@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "build123d-mcp": {
+      "command": "C:\\Users\\gabri\\.local\\bin\\uv.exe",
+      "args": ["tool", "run", "--python", "3.12", "build123d-mcp@latest"],
+      "env": {}
+    }
+  }
+}

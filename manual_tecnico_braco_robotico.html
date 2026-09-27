@@ -19,6 +19,79 @@
       print-color-adjust: exact !important;
     }
 
+
+    @media screen {
+      body {
+        padding-top: 54px;
+      }
+      .screen-nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 52px;
+        background: rgba(15, 23, 42, 0.94);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 24px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+        border-bottom: 1px solid rgba(255,255,255,0.12);
+      }
+      .screen-nav-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #ffffff;
+        font-weight: 800;
+        font-size: 13px;
+        letter-spacing: 0.5px;
+      }
+      .screen-nav-links {
+        display: flex;
+        gap: 6px;
+      }
+      .screen-nav-links a {
+        color: #94a3b8;
+        text-decoration: none;
+        font-size: 10.5px;
+        font-weight: 600;
+        padding: 5px 10px;
+        border-radius: 5px;
+        transition: all 0.2s ease;
+      }
+      .screen-nav-links a:hover {
+        color: #ffffff;
+        background: rgba(255,255,255,0.12);
+      }
+      .screen-nav-links a.active {
+        color: #FF5E00;
+        background: rgba(255,94,0,0.15);
+      }
+      .page {
+        margin: 20px auto;
+        box-shadow: 0 12px 36px rgba(0,0,0,0.12);
+        border-radius: 6px;
+      }
+    }
+    @media print {
+      .screen-nav {
+        display: none !important;
+      }
+      body {
+        background: #ffffff;
+        padding: 0;
+      }
+      .page {
+        margin: 0;
+        box-shadow: none;
+        border-radius: 0;
+      }
+    }
+
     body {
       font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: #f1f5f9;
@@ -157,62 +230,84 @@
 
     .parts-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
       grid-template-rows: 1fr 1fr;
-      gap: 12px;
+      gap: 10px;
       flex: 1;
       margin-bottom: 8px;
+      width: 100%;
+      box-sizing: border-box;
     }
 
     .part-card {
       border: 1.5px solid #e2e8f0;
       border-radius: 10px;
       background: #ffffff;
-      padding: 10px;
+      padding: 8px 10px;
       display: flex;
       flex-direction: column;
       box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+      min-width: 0;
+      box-sizing: border-box;
+      overflow: hidden;
     }
 
     .part-card-header {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: center;
+      gap: 6px;
       margin-bottom: 6px;
       padding-bottom: 4px;
       border-bottom: 1px solid #f1f5f9;
+      min-width: 0;
+    }
+
+    .part-card-header > div:first-child {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+      flex: 1;
+      overflow: hidden;
     }
 
     .part-name {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 10.5px;
+      font-size: 9.5px;
       font-weight: 700;
       color: #0f172a;
       line-height: 1.2;
+      min-width: 0;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
     .part-cat {
-      font-size: 8px;
-      padding: 2px 6px;
+      font-size: 7.5px;
+      padding: 1.5px 5px;
       border-radius: 3px;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.4px;
+      letter-spacing: 0.3px;
       background: #fff7ed;
       color: #c2410c;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
     .part-body {
       display: grid;
-      grid-template-columns: 110px 1fr;
-      gap: 10px;
+      grid-template-columns: 95px minmax(0, 1fr);
+      gap: 8px;
       align-items: center;
       margin-bottom: 6px;
+      min-width: 0;
     }
 
     .part-img-box {
-      width: 110px;
-      height: 110px;
+      width: 95px;
+      height: 95px;
       background: radial-gradient(circle, #f8fafc 0%, #e2e8f0 100%);
       border: 1px solid #e2e8f0;
       border-radius: 8px;
@@ -220,6 +315,7 @@
       align-items: center;
       justify-content: center;
       padding: 4px;
+      flex-shrink: 0;
     }
 
     .part-img-box img {
@@ -231,40 +327,50 @@
 
     .specs-table {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 4px 8px;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 3px 6px;
+      min-width: 0;
     }
 
     .spec-item {
       background: #f8fafc;
       border: 1px solid #f1f5f9;
       border-radius: 4px;
-      padding: 3px 6px;
+      padding: 2.5px 5px;
+      min-width: 0;
+      overflow: hidden;
     }
 
     .spec-k {
-      font-size: 7.5px;
+      font-size: 7px;
       color: #64748b;
       text-transform: uppercase;
       font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .spec-v {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 9px;
+      font-size: 8px;
       color: #0f172a;
       font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .part-desc {
-      font-size: 8.5px;
+      font-size: 8px;
       color: #475569;
-      line-height: 1.35;
+      line-height: 1.3;
       background: #f8fafc;
-      padding: 6px 8px;
+      padding: 5px 7px;
       border-radius: 6px;
       border-left: 3px solid #FF5E00;
       margin-top: auto;
+      min-width: 0;
     }
 
     .part-meta-footer {
@@ -274,8 +380,9 @@
       margin-top: 6px;
       padding-top: 4px;
       border-top: 1px dashed #e2e8f0;
-      font-size: 8px;
+      font-size: 7.5px;
       color: #94a3b8;
+      min-width: 0;
     }
 
     .step-box {
@@ -314,8 +421,28 @@
 </head>
 <body>
 
+  <!-- Interactive Navigation Bar (Screen Only) -->
+  <nav class="screen-nav">
+    <div class="screen-nav-brand">
+      <span style="background: #FF5E00; color: #fff; padding: 2.5px 8px; border-radius: 4px; font-size: 10px; font-weight: 900;">BAMBU A1</span>
+      <span>Braço Robótico 4-DOF • Manual Técnico & Guia de Montagem</span>
+    </div>
+    <div class="screen-nav-links">
+      <a href="#pag1">Capa</a>
+      <a href="#pag2">1. Cinemática</a>
+      <a href="#pag3">2. Lista de Materiais (BOM)</a>
+      <a href="#pag4">3. Catálogo 3D (28 Peças)</a>
+      <a href="#pag11">4. Fatiamento Bambu A1</a>
+      <a href="#pag12">5. Etapa 1 Base</a>
+      <a href="#pag13">6. Etapa 2 Torres</a>
+      <a href="#pag14">7. Etapa 3 Braço</a>
+      <a href="#pag15">8. Etapa 4 Garra</a>
+      <a href="#pag16">9. Eletrônica & Código</a>
+    </div>
+  </nav>
+
   <!-- PÁGINA 1: CAPA EXECUTIVA -->
-  <div class="page" style="background: linear-gradient(135deg, #090d16 0%, #111827 50%, #1e293b 100%); color: #ffffff; justify-content: space-between; padding: 22mm 20mm;">
+  <div class="page" id="pag1" style="background: linear-gradient(135deg, #090d16 0%, #111827 50%, #1e293b 100%); color: #ffffff; justify-content: space-between; padding: 22mm 20mm;">
     <div style="display: flex; justify-content: space-between; align-items: center;">
       <div style="display: flex; align-items: center; gap: 10px;">
         <div style="background: #FF5E00; color: #fff; font-weight: 900; font-size: 14px; padding: 5px 12px; border-radius: 6px; letter-spacing: 1px;">BAMBU LAB A1</div>
@@ -370,7 +497,7 @@
   </div>
 
   <!-- PÁGINA 2: VISÃO GERAL DO CONJUNTO & CINEMÁTICA -->
-  <div class="page">
+  <div class="page" id="pag2">
     <div class="page-header">
       <div class="brand">
         <span class="tag">BAMBU A1</span>
@@ -446,7 +573,7 @@
         Arquitetura Cinemática: Paralelogramo Duplo Articulado
       </div>
       <p style="font-size: 8.5px; color: #475569; line-height: 1.4;">
-        O mecanismo adota tirantes de acoplamento direto acionados por servomotores fixos na base. Esta configuração reduz a inércia rotacional ao transferir a massa dos motores para a mesa giratória inferior, proporcionando movimentos mais estáveis e capacidade de carga útil (payload) de até 150g na garra mecânica terminal.
+        O mecanismo adota tirantes de paralelogramo acionados por servomotores concentrados na base giratória. Esta arquitetura reduz a inércia rotacional transferindo o peso dos atuadores para a mesa inferior. <b>Capacidade de Carga Útil (Payload Calibrado):</b> 35 g a 40 g com atuadores SG90 (limite de stall térmico de 0.17 Nm no ombro) ou até 100 g mediante upgrade dos servos 2 e 3 para MG90S metálicos. <b>Envelope de Movimento com Margem de Segurança:</b> Eixo 1 (Base/Yaw) 0° a 180° • Eixo 2 (Ombro/Pitch 1) 35° a 145° (anti-colisão com torre 09) • Eixo 3 (Cotovelo/Pitch 2) 25° a 150° (anti-colisão com biela 05) • Eixo 4 (Garra/Claw) 0° a 85° (abertura útil de 50 mm).
       </p>
     </div>
 
@@ -457,7 +584,7 @@
   </div>
 
   <!-- PÁGINA 3: LISTA COMPLETA DE MATERIAIS (BOM) -->
-  <div class="page">
+  <div class="page" id="pag3">
     <div class="page-header">
       <div class="brand">
         <span class="tag">BAMBU A1</span>
@@ -470,145 +597,139 @@
       <span class="num-badge">2</span>
       Lista Completa de Materiais (Bill of Materials • BOM)
     </div>
-    <div class="section-subtitle">
-      Relação exata de parafusos, porcas, servomotores, eletrônica de controle e insumos de impressão.
+    <div class="section-subtitle" style="margin-bottom: 8px;">
+      Relação consolidada e reconciliada de parafusos M3, porcas, servomotores, eletrônica de controle e insumos de impressão.
     </div>
 
     <!-- BOM Table 1: Electronic Hardware -->
-    <div style="margin-bottom: 12px;">
-      <h4 style="font-size: 10.5px; font-weight: 800; color: #FF5E00; text-transform: uppercase; margin-bottom: 4px;">
+    <div style="margin-bottom: 8px;">
+      <h4 style="font-size: 9.5px; font-weight: 800; color: #FF5E00; text-transform: uppercase; margin-bottom: 3px;">
         1. Componentes Eletrônicos & Atuadores
       </h4>
-      <table class="data-table">
+      <table class="data-table" style="font-size: 7.8px; margin-bottom: 4px;">
         <thead>
-          <tr>
-            <th style="width: 25%;">Item / Componente</th>
-            <th style="width: 35%;">Especificação Técnica</th>
-            <th style="width: 15%; text-align: center;">Qtd</th>
-            <th style="width: 25%;">Função no Projeto</th>
+          <tr style="background: #f8fafc;">
+            <th style="width: 25%; padding: 3px 6px;">Item / Componente</th>
+            <th style="width: 37%; padding: 3px 6px;">Especificação Técnica</th>
+            <th style="width: 12%; text-align: center; padding: 3px 6px;">Qtd</th>
+            <th style="width: 26%; padding: 3px 6px;">Função no Projeto</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td><b>Micro Servomotor SG90 / MG90S</b></td>
-            <td>Torque 1.8-2.2 kg·cm, 4.8V-6V, dentes de nylon/metal</td>
-            <td style="text-align: center; font-weight: 700;">4 un</td>
-            <td>Juntas de Giro, Ombro, Cotovelo e Garra</td>
+            <td style="padding: 2.5px 6px;"><b>Micro Servomotor SG90 / MG90S</b></td>
+            <td style="padding: 2.5px 6px;">Torque 1.8 - 2.2 kg·cm, 4.8V-6V, dentes nylon/metal</td>
+            <td style="text-align: center; font-weight: 700; padding: 2.5px 6px;">4 un</td>
+            <td style="padding: 2.5px 6px;">Juntas de Giro (Yaw), Ombro, Cotovelo e Garra</td>
           </tr>
           <tr>
-            <td><b>Microcontrolador Arduino Uno R3</b></td>
-            <td>ATmega328P, 16 MHz, cabo USB de programação</td>
-            <td style="text-align: center; font-weight: 700;">1 un</td>
-            <td>Controle cinemático e geração de PWM</td>
+            <td style="padding: 2.5px 6px;"><b>Microcontrolador Arduino Uno R3</b></td>
+            <td style="padding: 2.5px 6px;">ATmega328P, 16 MHz, cabo USB de programação</td>
+            <td style="text-align: center; font-weight: 700; padding: 2.5px 6px;">1 un</td>
+            <td style="padding: 2.5px 6px;">Controle cinemático e geração de sinais PWM</td>
           </tr>
           <tr>
-            <td><b>Sensor Shield v5.0</b></td>
-            <td>Expansor I/O para 14 servos com borne externo</td>
-            <td style="text-align: center; font-weight: 700;">1 un</td>
-            <td>Alimentação dedicada evitando ruídos</td>
+            <td style="padding: 2.5px 6px;"><b>Sensor Shield v5.0</b></td>
+            <td style="padding: 2.5px 6px;">Expansor I/O para servos (Jumper SEL removido)</td>
+            <td style="text-align: center; font-weight: 700; padding: 2.5px 6px;">1 un</td>
+            <td style="padding: 2.5px 6px;">Barramento de potência isolado dos atuadores</td>
           </tr>
           <tr>
-            <td><b>Módulo Joystick Analógico 2-Eixos</b></td>
-            <td>Potenciômetros 10k duplos + Botão Push (KY-023)</td>
-            <td style="text-align: center; font-weight: 700;">2 un</td>
-            <td>Controle manual dos 4 graus de liberdade</td>
+            <td style="padding: 2.5px 6px;"><b>Módulo Joystick Analógico 2-Eixos</b></td>
+            <td style="padding: 2.5px 6px;">Potenciômetros 10k duplos + Botão Push (KY-023)</td>
+            <td style="text-align: center; font-weight: 700; padding: 2.5px 6px;">2 un</td>
+            <td style="padding: 2.5px 6px;">Controle manual dos 4 graus de liberdade</td>
           </tr>
           <tr>
-            <td><b>Fonte Chaveada 5V 3A (DC)</b></td>
-            <td>Conector P4 fêmea / Bornes (Plugue padrão BR)</td>
-            <td style="text-align: center; font-weight: 700;">1 un</td>
-            <td>Potência para os 4 servos simultâneos</td>
+            <td style="padding: 2.5px 6px;"><b>Fonte Chaveada 5V 5A + Filtro</b></td>
+            <td style="padding: 2.5px 6px;">5.0V / 5.0A contínuos + Capacitor 1000 µF / 16V</td>
+            <td style="text-align: center; font-weight: 700; padding: 2.5px 6px;">1 un</td>
+            <td style="padding: 2.5px 6px;">Potência dedicada para picos simultâneos de stall</td>
           </tr>
           <tr>
-            <td><b>Jumpers Fêmea-Fêmea 20cm</b></td>
-            <td>Fios flexíveis coloridos com terminais Dupont</td>
-            <td style="text-align: center; font-weight: 700;">10 un</td>
-            <td>Interligação dos joysticks ao Shield</td>
+            <td style="padding: 2.5px 6px;"><b>Jumpers Fêmea-Fêmea 20cm</b></td>
+            <td style="padding: 2.5px 6px;">Fios flexíveis coloridos com terminais Dupont</td>
+            <td style="text-align: center; font-weight: 700; padding: 2.5px 6px;">10 un</td>
+            <td style="padding: 2.5px 6px;">Interligação dos joysticks ao Shield</td>
           </tr>
         </tbody>
       </table>
     </div>
 
     <!-- BOM Table 2: Fasteners & Fastening Hardware -->
-    <div style="margin-bottom: 12px;">
-      <h4 style="font-size: 10.5px; font-weight: 800; color: #FF5E00; text-transform: uppercase; margin-bottom: 4px;">
-        2. Elementos de Fixação Mecânica (Fixadores M3 em Aço Inox)
+    <div style="margin-bottom: 8px;">
+      <h4 style="font-size: 9.5px; font-weight: 800; color: #FF5E00; text-transform: uppercase; margin-bottom: 3px;">
+        2. Elementos de Fixação Mecânica (Fixadores M3 em Aço Inox A2)
       </h4>
-      <table class="data-table">
+      <table class="data-table" style="font-size: 7.8px; margin-bottom: 4px;">
         <thead>
-          <tr>
-            <th style="width: 25%;">Fixador</th>
-            <th style="width: 35%;">Tipo / Norma / Dimensão</th>
-            <th style="width: 15%; text-align: center;">Qtd</th>
-            <th style="width: 25%;">Local de Aplicação</th>
+          <tr style="background: #f8fafc;">
+            <th style="width: 25%; padding: 3px 6px;">Fixador</th>
+            <th style="width: 37%; padding: 3px 6px;">Tipo / Norma / Dimensão</th>
+            <th style="width: 12%; text-align: center; padding: 3px 6px;">Qtd</th>
+            <th style="width: 26%; padding: 3px 6px;">Local de Aplicação no Conjunto</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td><b>Parafuso Allen M3 × 30 mm</b></td>
-            <td>Cabeça Cilíndrica (DIN 912), Rosca Total</td>
-            <td style="text-align: center; font-weight: 700;">2 un</td>
-            <td>Travamento passante das torres e espaçador</td>
+            <td style="padding: 2px 6px;"><b>Parafuso Allen M3 × 30 mm</b></td>
+            <td style="padding: 2px 6px;">Cabeça Cilíndrica (DIN 912), Rosca Total</td>
+            <td style="text-align: center; font-weight: 700; padding: 2px 6px;">4 un</td>
+            <td style="padding: 2px 6px;">Torres (09, 11) cruzando espaçador 14 e união superior</td>
           </tr>
           <tr>
-            <td><b>Parafuso Allen M3 × 16 mm</b></td>
-            <td>Cabeça Cilíndrica (DIN 912), Rosca Total</td>
-            <td style="text-align: center; font-weight: 700;">4 un</td>
-            <td>Eixos principais do ombro e cotovelo</td>
+            <td style="padding: 2px 6px;"><b>Parafuso Allen M3 × 16 mm</b></td>
+            <td style="padding: 2px 6px;">Cabeça Cilíndrica (DIN 912), Rosca Total</td>
+            <td style="text-align: center; font-weight: 700; padding: 2px 6px;">5 un</td>
+            <td style="padding: 2px 6px;">Mancais do ombro (2x), cotovelo (2x) e pivô do balancim 10</td>
           </tr>
           <tr>
-            <td><b>Parafuso Allen M3 × 12 mm</b></td>
-            <td>Cabeça Abaulada (ISO 7380)</td>
-            <td style="text-align: center; font-weight: 700;">8 un</td>
-            <td>Articulações dos tirantes e balancim</td>
+            <td style="padding: 2px 6px;"><b>Parafuso Allen M3 × 12 mm</b></td>
+            <td style="padding: 2px 6px;">Cabeça Abaulada (ISO 7380), Rosca Total</td>
+            <td style="text-align: center; font-weight: 700; padding: 2px 6px;">12 un</td>
+            <td style="padding: 2px 6px;">Tirantes (03, 04, 05, 13) e travessas da base (17, 18)</td>
           </tr>
           <tr>
-            <td><b>Parafuso Allen M3 × 10 mm</b></td>
-            <td>Cabeça Abaulada (ISO 7380)</td>
-            <td style="text-align: center; font-weight: 700;">6 un</td>
-            <td>Fixação do berço do servo e mesa giratória</td>
+            <td style="padding: 2px 6px;"><b>Parafuso Allen M3 × 10 mm</b></td>
+            <td style="padding: 2px 6px;">Cabeça Abaulada (ISO 7380), Rosca Total</td>
+            <td style="text-align: center; font-weight: 700; padding: 2px 6px;">8 un</td>
+            <td style="padding: 2px 6px;">Fixação do berço yaw (16), mesa giratória (12) e cruzetas</td>
           </tr>
           <tr>
-            <td><b>Parafuso Allen M3 × 8 mm</b></td>
-            <td>Cabeça Abaulada (ISO 7380)</td>
-            <td style="text-align: center; font-weight: 700;">4 un</td>
-            <td>Estrutura da garra e travamento dos dedos</td>
+            <td style="padding: 2px 6px;"><b>Parafuso Allen M3 × 8 mm</b></td>
+            <td style="padding: 2px 6px;">Cabeça Abaulada (ISO 7380), Rosca Total</td>
+            <td style="text-align: center; font-weight: 700; padding: 2px 6px;">6 un</td>
+            <td style="padding: 2px 6px;">Conjunto da garra (15, 19), guia 27 e biela curta 28</td>
           </tr>
           <tr>
-            <td><b>Porca Auto-Travante M3 (Nyloc)</b></td>
-            <td>Com anel de nylon anti-vibração (DIN 985)</td>
-            <td style="text-align: center; font-weight: 700;">14 un</td>
-            <td>Todas as juntas móveis com giro suave</td>
+            <td style="padding: 2px 6px;"><b>Porca Auto-Travante M3 (Nyloc)</b></td>
+            <td style="padding: 2px 6px;">Com anel de nylon anti-vibração (DIN 985)</td>
+            <td style="text-align: center; font-weight: 700; padding: 2px 6px;">15 un</td>
+            <td style="padding: 2px 6px;">Todas as 15 articulações dinâmicas com movimento rotativo</td>
           </tr>
           <tr>
-            <td><b>Porca Sextavada Comum M3</b></td>
-            <td>Aço zincado classe 6 (DIN 934)</td>
-            <td style="text-align: center; font-weight: 700;">8 un</td>
-            <td>Alojamentos hexagonais da base e travas</td>
+            <td style="padding: 2px 6px;"><b>Porca Sextavada Comum M3</b></td>
+            <td style="padding: 2px 6px;">Aço zincado classe 6 (DIN 934)</td>
+            <td style="text-align: center; font-weight: 700; padding: 2px 6px;">16 un</td>
+            <td style="padding: 2px 6px;">Alojamentos estáticos (base 01, travessas 17/18, torres)</td>
           </tr>
           <tr>
-            <td><b>Espaçador Metálico Sextavado M3 × 24 mm</b></td>
-            <td>Latão Niquelado / Aço Inox (Fêmea-Fêmea ou Macho-Fêmea M3)</td>
-            <td style="text-align: center; font-weight: 700;">4 un</td>
-            <td>Sustentação estrutural da base (elevação de 24mm para o servo yaw)</td>
+            <td style="padding: 2px 6px;"><b>Espaçador Sextavado M3 × 24 mm</b></td>
+            <td style="padding: 2px 6px;">Latão Niquelado / Aço Inox (M3x24mm)</td>
+            <td style="text-align: center; font-weight: 700; padding: 2px 6px;">4 un</td>
+            <td style="padding: 2px 6px;">Sustentação estrutural da base (vão de 24mm para servo yaw)</td>
           </tr>
           <tr>
-            <td><b>Arruelas de Nylon M3 (0.5 mm)</b></td>
-            <td>Arruela lisa em poliamida (Øext 7mm)</td>
-            <td style="text-align: center; font-weight: 700;">16 un</td>
-            <td>Isolamento de atrito plástico contra plástico</td>
+            <td style="padding: 2px 6px;"><b>Arruelas de Nylon M3 (0.5 mm)</b></td>
+            <td style="padding: 2px 6px;">Poliamida lisa (Øext 7.0 mm, espessura 0.5 mm)</td>
+            <td style="text-align: center; font-weight: 700; padding: 2px 6px;">16 un</td>
+            <td style="padding: 2px 6px;">Isolamento anti-atrito em todas as juntas móveis PLA-PLA</td>
           </tr>
           <tr>
-            <td><b>Arruela Lisa M3 em Aço Inox</b></td>
-            <td>Aço inox A2 padrão DIN 125 (Øext 7mm)</td>
-            <td style="text-align: center; font-weight: 700;">12 un</td>
-            <td>Assento de aperto dos espaçadores e parafusos de pivô</td>
-          </tr>
-          <tr>
-            <td><b>Micro Parafusos do Servo SG90</b></td>
-            <td>Ponta fina e parafuso central do horn M2</td>
-            <td style="text-align: center; font-weight: 700;">12 un</td>
-            <td>Inclusos no pacote original de cada SG90</td>
+            <td style="padding: 2px 6px;"><b>Arruela Lisa M3 Inox + Microparafusos</b></td>
+            <td style="padding: 2px 6px;">DIN 125 Inox (12 un) + Kit Horn/Abas M2 (12 un)</td>
+            <td style="text-align: center; font-weight: 700; padding: 2px 6px;">24 un</td>
+            <td style="padding: 2px 6px;">Assento de aperto dos espaçadores e fixação dos 4 servos</td>
           </tr>
         </tbody>
       </table>
@@ -616,42 +737,42 @@
 
     <!-- BOM Table 3: 3D Printing Filament & Supplies -->
     <div>
-      <h4 style="font-size: 10.5px; font-weight: 800; color: #FF5E00; text-transform: uppercase; margin-bottom: 4px;">
+      <h4 style="font-size: 9.5px; font-weight: 800; color: #FF5E00; text-transform: uppercase; margin-bottom: 3px;">
         3. Insumos de Manufatura Aditiva & Ferramentas
       </h4>
-      <table class="data-table">
+      <table class="data-table" style="font-size: 7.8px; margin-bottom: 4px;">
         <thead>
-          <tr>
-            <th style="width: 25%;">Item</th>
-            <th style="width: 35%;">Especificação Recomendada</th>
-            <th style="width: 15%; text-align: center;">Consumo</th>
-            <th style="width: 25%;">Observações Técnicas</th>
+          <tr style="background: #f8fafc;">
+            <th style="width: 25%; padding: 3px 6px;">Item</th>
+            <th style="width: 37%; padding: 3px 6px;">Especificação Recomendada</th>
+            <th style="width: 12%; text-align: center; padding: 3px 6px;">Consumo</th>
+            <th style="width: 26%; padding: 3px 6px;">Observações Técnicas</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td><b>Filamento PLA Bicolor Técnico</b></td>
-            <td>Bambu PLA Basic Preto (#22262C) e Azul (#0077D4) 1.75mm</td>
-            <td style="text-align: center; font-weight: 700;">~56 g</td>
-            <td>14 peças Pretas (~28g) e 14 peças Azuis (~28g) para máximo contraste e legibilidade</td>
+            <td style="padding: 2.5px 6px;"><b>Filamento PLA Bicolor Técnico</b></td>
+            <td style="padding: 2.5px 6px;">Bambu PLA Basic Preto (#22262C) e Azul (#0077D4) 1.75mm</td>
+            <td style="text-align: center; font-weight: 700; padding: 2.5px 6px;">~56 g</td>
+            <td style="padding: 2.5px 6px;">14 peças Pretas (~28g) e 14 peças Azuis (~28g)</td>
           </tr>
           <tr>
-            <td><b>Filamento TPU 95A (Opcional)</b></td>
-            <td>Para os 4 pés de apoio de canto na base</td>
-            <td style="text-align: center; font-weight: 700;">~4 g</td>
-            <td>Amortecimento de vibrações de bancada</td>
+            <td style="padding: 2.5px 6px;"><b>Filamento TPU 95A (Opcional)</b></td>
+            <td style="padding: 2.5px 6px;">Para os 4 pés de apoio de canto na base</td>
+            <td style="text-align: center; font-weight: 700; padding: 2.5px 6px;">~4 g</td>
+            <td style="padding: 2.5px 6px;">Amortecimento de vibrações de bancada</td>
           </tr>
           <tr>
-            <td><b>Chave Allen 2.0 mm / 2.5 mm</b></td>
-            <td>Aço cromo-vanádio com ponta esférica</td>
-            <td style="text-align: center; font-weight: 700;">1 kit</td>
-            <td>Montagem e ajuste de torque dos parafusos M3</td>
+            <td style="padding: 2.5px 6px;"><b>Chave Allen 2.0 mm / 2.5 mm</b></td>
+            <td style="padding: 2.5px 6px;">Aço cromo-vanádio com ponta esférica</td>
+            <td style="text-align: center; font-weight: 700; padding: 2.5px 6px;">1 kit</td>
+            <td style="padding: 2.5px 6px;">Montagem e ajuste de torque dos parafusos M3</td>
           </tr>
           <tr>
-            <td><b>Graxa de Silicone ou Vaselina</b></td>
-            <td>Lubrificante neutro para plásticos de engenharia</td>
-            <td style="text-align: center; font-weight: 700;">1 gota</td>
-            <td>Engrenagens da garra e mesa giratória</td>
+            <td style="padding: 2.5px 6px;"><b>Graxa de Silicone com PTFE</b></td>
+            <td style="padding: 2.5px 6px;">Lubrificante sintético neutro para termoplásticos</td>
+            <td style="text-align: center; font-weight: 700; padding: 2.5px 6px;">1 gota</td>
+            <td style="padding: 2.5px 6px;">Engrenagens da garra e pista de giro da mesa</td>
           </tr>
         </tbody>
       </table>
@@ -663,8 +784,7 @@
     </div>
   </div>
 
-  <!-- PÁGINA 4: CATÁLOGO DE PEÇAS (01 A 04) -->
-  <div class="page">
+  <div class="page" id="pag4">
     <div class="page-header">
       <div class="brand">
         <span class="tag">BAMBU A1</span>
@@ -884,7 +1004,7 @@
   </div>
 
   <!-- PÁGINA 5: CATÁLOGO DE PEÇAS (05 A 08) -->
-  <div class="page">
+  <div class="page" id="pag5">
     <div class="page-header">
       <div class="brand">
         <span class="tag">BAMBU A1</span>
@@ -1104,7 +1224,7 @@
   </div>
 
   <!-- PÁGINA 6: CATÁLOGO DE PEÇAS (09 A 12) -->
-  <div class="page">
+  <div class="page" id="pag6">
     <div class="page-header">
       <div class="brand">
         <span class="tag">BAMBU A1</span>
@@ -1324,7 +1444,7 @@
   </div>
 
   <!-- PÁGINA 7: CATÁLOGO DE PEÇAS (13 A 16) -->
-  <div class="page">
+  <div class="page" id="pag7">
     <div class="page-header">
       <div class="brand">
         <span class="tag">BAMBU A1</span>
@@ -1544,7 +1664,7 @@
   </div>
 
   <!-- PÁGINA 8: CATÁLOGO DE PEÇAS (17 A 20) -->
-  <div class="page">
+  <div class="page" id="pag8">
     <div class="page-header">
       <div class="brand">
         <span class="tag">BAMBU A1</span>
@@ -1764,7 +1884,7 @@
   </div>
 
   <!-- PÁGINA 9: CATÁLOGO DE PEÇAS (21 A 24) -->
-  <div class="page">
+  <div class="page" id="pag9">
     <div class="page-header">
       <div class="brand">
         <span class="tag">BAMBU A1</span>
@@ -1984,7 +2104,7 @@
   </div>
 
   <!-- PÁGINA 10: CATÁLOGO DE PEÇAS (25 A 28) -->
-  <div class="page">
+  <div class="page" id="pag10">
     <div class="page-header">
       <div class="brand">
         <span class="tag">BAMBU A1</span>
@@ -2204,7 +2324,7 @@
   </div>
 
   <!-- PÁGINA 11: DIRETRIZES DE FATIAMENTO & ARRANJO DE PRATOS -->
-  <div class="page">
+  <div class="page" id="pag11">
     <div class="page-header">
       <div class="brand">
         <span class="tag">BAMBU A1</span>
@@ -2254,23 +2374,23 @@
           </tr>
           <tr style="border-bottom: 1px solid #e2e8f0;">
             <td style="padding: 3px 0; color: #64748b;">Paredes Perimetrais (Wall Loops):</td>
-            <td style="padding: 3px 0; font-weight: 700; text-align: right;">4 paredes (Rigidez nos furos M3)</td>
+            <td style="padding: 3px 0; font-weight: 700; text-align: right;">4 a 6 voltas (Bucha sólida anti-esmagamento M3)</td>
           </tr>
           <tr style="border-bottom: 1px solid #e2e8f0;">
             <td style="padding: 3px 0; color: #64748b;">Densidade de Preenchimento (Infill):</td>
-            <td style="padding: 3px 0; font-weight: 700; text-align: right;">25% Gyroid (Isotrópico)</td>
+            <td style="padding: 3px 0; font-weight: 700; text-align: right;">25% a 45% Gyroid (Resistência tênsil isotrópica)</td>
           </tr>
           <tr style="border-bottom: 1px solid #e2e8f0;">
-            <td style="padding: 3px 0; color: #64748b;">Tipo de Filamento Indicado:</td>
-            <td style="padding: 3px 0; font-weight: 700; text-align: right;">PLA Tough, PETG ou PLA Basic</td>
+            <td style="padding: 3px 0; color: #64748b;">Orientação das Torres (09 e 11):</td>
+            <td style="padding: 3px 0; font-weight: 700; text-align: right; color: #FF5E00;">Deitadas no plano XY + Tree Slim (0.6mm gap)</td>
           </tr>
           <tr style="border-bottom: 1px solid #e2e8f0;">
-            <td style="padding: 3px 0; color: #64748b;">Temperatura da Mesa (Bed):</td>
-            <td style="padding: 3px 0; font-weight: 700; text-align: right;">65°C (Textured PEI Plate)</td>
+            <td style="padding: 3px 0; color: #64748b;">Compensação de Furo (X-Y Hole):</td>
+            <td style="padding: 3px 0; font-weight: 700; text-align: right;">+0.05 mm (+0.08 mm nos mancais de giro)</td>
           </tr>
           <tr>
-            <td style="padding: 3px 0; color: #64748b;">Compensação de Furo (X-Y Hole):</td>
-            <td style="padding: 3px 0; font-weight: 700; text-align: right;">+0.05 mm (Folga suave para eixos M3)</td>
+            <td style="padding: 3px 0; color: #64748b;">Compensação Contorno (X-Y Contour):</td>
+            <td style="padding: 3px 0; font-weight: 700; text-align: right;">-0.02 mm a -0.05 mm (Backlash engrenagens garra)</td>
           </tr>
         </table>
       </div>
@@ -2322,7 +2442,7 @@
   </div>
 
   <!-- PÁGINA 12: GUIA DE MONTAGEM — ETAPA 1: CHASSI, BASE & EIXO YAW -->
-  <div class="page">
+  <div class="page" id="pag12">
     <div class="page-header">
       <div class="brand">
         <span class="tag">BAMBU A1</span>
@@ -2405,7 +2525,21 @@
         Centralização de 90° e Travamento Axial do Eixo Yaw
       </div>
       <div class="step-text">
-        <b>ATENÇÃO CRÍTICA:</b> Antes de encaixar a mesa, conecte o Servo 1 ao testador ou Arduino e envie o pulso de neutro (90° / 1500 µs). Com o servo travado em 90°, encaixe a Mesa Giratória (12) perfeitamente alinhada para a frente. Insira o parafuso central M2×4mm pelo orifício superior da mesa e aperte até fixar no eixo estriado.
+        <div style="display: flex; gap: 12px; align-items: center; margin-top: 4px;">
+          <div style="flex: 1;">
+            <b>ATENÇÃO CRÍTICA:</b> Antes de encaixar a mesa, conecte o Servo 1 ao Arduino e envie o pulso de neutro (90° / 1500 µs). Com o servo travado em 90°, encaixe a Mesa Giratória (12) perfeitamente alinhada para a frente (eixo X). Insira o parafuso central M2×4mm pelo orifício superior da mesa e aperte até fixar no estriado.
+          </div>
+          <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; text-align: center; width: 120px;">
+            <svg width="100" height="42" viewBox="0 0 100 42">
+              <rect x="35" y="10" width="30" height="25" rx="3" fill="#1873E6" />
+              <circle cx="50" cy="20" r="8" fill="#e2e8f0" stroke="#0f172a" stroke-width="1.5" />
+              <line x1="50" y1="20" x2="50" y2="2" stroke="#FF5E00" stroke-width="2.5" stroke-linecap="round" />
+              <line x1="20" y1="20" x2="80" y2="20" stroke="#94a3b8" stroke-width="1" stroke-dasharray="2,2" />
+              <text x="54" y="9" font-size="7" font-weight="bold" fill="#FF5E00">90° Neutro</text>
+            </svg>
+            <div style="font-size: 7.5px; color: #64748b; font-weight: 700;">Servo 1 (Yaw)</div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -2420,7 +2554,7 @@
   </div>
 
   <!-- PÁGINA 13: GUIA DE MONTAGEM — ETAPA 2: TORRES & SERVOS CENTRAIS -->
-  <div class="page">
+  <div class="page" id="pag13">
     <div class="page-header">
       <div class="brand">
         <span class="tag">BAMBU A1</span>
@@ -2503,9 +2637,24 @@
         Instalação das Bielas dos Servos (22 e 23)
       </div>
       <div class="step-text">
-        Com os servos 2 e 3 energizados em 90°, encaixe os braços de acionamento:
-        <br>• No Servo 2 (Direito): Horn apontando a 45° para trás, acoplado à <b>22_Biela_Conexao_Horn_Direito</b>.
-        <br>• No Servo 3 (Esquerdo): Horn apontando para cima a 90°, acoplado à <b>23_Biela_Conexao_Horn_Esquerdo</b>.
+        <div style="display: flex; gap: 12px; align-items: center; margin-top: 4px;">
+          <div style="flex: 1;">
+            Com os servos 2 e 3 energizados em neutro de 90° (1500 µs), encaixe as cruzetas com alinhamento rigoroso:
+            <br>• <b>Servo 2 (Ombro/Direito):</b> Horn alinhado a 90° (perpendicular), acoplado à biela 22 para curso de 35° a 145°.
+            <br>• <b>Servo 3 (Cotovelo/Esquerdo):</b> Horn alinhado verticalmente a 90°, acoplado à biela 23 para curso de 25° a 150°.
+          </div>
+          <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; text-align: center; width: 140px;">
+            <svg width="120" height="42" viewBox="0 0 120 42">
+              <circle cx="35" cy="24" r="7" fill="#e2e8f0" stroke="#0f172a" stroke-width="1.5" />
+              <line x1="35" y1="24" x2="16" y2="10" stroke="#0077D4" stroke-width="2.5" stroke-linecap="round" />
+              <text x="12" y="36" font-size="7" font-weight="bold" fill="#0077D4">S2: 90°/Biela</text>
+              <circle cx="85" cy="24" r="7" fill="#e2e8f0" stroke="#0f172a" stroke-width="1.5" />
+              <line x1="85" y1="24" x2="85" y2="4" stroke="#FF5E00" stroke-width="2.5" stroke-linecap="round" />
+              <text x="68" y="36" font-size="7" font-weight="bold" fill="#FF5E00">S3: 90° Vertical</text>
+            </svg>
+            <div style="font-size: 7.5px; color: #64748b; font-weight: 700;">Alinhamento Servos 2 & 3</div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -2520,7 +2669,7 @@
   </div>
 
   <!-- PÁGINA 14: GUIA DE MONTAGEM — ETAPA 3: BRAÇO PRINCIPAL & PARALELOGRAMO -->
-  <div class="page">
+  <div class="page" id="pag14">
     <div class="page-header">
       <div class="brand">
         <span class="tag">BAMBU A1</span>
@@ -2621,7 +2770,7 @@
   </div>
 
   <!-- PÁGINA 15: GUIA DE MONTAGEM — ETAPA 4: CABEÇOTE & GARRA ROBÓTICA -->
-  <div class="page">
+  <div class="page" id="pag15">
     <div class="page-header">
       <div class="brand">
         <span class="tag">BAMBU A1</span>
@@ -2674,7 +2823,20 @@
         Calibração do Servo em 0° (Posição Fechada) e Alavanca Acionadora (26)
       </div>
       <div class="step-text">
-        Conecte o Servo 4 ao Arduino e envie o pulso de 0° (1000 µs), que representa a garra 100% FECHADA. Com o servo calibrado em 0°, encaixe a alavanca <b>26_Engrenagem_Acionadora_Garra</b> (Azul) no horn do servomotor e aperte o micro parafuso central M2×4mm. O rasgo oblongo permite o curso suave do pino de acionamento.
+        <div style="display: flex; gap: 12px; align-items: center; margin-top: 4px;">
+          <div style="flex: 1;">
+            Conecte o Servo 4 ao Arduino e envie o pulso de 0° (1000 µs), que representa a garra 100% FECHADA. Com o servo calibrado em 0°, encaixe a alavanca <b>26_Engrenagem_Acionadora_Garra</b> no estriado e aperte o micro parafuso central M2×4mm. <b>Mecanismo Compliant:</b> Não force o fechamento além do toque para não induzir corrente contínua de stall.
+          </div>
+          <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; text-align: center; width: 120px;">
+            <svg width="100" height="42" viewBox="0 0 100 42">
+              <rect x="25" y="14" width="30" height="20" rx="3" fill="#1873E6" />
+              <circle cx="40" cy="22" r="6" fill="#e2e8f0" stroke="#0f172a" stroke-width="1.5" />
+              <line x1="40" y1="22" x2="80" y2="22" stroke="#FF5E00" stroke-width="2.5" stroke-linecap="round" />
+              <text x="45" y="15" font-size="7" font-weight="bold" fill="#FF5E00">0° Fechado</text>
+            </svg>
+            <div style="font-size: 7.5px; color: #64748b; font-weight: 700;">Servo 4 (Garra)</div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -2725,7 +2887,7 @@
   </div>
 
   <!-- PÁGINA 16: CALIBRAÇÃO, ELETRÔNICA, CÓDIGO ARDUINO & CHECKLIST -->
-  <div class="page">
+  <div class="page" id="pag16">
     <div class="page-header">
       <div class="brand">
         <span class="tag">BAMBU A1</span>
@@ -2846,7 +3008,7 @@
         <div>☑ <b>Giro Livre:</b> Articulações giram sem emperramento mecânico.</div>
         <div>☑ <b>Jumper Shield:</b> Jumper PWR/VCC removido para isolar a fonte 5V.</div>
         <div>☑ <b>Arruelas de Nylon:</b> Todas as 14 juntas contêm arruelas de baixo atrito.</div>
-        <div>☑ <b>Fonte Externa:</b> Alimentação 5V 3A conectada no borne azul do shield.</div>
+        <div>☑ <b>Fonte Externa:</b> Alimentação 5V 5A conectada no borne com capacitor 1000 µF / 16V.</div>
         <div>☑ <b>Porcas Nyloc:</b> Nenhuma porca excessivamente apertada.</div>
         <div>☑ <b>Organização de Cabos:</b> Fios agrupados com abraçadeiras sem puxar.</div>
         <div>☑ <b>Sincronismo da Garra:</b> Dedos fecham perfeitamente no centro.</div>
