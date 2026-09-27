@@ -303,15 +303,15 @@
       "category": "Fixadores & Hardware M3",
       "color": "#B4B9BE",
       "material": "Aço Inoxidável A2 (DIN 912 / ISO 7380 / DIN 985)",
-      "desc": "Parafusos Allen M3 com porcas autotravantes Nyloc e arruelas inox em todas as articulações mecânicas."
+      "desc": "Parafusos Allen M3 (4x M3×30mm, 5x M3×16mm, 14x M3×12mm, 10x M3×10mm) + 20x Porcas Nyloc M3 + 24x Arruelas de Nylon M3 em todas as articulações mecânicas. [Contagem corrigida vs. BOM original: +2 M3×12mm, +2 M3×10mm, +5 Nyloc, +8 Arruelas]"
     },
     {
       "id": "espacadores_nylon_m3",
-      "name": "Arruelas de Nylon M3 (0.5 mm) — 16 un",
+      "name": "Arruelas de Nylon M3 (0.5 mm) — 24 un",
       "category": "Fixadores & Hardware M3",
       "color": "#F0F5FA",
       "material": "Poliamida (Nylon) — Øext 7mm, espessura 0.5mm",
-      "desc": "Arruelas isoladoras de atrito plástico-contra-plástico em todas as juntas móveis pivotantes."
+      "desc": "Arruelas isoladoras de atrito plástico-contra-plástico em todas as juntas móveis pivotantes. ATENÇÃO: BOM original listava 16 un, valor correto é 24 un."
     },
     {
       "id": "eletronica_arduino_shield",

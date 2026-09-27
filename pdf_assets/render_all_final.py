@@ -125,14 +125,14 @@ HTML_CONTENT = """<!DOCTYPE html>
         const targetMain = new THREE.Vector3(center.x, center.y, center.z);
         const targetBase = new THREE.Vector3(0, 115, 25);
 
-        // 4 Full assembly views
+        // Full assembly views and zooms
         const views = [
           {
             name: 'braco_completo_com_componentes_iso',
             folder: 'renders',
             fov: 28,
-            pos: new THREE.Vector3(center.x - 360, center.y - 380, center.z + 180),
-            target: targetMain
+            pos: new THREE.Vector3(center.x - 380, center.y - 450, center.z + 280),
+            target: new THREE.Vector3(center.x, center.y + 15, center.z)
           },
           {
             name: 'braco_completo_com_componentes_side',
@@ -151,9 +151,37 @@ HTML_CONTENT = """<!DOCTYPE html>
           {
             name: 'braco_completo_com_componentes_base',
             folder: 'renders',
-            fov: 20,
-            pos: new THREE.Vector3(-220, 115 - 220, 95),
-            target: targetBase
+            fov: 22,
+            pos: new THREE.Vector3(-180, 20 - 240, 110),
+            target: new THREE.Vector3(0, 25, 30)
+          },
+          {
+            name: 'braco_completo_com_componentes_top',
+            folder: 'renders',
+            fov: 24,
+            pos: new THREE.Vector3(center.x, center.y, center.z + 650),
+            target: new THREE.Vector3(center.x, center.y, center.z)
+          },
+          {
+            name: 'braco_capa_lateral_dinamica',
+            folder: 'renders',
+            fov: 30,
+            pos: new THREE.Vector3(center.x - 420, center.y - 280, center.z + 140),
+            target: new THREE.Vector3(center.x + 10, center.y + 20, center.z - 10)
+          },
+          {
+            name: 'shield_dupont_connections_zoom',
+            folder: 'renders',
+            fov: 22,
+            pos: new THREE.Vector3(5.0 - 150, -32.5 - 180, 120),
+            target: new THREE.Vector3(5.0, -20.0, 25.0)
+          },
+          {
+            name: 'subconjunto_1_base',
+            folder: 'renders',
+            fov: 24,
+            pos: new THREE.Vector3(-200, 20 - 260, 125),
+            target: new THREE.Vector3(0, 25, 30)
           }
         ];
 
@@ -165,7 +193,7 @@ HTML_CONTENT = """<!DOCTYPE html>
           camera.updateProjectionMatrix();
 
           renderer.render(scene, camera);
-          await new Promise(r => setTimeout(r, 200));
+          await new Promise(r => setTimeout(r, 150));
 
           await sendImage(v.name, canvas, v.folder);
         }

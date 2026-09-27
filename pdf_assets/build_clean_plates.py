@@ -119,22 +119,25 @@ model_xml_lines_1.append('</model>')
 
 model_3d_content_1 = '\n'.join(model_xml_lines_1).encode('utf-8')
 
-temp_3mf_1 = p1_3mf_path + ".temp"
-with zipfile.ZipFile(p1_3mf_path, 'r') as zin, zipfile.ZipFile(temp_3mf_1, 'w', compression=zipfile.ZIP_DEFLATED) as zout:
-    for zinfo in zin.infolist():
-        fn = zinfo.filename
-        if fn == '3D/3dmodel.model':
-            zout.writestr(fn, model_3d_content_1)
-        elif fn.startswith('3D/Objects/object_'):
-            if fn in object_files_1:
-                zout.writestr(fn, object_files_1[fn])
-        elif fn == 'Metadata/model_settings.config':
-            cfg_content = '<?xml version="1.0" encoding="UTF-8"?>\n<config>\n' + '\n'.join(config_objects_1) + '\n</config>\n'
-            zout.writestr(fn, cfg_content.encode('utf-8'))
-        else:
-            zout.writestr(fn, zin.read(fn))
+with open(p1_3mf_path, 'rb') as f_in:
+    zin_bytes = f_in.read()
 
-os.replace(temp_3mf_1, p1_3mf_path)
+import io
+with zipfile.ZipFile(io.BytesIO(zin_bytes), 'r') as zin, open(p1_3mf_path, 'wb') as f_out:
+    with zipfile.ZipFile(f_out, 'w', compression=zipfile.ZIP_DEFLATED) as zout:
+        for zinfo in zin.infolist():
+            fn = zinfo.filename
+            if fn == '3D/3dmodel.model':
+                zout.writestr(fn, model_3d_content_1)
+            elif fn.startswith('3D/Objects/object_'):
+                if fn in object_files_1:
+                    zout.writestr(fn, object_files_1[fn])
+            elif fn == 'Metadata/model_settings.config':
+                cfg_content = '<?xml version="1.0" encoding="UTF-8"?>\n<config>\n' + '\n'.join(config_objects_1) + '\n</config>\n'
+                zout.writestr(fn, cfg_content.encode('utf-8'))
+            else:
+                zout.writestr(fn, zin.read(fn))
+
 print(f"  [x] Prato 1 updated with debossed STLs (Extruder 1 / Black PLA): {os.path.getsize(p1_3mf_path) // 1024} KB")
 
 # ==============================================================================
@@ -240,18 +243,20 @@ for obj in root_cfg.findall('object'):
 
 cfg_content_2 = ET.tostring(root_cfg, encoding='utf-8', xml_declaration=True)
 
-temp_3mf_2 = p2_3mf_path + ".temp"
-with zipfile.ZipFile(p2_3mf_path, 'r') as zin, zipfile.ZipFile(temp_3mf_2, 'w', compression=zipfile.ZIP_DEFLATED) as zout:
-    for zinfo in zin.infolist():
-        fn = zinfo.filename
-        if fn in object_files_2:
-            zout.writestr(fn, object_files_2[fn])
-        elif fn == 'Metadata/model_settings.config':
-            zout.writestr(fn, cfg_content_2)
-        else:
-            zout.writestr(fn, zin.read(fn))
+with open(p2_3mf_path, 'rb') as f_in2:
+    zin_bytes_2 = f_in2.read()
 
-os.replace(temp_3mf_2, p2_3mf_path)
+with zipfile.ZipFile(io.BytesIO(zin_bytes_2), 'r') as zin, open(p2_3mf_path, 'wb') as f_out2:
+    with zipfile.ZipFile(f_out2, 'w', compression=zipfile.ZIP_DEFLATED) as zout:
+        for zinfo in zin.infolist():
+            fn = zinfo.filename
+            if fn in object_files_2:
+                zout.writestr(fn, object_files_2[fn])
+            elif fn == 'Metadata/model_settings.config':
+                zout.writestr(fn, cfg_content_2)
+            else:
+                zout.writestr(fn, zin.read(fn))
+
 print(f"  [x] Prato 2 updated with debossed STLs (Extruder 1 / Black PLA): {os.path.getsize(p2_3mf_path) // 1024} KB")
 
 # Copy updated plates to root if they exist there

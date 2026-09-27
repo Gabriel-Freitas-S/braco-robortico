@@ -67,13 +67,16 @@ offsets = {
     "printed_21_Garra_Dedo_Movel_Esquerdo": (-10, 110, 250),
 }
 
-for name, geom in complete_glb.geometry.items():
-    if name.startswith("printed_"):
-        mesh = geom.copy()
-        offset = offsets.get(name, (0, 0, 0))
+for name, offset in offsets.items():
+    stl_basename = name.replace("printed_", "") + ".stl"
+    stl_path = os.path.join(PARTS_DIR, stl_basename)
+    if os.path.exists(stl_path):
+        mesh = trimesh.load(stl_path)
+        # Center mesh at origin
+        mesh.apply_translation(-mesh.bounds.mean(axis=0))
+        # Apply exploded offset
         mesh.apply_translation(offset)
-        
-        # All printed parts in Black PLA
+        # Color in Technical Black PLA
         mesh.visual = trimesh.visual.ColorVisuals(mesh=mesh, vertex_colors=[CHARCOAL_COLOR]*len(mesh.vertices))
         exploded_scene.add_geometry(mesh, node_name=name)
 
