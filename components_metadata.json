@@ -6,7 +6,7 @@
       "name": "01 Base Chassi Inferior",
       "category": "Peças Impressas PLA (Bambu Lab A1)",
       "color": "#22262C",
-      "desc": "Placa base estrutural de apoio na bancada com furações para pés de TPU e parafusos de fixação M3.",
+      "desc": "Placa base estrutural ergonômica sólida com contorno curvilíneo, abas de apoio para punhos/mãos, furações de fixação M3 para pés de TPU, espaçadores do braço e Arduino Uno. Fundação robusta sem recortes inferiores.",
       "plate": 1,
       "material": "PLA Basic Technical (Preto)"
     },
@@ -267,7 +267,7 @@
       "category": "Servomotores SG90",
       "color": "#1873E6",
       "material": "Micro Servo SG90 / MG90S 9g",
-      "desc": "Acionamento do giro da base em 180°, alojado com segurança entre os 4 espaçadores estruturais da base.",
+      "desc": "Acionamento do giro da base em 180° (Yaw), alojado no nicho da mesa giratória 4.8mm acima da base chassi, sem qualquer saliência ou contato com a bancada.",
       "pin": "D8 (PWM)"
     },
     {
@@ -315,12 +315,12 @@
     },
     {
       "id": "eletronica_arduino_shield",
-      "name": "Arduino Uno R3 + Sensor Shield v5.0",
+      "name": "Arduino Uno R3 + Shield Joystick Duplo (meARM.WDT V2.10)",
       "category": "Controle & Eletrônica",
       "color": "#008791",
-      "material": "PCB / Microcontrolador ATmega328P 16MHz",
-      "desc": "Placa controladora com shield de expansão para servos montada na parte frontal do chassi inferior.",
-      "pin": "Alimentação 5V 3A Externa"
+      "material": "PCB Dupla Face FR4 / ATmega328P / 2x Joysticks Analógicos PS2",
+      "desc": "Placa controladora equipada com o Shield Joystick Duplo meArm.WDT montado no topo, com dois analógicos integrados (A0-A3) e barramento dedicado de 4 canais de servomotores (D11, D10, D9, D6).",
+      "pin": "Alimentação 5V 3A / D11 (Cotovelo), D10 (Ombro), D9 (Base), D6 (Garra)"
     },
     {
       "id": "pes_tpu",
@@ -336,27 +336,27 @@
       "category": "Fiação & Chicote Elétrico",
       "color": "#E53935",
       "material": "Cabo Flat 3-Vias (Marrom GND, Vermelho 5V, Laranja PWM)",
-      "desc": "Fiação organizada conectando cada atuador diretamente aos conectores dedicados do Sensor Shield v5.0."
+      "desc": "Fiação organizada JR 3 vias (GND marrom, 5V vermelho, PWM laranja) com conectores fêmea Dupont 3 pinos perfeitamente plugados nos 4 canais do Shield Joystick Duplo."
     }
   ],
   "statistics": {
-    "total_triangles": 28565,
-    "total_vertices": 14492,
+    "total_triangles": 152305,
+    "total_vertices": 77084,
     "dimensions_mm": {
-      "width_x": 101.36,
-      "depth_y": 218.1999969482422,
-      "height_z": 190.86000061035156
+      "width_x": 122.0,
+      "depth_y": 230.42,
+      "height_z": 186.62
     },
     "bounds": {
       "min": [
-        -50.65,
-        9.0,
-        0.0
+        -57.28,
+        -3.22,
+        4.24
       ],
       "max": [
-        50.71,
-        227.1999969482422,
-        190.86000061035156
+        64.72,
+        227.2,
+        190.86
       ]
     }
   }
