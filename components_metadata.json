@@ -32,28 +32,28 @@
       "id": "printed_04_Tirante_Paralelogramo_Medio",
       "name": "04 Tirante Paralelogramo Medio",
       "category": "Peças Impressas PLA (Bambu Lab A1)",
-      "color": "#0077D4",
+      "color": "#22262C",
       "desc": "Tirante secundário intermediário da articulação do cotovelo.",
       "plate": 2,
-      "material": "PLA Basic Technical (Azul)"
+      "material": "PLA Basic Technical (Preto)"
     },
     {
       "id": "printed_05_Haste_Acionamento_Servo_Braco",
       "name": "05 Haste Acionamento Servo Braco",
       "category": "Peças Impressas PLA (Bambu Lab A1)",
-      "color": "#0077D4",
+      "color": "#22262C",
       "desc": "Biela de transmissão direta entre o braço do servo direito e a elevação principal.",
       "plate": 2,
-      "material": "PLA Basic Technical (Azul)"
+      "material": "PLA Basic Technical (Preto)"
     },
     {
       "id": "printed_06_Antebraco_Esquerdo",
       "name": "06 Antebraco Esquerdo",
       "category": "Peças Impressas PLA (Bambu Lab A1)",
-      "color": "#0077D4",
+      "color": "#22262C",
       "desc": "Haste lateral esquerda do antebraço com encaixe para mancal pivotante.",
       "plate": 2,
-      "material": "PLA Basic Technical (Azul)"
+      "material": "PLA Basic Technical (Preto)"
     },
     {
       "id": "printed_07_Braco_Principal_Direito",
@@ -68,10 +68,10 @@
       "id": "printed_08_Antebraco_Direito",
       "name": "08 Antebraco Direito",
       "category": "Peças Impressas PLA (Bambu Lab A1)",
-      "color": "#0077D4",
+      "color": "#22262C",
       "desc": "Braço triangular do antebraço direito que ancora o cabeçote da garra.",
       "plate": 2,
-      "material": "PLA Basic Technical (Azul)"
+      "material": "PLA Basic Technical (Preto)"
     },
     {
       "id": "printed_09_Torre_Suporte_Servo_Direita",
@@ -104,28 +104,28 @@
       "id": "printed_12_Mesa_Giratoria_Turntable",
       "name": "12 Mesa Giratoria Turntable",
       "category": "Peças Impressas PLA (Bambu Lab A1)",
-      "color": "#0077D4",
+      "color": "#22262C",
       "desc": "Disco giratório da base com flange de apoio para alívio de carga axial no servo yaw.",
       "plate": 1,
-      "material": "PLA Basic Technical (Azul)"
+      "material": "PLA Basic Technical (Preto)"
     },
     {
       "id": "printed_13_Tirante_Superior_Garra",
       "name": "13 Tirante Superior Garra",
       "category": "Peças Impressas PLA (Bambu Lab A1)",
-      "color": "#0077D4",
+      "color": "#22262C",
       "desc": "Haste de paralelismo superior responsável por manter a garra sempre na horizontal.",
       "plate": 2,
-      "material": "PLA Basic Technical (Azul)"
+      "material": "PLA Basic Technical (Preto)"
     },
     {
       "id": "printed_14_Separador_Espacador_Central_Base",
       "name": "14 Separador Espacador Central Base",
       "category": "Peças Impressas PLA (Bambu Lab A1)",
-      "color": "#0077D4",
+      "color": "#22262C",
       "desc": "Parede estrutural de rigidez central da base giratória que une as torres laterais.",
       "plate": 1,
-      "material": "PLA Basic Technical (Azul)"
+      "material": "PLA Basic Technical (Preto)"
     },
     {
       "id": "printed_15_Suporte_Cabeca_Garra",
@@ -140,10 +140,10 @@
       "id": "printed_16_Berco_Servo_Rotacao_Base",
       "name": "16 Berco Servo Rotacao Base",
       "category": "Peças Impressas PLA (Bambu Lab A1)",
-      "color": "#0077D4",
+      "color": "#22262C",
       "desc": "Berço de travamento do servomotor SG90 da base de giro yaw.",
       "plate": 1,
-      "material": "PLA Basic Technical (Azul)"
+      "material": "PLA Basic Technical (Preto)"
     },
     {
       "id": "printed_17_Travessa_Reforco_Base_Frontal",
@@ -167,19 +167,19 @@
       "id": "printed_19_Garra_Base_Suporte_Fixo",
       "name": "19 Garra Base Suporte Fixo",
       "category": "Peças Impressas PLA (Bambu Lab A1)",
-      "color": "#0077D4",
+      "color": "#22262C",
       "desc": "Estrutura base da garra com trilhos guias para as mandíbulas móveis.",
       "plate": 2,
-      "material": "PLA Basic Technical (Azul)"
+      "material": "PLA Basic Technical (Preto)"
     },
     {
       "id": "printed_20_Garra_Dedo_Movel_Direito",
       "name": "20 Garra Dedo Movel Direito",
       "category": "Peças Impressas PLA (Bambu Lab A1)",
-      "color": "#0077D4",
+      "color": "#22262C",
       "desc": "Mandíbula móvel direita com engrenagem envolvente e dentes de agarre reforçados.",
       "plate": 2,
-      "material": "PLA Basic Technical (Azul)"
+      "material": "PLA Basic Technical (Preto)"
     },
     {
       "id": "printed_21_Garra_Dedo_Movel_Esquerdo",
@@ -194,19 +194,19 @@
       "id": "printed_22_Biela_Conexao_Horn_Direito",
       "name": "22 Biela Conexao Horn Direito",
       "category": "Peças Impressas PLA (Bambu Lab A1)",
-      "color": "#0077D4",
+      "color": "#22262C",
       "desc": "Braço de ligação rígido entre a cruzeta do servo e o braço direito.",
       "plate": 2,
-      "material": "PLA Basic Technical (Azul)"
+      "material": "PLA Basic Technical (Preto)"
     },
     {
       "id": "printed_23_Biela_Conexao_Horn_Esquerdo",
       "name": "23 Biela Conexao Horn Esquerdo",
       "category": "Peças Impressas PLA (Bambu Lab A1)",
-      "color": "#0077D4",
+      "color": "#22262C",
       "desc": "Braço de ligação rígido entre a cruzeta do servo e o braço esquerdo.",
       "plate": 2,
-      "material": "PLA Basic Technical (Azul)"
+      "material": "PLA Basic Technical (Preto)"
     },
     {
       "id": "printed_24_Suporte_Encaixe_Servo_Garra",
@@ -230,10 +230,10 @@
       "id": "printed_26_Engrenagem_Acionadora_Garra",
       "name": "26 Engrenagem Acionadora Garra",
       "category": "Peças Impressas PLA (Bambu Lab A1)",
-      "color": "#0077D4",
+      "color": "#22262C",
       "desc": "Engrenagem primária de dentes involutos acoplada ao eixo do servo da garra.",
       "plate": 2,
-      "material": "PLA Basic Technical (Azul)"
+      "material": "PLA Basic Technical (Preto)"
     },
     {
       "id": "printed_27_Guia_Articulacao_Garra",
@@ -248,10 +248,10 @@
       "id": "printed_28_Biela_Articulacao_Curta",
       "name": "28 Biela Articulacao Curta",
       "category": "Peças Impressas PLA (Bambu Lab A1)",
-      "color": "#0077D4",
+      "color": "#22262C",
       "desc": "Biela curta de compensação angular do mecanismo de acionamento.",
       "plate": 2,
-      "material": "PLA Basic Technical (Azul)"
+      "material": "PLA Basic Technical (Preto)"
     },
     {
       "id": "espacadores_base_m3",
@@ -340,23 +340,23 @@
     }
   ],
   "statistics": {
-    "total_triangles": 152305,
-    "total_vertices": 77084,
+    "total_triangles": 242981,
+    "total_vertices": 122576,
     "dimensions_mm": {
       "width_x": 122.0,
       "depth_y": 230.42,
-      "height_z": 186.62
+      "height_z": 168.26
     },
     "bounds": {
       "min": [
         -57.28,
         -3.22,
-        4.24
+        -7.01
       ],
       "max": [
         64.72,
         227.2,
-        190.86
+        161.25
       ]
     }
   }

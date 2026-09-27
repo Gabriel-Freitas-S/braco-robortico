@@ -10,7 +10,7 @@ RENDERS_DIR = os.path.join(BASE_DIR, "pdf_assets", "renders")
 os.makedirs(RENDERS_DIR, exist_ok=True)
 
 CYAN_COLOR = [0, 210, 255, 255]     # #00D2FF
-CHARCOAL_COLOR = [51, 65, 85, 255]  # #334155
+CHARCOAL_COLOR = [34, 38, 44, 255]  # #22262C - Technical Black PLA
 
 # ==============================================================================
 # 1. BUILD EXPLODED ASSEMBLY GLB
@@ -67,31 +67,14 @@ offsets = {
     "printed_21_Garra_Dedo_Movel_Esquerdo": (-10, 110, 250),
 }
 
-# Colors
-cyan_parts = {
-    "printed_12_Mesa_Giratoria_Turntable",
-    "printed_14_Separador_Espacador_Central_Base",
-    "printed_16_Berco_Servo_Rotacao_Base",
-    "printed_03_Tirante_Paralelogramo_Longo",
-    "printed_04_Tirante_Paralelogramo_Medio",
-    "printed_06_Antebraco_Esquerdo",
-    "printed_08_Antebraco_Direito",
-    "printed_15_Suporte_Cabeca_Garra",
-    "printed_19_Garra_Base_Suporte_Fixo",
-    "printed_21_Garra_Dedo_Movel_Esquerdo",
-    "printed_24_Suporte_Encaixe_Servo_Garra",
-    "printed_27_Guia_Articulacao_Garra",
-}
-
 for name, geom in complete_glb.geometry.items():
     if name.startswith("printed_"):
         mesh = geom.copy()
         offset = offsets.get(name, (0, 0, 0))
         mesh.apply_translation(offset)
         
-        # Color
-        color = CYAN_COLOR if name in cyan_parts else CHARCOAL_COLOR
-        mesh.visual = trimesh.visual.ColorVisuals(mesh=mesh, vertex_colors=[color]*len(mesh.vertices))
+        # All printed parts in Black PLA
+        mesh.visual = trimesh.visual.ColorVisuals(mesh=mesh, vertex_colors=[CHARCOAL_COLOR]*len(mesh.vertices))
         exploded_scene.add_geometry(mesh, node_name=name)
 
 exploded_glb_path = os.path.join(BASE_DIR, "pdf_assets", "braco_exploded.glb")
@@ -104,22 +87,26 @@ print(f"Exported exploded GLB to {exploded_glb_path} with {len(exploded_scene.ge
 print("\n2. Creating Knolled Plates GLB (Prato 1 + Prato 2)...")
 knolled_scene = trimesh.Scene()
 
-# Plate 1 meshes from 3MF
-p1_3mf = trimesh.load(os.path.join(BASE_DIR, "Prato_1_Chassi_Estrutura_Bambu_A1.3mf"))
-# Plate 2 meshes from 3MF
-p2_3mf = trimesh.load(os.path.join(BASE_DIR, "Prato_2_Mecanica_Garra_Bambu_A1.3mf"))
+# Load Plate 1 and Plate 2 meshes from pratos directory
+p1_path = os.path.join(BASE_DIR, "pratos", "Prato_1_Chassi_Estrutura_Bambu_A1.3mf")
+p2_path = os.path.join(BASE_DIR, "pratos", "Prato_2_Mecanica_Garra_Bambu_A1.3mf")
+if not os.path.exists(p1_path):
+    p1_path = os.path.join(BASE_DIR, "Prato_1_Chassi_Estrutura_Bambu_A1.3mf")
+if not os.path.exists(p2_path):
+    p2_path = os.path.join(BASE_DIR, "Prato_2_Mecanica_Garra_Bambu_A1.3mf")
+
+p1_3mf = trimesh.load(p1_path)
+p2_3mf = trimesh.load(p2_path)
 
 # Offsets for bed centers:
-# Bed 1 at X = -150 mm (centered at X=0 on bed -> X=-150 in scene)
-# Bed 2 at X = +150 mm (centered at X=0 on bed -> X=+150 in scene)
-# Add Build Plate 1 Mesh (256 x 256 mm sheet)
+# Bed 1 at X = -160 mm
+# Bed 2 at X = +160 mm
 bed1 = trimesh.creation.box(extents=[256, 256, 2])
 bed1.apply_translation([-160, 0, -1])
 bed_gold_color = [228, 180, 48, 255] # Bambu Lab Gold Textured PEI
 bed1.visual = trimesh.visual.ColorVisuals(mesh=bed1, vertex_colors=[bed_gold_color]*len(bed1.vertices))
 knolled_scene.add_geometry(bed1, node_name="bed_plate_1")
 
-# Add Build Plate 2 Mesh
 bed2 = trimesh.creation.box(extents=[256, 256, 2])
 bed2.apply_translation([160, 0, -1])
 bed2.visual = trimesh.visual.ColorVisuals(mesh=bed2, vertex_colors=[bed_gold_color]*len(bed2.vertices))
@@ -131,20 +118,13 @@ m2_list = p2_3mf.dump()
 for i, m in enumerate(m1_list):
     m_copy = m.copy()
     m_copy.apply_translation([-160 - 128.0, -128.0, 0])
-    if m_copy.volume > 50000:
-        c = CHARCOAL_COLOR # Base is charcoal
-    elif i in [3, 7, 8]:
-        c = CYAN_COLOR    # turntable, berco, separador
-    else:
-        c = CHARCOAL_COLOR
-    m_copy.visual = trimesh.visual.ColorVisuals(mesh=m_copy, vertex_colors=[c]*len(m_copy.vertices))
+    m_copy.visual = trimesh.visual.ColorVisuals(mesh=m_copy, vertex_colors=[CHARCOAL_COLOR]*len(m_copy.vertices))
     knolled_scene.add_geometry(m_copy, node_name=f"p1_part_{i}")
 
 for i, m in enumerate(m2_list):
     m_copy = m.copy()
     m_copy.apply_translation([160 - 128.0, -128.0, 0])
-    c = CYAN_COLOR if (i % 2 == 1) else CHARCOAL_COLOR
-    m_copy.visual = trimesh.visual.ColorVisuals(mesh=m_copy, vertex_colors=[c]*len(m_copy.vertices))
+    m_copy.visual = trimesh.visual.ColorVisuals(mesh=m_copy, vertex_colors=[CHARCOAL_COLOR]*len(m_copy.vertices))
     knolled_scene.add_geometry(m_copy, node_name=f"p2_part_{i}")
 
 knolled_glb_path = os.path.join(BASE_DIR, "pdf_assets", "plates_knolled.glb")
