@@ -3,12 +3,12 @@ build_complete_dual_joystick_arm.py
 ===================================
 Reconstrói o modelo 3D completo do braço robótico com componentes (braco_completo_com_componentes.glb/stl)
 incorporando com fidelidade máxima:
-1. Nova Base Chassi 01_Base_Chassi_Inferior.stl fiel ao modelo MDF de referência (95 x 145 x 4 mm,
-   recorte diamond/berço da mesa giratória, 4 furações dos espaçadores e 4 furações do Arduino Uno).
-2. Fixação direta do Arduino Uno R3 sobre a base com 4 parafusos M3 e espaçadores nylon de 3mm.
+1. Base Chassi Retangular 01_Base_Chassi_Inferior.stl (110 x 175 x 4 mm, plana, com cantos arredondados,
+   recorte diamond do berço da mesa giratória, 4 furações dos espaçadores e 4 furações do Arduino Uno).
+2. Fixação direta do Arduino Uno R3 sobre a base com furação alinhada e 4 espaçadores nylon de 3mm.
 3. Shield com 2 Joysticks analógicos para Arduino Uno (modelo Casa da Robótica):
    - PCB de expansão sobre o Arduino Uno (65.1 x 53.8 mm)
-   - 2 Joysticks analógicos ergonômicos lado a lado (gamepad layout) com chapéus emborrachados
+   - 2 Joysticks analógicos ergonômicos lado a lado com chapéus emborrachados
    - Interface de 4 canais dedicados para servomotores voltada para o braço
    - Conector Bluetooth HC-06, LEDs de status e botões táteis
 4. Chicote elétrico realista dos 4 servomotores:
@@ -76,11 +76,11 @@ for i, (fx, fy) in enumerate(foot_coords):
 # 2. 4x M3x24mm METALLIC STANDOFFS
 # ------------------------------------------------------------------
 print("\n2. Creating 4x M3x24mm standoffs...")
-standoff_holes = [[28.13, 5.07], [-22.10, 5.08], [25.96, 53.73], [-22.12, 55.62]]
+standoff_holes = [[28.10, 5.05], [-22.10, 5.05], [25.90, 53.50], [-22.10, 55.60]]
 standoffs = []
 for sx, sy in standoff_holes:
     st = trimesh.creation.cylinder(radius=2.9, height=24.0, sections=6)
-    st.apply_translation([sx, sy, 4.0 + 12.0])
+    st.apply_translation([sx, sy, 3.0 + 12.0])
     set_color(st, METAL_GREY)
     standoffs.append(st)
 
@@ -91,14 +91,14 @@ print("\n3. Creating Arduino Uno R3 perfectly aligned with mounting holes...")
 # Center of Arduino mounting footprint on base plate:
 UNO_CX = 10.42
 UNO_CY = -46.81
-UNO_Z = 7.0  # Sits on 3mm nylon standoffs (Z = 4.0 to 7.0 mm)
+UNO_Z = 6.0  # Sits on 3mm nylon standoffs (Z = 3.0 to 6.0 mm)
 
-# Arduino PCB: 68.6 (length in X) x 53.4 (width in Y) x 1.6 mm
+# Arduino PCB: 68.6 mm (length along X) x 53.4 mm (width along Y) x 1.6 mm
 uno_pcb = trimesh.creation.box(extents=[68.6, 53.4, 1.6])
 uno_pcb.apply_translation([UNO_CX, UNO_CY, UNO_Z + 0.8])
 set_color(uno_pcb, ARDUINO_BLUE)
 
-# USB-B metal receptacle & DC barrel jack on the left edge (-X)
+# USB-B metal receptacle & DC barrel jack on left edge (-X)
 usb = trimesh.creation.box(extents=[16.0, 12.0, 11.0])
 usb.apply_translation([UNO_CX - 34.3 + 8.0, UNO_CY + 14.0, UNO_Z + 1.6 + 5.5])
 set_color(usb, METAL_GREY)
@@ -107,7 +107,7 @@ pwr = trimesh.creation.box(extents=[13.5, 9.0, 11.0])
 pwr.apply_translation([UNO_CX - 34.3 + 6.75, UNO_CY - 16.0, UNO_Z + 1.6 + 5.5])
 set_color(pwr, DUPONT_BLACK)
 
-# Uno stacking female pin headers (black plastic strips)
+# Uno stacking female pin headers (black plastic strips along top and bottom edges)
 uno_hdr_top = trimesh.creation.box(extents=[48.0, 2.5, 8.5])
 uno_hdr_top.apply_translation([UNO_CX + 4.0, UNO_CY + 24.5, UNO_Z + 1.6 + 4.25])
 set_color(uno_hdr_top, DUPONT_BLACK)
@@ -116,18 +116,18 @@ uno_hdr_bot = trimesh.creation.box(extents=[48.0, 2.5, 8.5])
 uno_hdr_bot.apply_translation([UNO_CX + 4.0, UNO_CY - 24.5, UNO_Z + 1.6 + 4.25])
 set_color(uno_hdr_bot, DUPONT_BLACK)
 
-# 4 Mounting Screws and 3mm Spacers fixing Arduino to Base 01
+# 4 Mounting Screws & 3mm Spacers fixing Arduino to Base 01
 uno_mounting_screws = []
-uno_holes = [[-16.02, -68.47], [36.29, -63.64], [36.21, -34.93], [-14.82, -20.21]]
+uno_holes = [[-16.03, -68.44], [36.26, -63.61], [36.26, -34.90], [-14.82, -20.21]]
 for hx, hy in uno_holes:
-    # 3mm nylon standoff spacer under Arduino (Z = 4.0 to 7.0 mm)
+    # 3mm nylon standoff spacer under Arduino (Z = 3.0 to 6.0 mm)
     spacer = trimesh.creation.cylinder(radius=3.0, height=3.0, sections=16)
-    spacer.apply_translation([hx, hy, 4.0 + 1.5])
+    spacer.apply_translation([hx, hy, 3.0 + 1.5])
     set_color(spacer, NYLON_WHITE)
     uno_mounting_screws.append(spacer)
-    # M3 screw passing through base and Arduino (Z = 0 to 9.5 mm)
-    scr = trimesh.creation.cylinder(radius=1.45, height=9.5, sections=12)
-    scr.apply_translation([hx, hy, 4.75])
+    # M3 screw passing through base and Arduino (Z = 0 to 8.5 mm)
+    scr = trimesh.creation.cylinder(radius=1.45, height=8.5, sections=12)
+    scr.apply_translation([hx, hy, 4.25])
     set_color(scr, METAL_GREY)
     uno_mounting_screws.append(scr)
 
@@ -243,7 +243,7 @@ geoms = list(mdf_scene.geometry.values())
 
 DX = -0.03
 DY = -84.60
-DZ = 28.00
+DZ = 27.00
 TRANS = np.array([DX, DY, DZ])
 
 # Separate wood parts excluding old flat MDF base plate
@@ -255,7 +255,6 @@ arm_printed_parts = []
 for p in wood_parts:
     ext = p.bounding_box.extents
     b = p.bounds
-    # Skip any subparts belonging to the old flat base plate at Z < 0
     if ext[0] > 70.0 and ext[1] > 100.0 and b[0][2] < -15.0:
         continue
     p_copy = p.copy()
@@ -355,10 +354,10 @@ CH1_X = UNO_CX + 5.5   # Channel 1: Servo 1 (Base Yaw)
 CH2_X = UNO_CX + 8.5   # Channel 2: Servo 2 (Ombro / Shoulder)
 CH3_X = UNO_CX + 11.5  # Channel 3: Servo 3 (Cotovelo / Elbow)
 CH4_X = UNO_CX + 14.5  # Channel 4: Servo 4 (Garra / Gripper)
-PLUG_Y = UNO_CY + 22.0
+PLUG_Y = UNO_CY + 22.0 # -13.0 mm
 PLUG_Z = SHIELD_Z + 1.6 + 2.5 # Sits on top of header base
 
-TURNTABLE_X = 2.87
+TURNTABLE_X = 2.84
 TURNTABLE_Y = 30.50
 
 # Cable routes (Waypoints):
@@ -366,27 +365,27 @@ TURNTABLE_Y = 30.50
 route_s1 = [
     [TURNTABLE_X - 5.0, TURNTABLE_Y - 5.0, 14.0],
     [TURNTABLE_X - 2.0, TURNTABLE_Y - 18.0, 7.5],
-    [CH1_X, PLUG_Y + 12.0, 8.5],
-    [CH1_X, PLUG_Y - 2.0, 26.0],
+    [CH1_X, PLUG_Y + 14.0, 8.5],
+    [CH1_X, PLUG_Y - 2.0, 24.0],
     [CH1_X, PLUG_Y, PLUG_Z + 14.0]
 ]
 
-# 2. Servo 2 (Ombro - Right Tower at X ~ 35, Y ~ 31, Z ~ 60)
+# 2. Servo 2 (Ombro - Right Tower)
 route_s2 = [
     [TURNTABLE_X + 33.0, TURNTABLE_Y, 58.0],
     [TURNTABLE_X + 26.0, TURNTABLE_Y - 15.0, 36.0],
     [TURNTABLE_X + 18.0, TURNTABLE_Y - 28.0, 16.0],
-    [CH2_X + 4.0, PLUG_Y + 10.0, 9.0],
+    [CH2_X + 4.0, PLUG_Y + 12.0, 9.0],
     [CH2_X, PLUG_Y - 2.0, 24.0],
     [CH2_X, PLUG_Y, PLUG_Z + 14.0]
 ]
 
-# 3. Servo 3 (Cotovelo - Left Tower at X ~ -29, Y ~ 31, Z ~ 60)
+# 3. Servo 3 (Cotovelo - Left Tower)
 route_s3 = [
     [TURNTABLE_X - 33.0, TURNTABLE_Y, 58.0],
     [TURNTABLE_X - 26.0, TURNTABLE_Y - 15.0, 36.0],
     [TURNTABLE_X - 18.0, TURNTABLE_Y - 28.0, 16.0],
-    [CH3_X - 4.0, PLUG_Y + 10.0, 9.0],
+    [CH3_X - 4.0, PLUG_Y + 12.0, 9.0],
     [CH3_X, PLUG_Y - 2.0, 24.0],
     [CH3_X, PLUG_Y, PLUG_Z + 14.0]
 ]
@@ -399,7 +398,7 @@ route_s4 = [
     [TURNTABLE_X - 10.0, 40.0, 68.0],  # down main arm
     [TURNTABLE_X - 11.0, 28.0, 42.0],  # down tower
     [TURNTABLE_X - 6.0, 10.0, 16.0],
-    [CH4_X - 2.0, PLUG_Y + 8.0, 9.0],
+    [CH4_X - 2.0, PLUG_Y + 10.0, 9.0],
     [CH4_X, PLUG_Y - 2.0, 24.0],
     [CH4_X, PLUG_Y, PLUG_Z + 14.0]
 ]
@@ -461,7 +460,6 @@ with open(OUTPUT_GLB, "wb") as f:
 print(f"   GLB saved successfully ({len(glb_bytes):,} bytes)")
 
 print(f"\n9. Exporting full STL to: {OUTPUT_STL}...")
-# Combine all meshes into a single solid mesh for STL
 full_mesh = trimesh.util.concatenate(list(final_scene.geometry.values()))
 full_mesh.export(OUTPUT_STL)
 print(f"   STL saved successfully ({os.path.getsize(OUTPUT_STL):,} bytes)")
