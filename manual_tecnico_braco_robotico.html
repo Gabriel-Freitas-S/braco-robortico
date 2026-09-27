@@ -1,0 +1,2868 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Manual Técnico & Guia de Montagem • Braço Robótico 4-DOF</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+    @page {
+      size: A4 portrait;
+      margin: 0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    body {
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f1f5f9;
+      color: #0f172a;
+      line-height: 1.45;
+    }
+
+    .page {
+      width: 210mm;
+      height: 297mm;
+      max-height: 297mm;
+      padding: 16mm 18mm 16mm 18mm;
+      margin: 0 auto;
+      background: #ffffff;
+      position: relative;
+      page-break-after: always;
+      page-break-inside: avoid;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #e2e8f0;
+      margin-bottom: 14px;
+    }
+
+    .page-header .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: #0f172a;
+    }
+
+    .page-header .brand .tag {
+      background: #FF5E00;
+      color: #ffffff;
+      font-size: 9px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+
+    .page-header .doc-id {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9.5px;
+      color: #64748b;
+      font-weight: 500;
+    }
+
+    .page-footer {
+      margin-top: auto;
+      padding-top: 8px;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 9px;
+      color: #94a3b8;
+      font-weight: 500;
+    }
+
+    .page-footer .page-number {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .section-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.3px;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title .num-badge {
+      background: #0f172a;
+      color: #ffffff;
+      width: 22px;
+      height: 22px;
+      border-radius: 5px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .section-subtitle {
+      font-size: 10px;
+      color: #64748b;
+      margin-bottom: 12px;
+      font-weight: 400;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 9px;
+      margin-bottom: 10px;
+    }
+
+    .data-table th {
+      background: #f8fafc;
+      color: #475569;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 6px 8px;
+      border: 1px solid #e2e8f0;
+      text-align: left;
+    }
+
+    .data-table td {
+      padding: 5px 8px;
+      border: 1px solid #e2e8f0;
+      color: #1e293b;
+    }
+
+    .data-table tr:nth-child(even) {
+      background: #f8fafc;
+    }
+
+    .parts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 12px;
+      flex: 1;
+      margin-bottom: 8px;
+    }
+
+    .part-card {
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      background: #ffffff;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+
+    .part-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 6px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .part-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #0f172a;
+      line-height: 1.2;
+    }
+
+    .part-cat {
+      font-size: 8px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      background: #fff7ed;
+      color: #c2410c;
+    }
+
+    .part-body {
+      display: grid;
+      grid-template-columns: 110px 1fr;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .part-img-box {
+      width: 110px;
+      height: 110px;
+      background: radial-gradient(circle, #f8fafc 0%, #e2e8f0 100%);
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+    }
+
+    .part-img-box img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.08));
+    }
+
+    .specs-table {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px 8px;
+    }
+
+    .spec-item {
+      background: #f8fafc;
+      border: 1px solid #f1f5f9;
+      border-radius: 4px;
+      padding: 3px 6px;
+    }
+
+    .spec-k {
+      font-size: 7.5px;
+      color: #64748b;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .spec-v {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      color: #0f172a;
+      font-weight: 600;
+    }
+
+    .part-desc {
+      font-size: 8.5px;
+      color: #475569;
+      line-height: 1.35;
+      background: #f8fafc;
+      padding: 6px 8px;
+      border-radius: 6px;
+      border-left: 3px solid #FF5E00;
+      margin-top: auto;
+    }
+
+    .part-meta-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 6px;
+      padding-top: 4px;
+      border-top: 1px dashed #e2e8f0;
+      font-size: 8px;
+      color: #94a3b8;
+    }
+
+    .step-box {
+      background: #ffffff;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 9px 12px;
+      margin-bottom: 8px;
+    }
+
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 800;
+      font-size: 11px;
+      color: #0f172a;
+      margin-bottom: 4px;
+    }
+
+    .step-badge {
+      background: #ff5e00;
+      color: #ffffff;
+      font-size: 9px;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 4px;
+    }
+
+    .step-text {
+      font-size: 9.5px;
+      color: #334155;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PÁGINA 1: CAPA EXECUTIVA -->
+  <div class="page" style="background: linear-gradient(135deg, #090d16 0%, #111827 50%, #1e293b 100%); color: #ffffff; justify-content: space-between; padding: 22mm 20mm;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="background: #FF5E00; color: #fff; font-weight: 900; font-size: 14px; padding: 5px 12px; border-radius: 6px; letter-spacing: 1px;">BAMBU LAB A1</div>
+        <div style="font-size: 12px; font-weight: 600; color: #94a3b8; letter-spacing: 0.5px;">PROJETO MECATRÔNICO OFICIAL</div>
+      </div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #64748b;">REV 2.2 • 2026</div>
+    </div>
+
+    <div style="text-align: center; margin: 15px 0;">
+      <div style="font-size: 11px; font-weight: 700; color: #FF5E00; letter-spacing: 2.5px; text-transform: uppercase; margin-bottom: 6px;">
+        Manual Técnico de Engenharia & Fabricação 3D
+      </div>
+      <h1 style="font-size: 32px; font-weight: 900; letter-spacing: -0.8px; line-height: 1.1; margin-bottom: 12px; background: linear-gradient(to right, #ffffff, #f97316); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+        BRAÇO ROBÓTICO 4-DOF
+      </h1>
+      <p style="font-size: 12px; color: #94a3b8; max-width: 520px; margin: 0 auto; line-height: 1.5;">
+        Especificação completa de componentes, cinemática de paralelogramo, lista quantitativa de materiais (BOM), catálogo tridimensional e guia minucioso de montagem passo a passo.
+      </p>
+
+      <div style="margin-top: 18px; display: flex; justify-content: center;">
+        <div style="width: 320px; height: 320px; background: radial-gradient(circle, rgba(255,94,0,0.12) 0%, rgba(15,23,42,0) 70%); display: flex; align-items: center; justify-content: center;">
+          <img src="pdf_assets/renders/braco_completo_com_componentes_iso.png" style="max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 15px 25px rgba(0,0,0,0.6));" alt="Braço Robótico Completo Montado">
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 14px; font-size: 9.5px;">
+        <div>
+          <div style="color: #64748b; font-size: 8px; text-transform: uppercase; font-weight: 700;">Graus de Liberdade</div>
+          <div style="font-weight: 700; color: #f1f5f9; font-size: 11px;">4 Eixos (Yaw, Pitch, Elbow, Claw)</div>
+        </div>
+        <div>
+          <div style="color: #64748b; font-size: 8px; text-transform: uppercase; font-weight: 700;">Peças Impressas 3D</div>
+          <div style="font-weight: 700; color: #f1f5f9; font-size: 11px;">28 Componentes STL</div>
+        </div>
+        <div>
+          <div style="color: #64748b; font-size: 8px; text-transform: uppercase; font-weight: 700;">Volume de Impressão</div>
+          <div style="font-weight: 700; color: #f1f5f9; font-size: 11px;">256 × 256 × 256 mm (A1)</div>
+        </div>
+        <div>
+          <div style="color: #64748b; font-size: 8px; text-transform: uppercase; font-weight: 700;">Atuadores Suportados</div>
+          <div style="font-weight: 700; color: #f1f5f9; font-size: 11px;">4x Servomotores SG90 / MG90S</div>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; font-size: 8.5px; color: #64748b;">
+        <div>Engenharia Mecatrônica & Otimização de Fatiamento</div>
+        <div>Documento Técnico Nº BR4D-2026-A1 • Página 1 de 16</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PÁGINA 2: VISÃO GERAL DO CONJUNTO & CINEMÁTICA -->
+  <div class="page">
+    <div class="page-header">
+      <div class="brand">
+        <span class="tag">BAMBU A1</span>
+        <span>Braço Robótico 4-DOF • Manual de Fabricação</span>
+      </div>
+      <div class="doc-id">DOC-BR-01 • SEÇÃO 01</div>
+    </div>
+
+    <div class="section-title">
+      <span class="num-badge">1</span>
+      Visão Geral do Conjunto & Cinemática (braco_completo_original.stl)
+    </div>
+    <div class="section-subtitle">
+      Inspeção ortogonal e isométrica do modelo montado, envelope cinemático e arquitetura de paralelogramo.
+    </div>
+
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+      <!-- Isometric Realistic CAD View -->
+      <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; align-items: center;">
+        <div style="font-size: 10px; font-weight: 800; color: #0f172a; text-transform: uppercase; margin-bottom: 4px; align-self: flex-start;">
+          FIGURA 1.1 — Conjunto Completo Montado (Perspectiva Isométrica Realista)
+        </div>
+        <div style="width: 100%; height: 180px; display: flex; align-items: center; justify-content: center;">
+          <img src="pdf_assets/renders/braco_completo_com_componentes_iso.png" style="max-width: 100%; max-height: 100%; object-fit: contain;" alt="Isométrica Realista">
+        </div>
+        <div style="font-size: 8.5px; color: #64748b; text-align: center; margin-top: 4px;">
+          Render do modelo GLB completo: 28 peças impressas, 4 servos SG90, Arduino Uno + Shield, 4 espaçadores da base e chicote elétrico.
+        </div>
+      </div>
+
+      <!-- Exploded View -->
+      <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; align-items: center;">
+        <div style="font-size: 10px; font-weight: 800; color: #0f172a; text-transform: uppercase; margin-bottom: 4px; align-self: flex-start;">
+          FIGURA 1.2 — Vista Explodida Estrutural dos Componentes
+        </div>
+        <div style="width: 100%; height: 180px; display: flex; align-items: center; justify-content: center;">
+          <img src="pdf_assets/renders/braco_colorido_exploded.png" style="max-width: 100%; max-height: 100%; object-fit: contain;" alt="Vista Explodida">
+        </div>
+        <div style="font-size: 8.5px; color: #64748b; text-align: center; margin-top: 4px;">
+          Vetorização de desmontagem mostrando as linhas de inserção dos 4 servomotores e articulações.
+        </div>
+      </div>
+    </div>
+
+    <!-- 3 Orthogonal Projections -->
+    <div style="margin-bottom: 12px;">
+      <div style="font-size: 10px; font-weight: 800; color: #0f172a; text-transform: uppercase; margin-bottom: 6px;">
+        Projeções Ortogonais de Engenharia (Escala 1:2.5)
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+        <div style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px; background: #ffffff; text-align: center;">
+          <img src="pdf_assets/renders/braco_completo_com_componentes_front.png" style="width: 100%; height: 110px; object-fit: contain;" alt="Vista Frontal Completa">
+          <div style="font-size: 9px; font-weight: 700; color: #334155; margin-top: 4px;">VISTA FRONTAL</div>
+          <div style="font-size: 8px; color: #64748b;">Altura máxima: 215 mm</div>
+        </div>
+        <div style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px; background: #ffffff; text-align: center;">
+          <img src="pdf_assets/renders/braco_completo_com_componentes_side.png" style="width: 100%; height: 110px; object-fit: contain;" alt="Vista Lateral Completa">
+          <div style="font-size: 9px; font-weight: 700; color: #334155; margin-top: 4px;">VISTA LATERAL</div>
+          <div style="font-size: 8px; color: #64748b;">Alcance horizontal: 185 mm</div>
+        </div>
+        <div style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px; background: #ffffff; text-align: center;">
+          <img src="pdf_assets/renders/braco_completo_com_componentes_top.png" style="width: 100%; height: 110px; object-fit: contain;" alt="Vista Superior Completa">
+          <div style="font-size: 9px; font-weight: 700; color: #334155; margin-top: 4px;">VISTA SUPERIOR</div>
+          <div style="font-size: 8px; color: #64748b;">Base: 95 × 145 mm</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Kinematics Specifications Table -->
+    <div style="background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 12px; margin-bottom: 10px;">
+      <div style="font-size: 9.5px; font-weight: 800; color: #0f172a; text-transform: uppercase; margin-bottom: 4px;">
+        Arquitetura Cinemática: Paralelogramo Duplo Articulado
+      </div>
+      <p style="font-size: 8.5px; color: #475569; line-height: 1.4;">
+        O mecanismo adota tirantes de acoplamento direto acionados por servomotores fixos na base. Esta configuração reduz a inércia rotacional ao transferir a massa dos motores para a mesa giratória inferior, proporcionando movimentos mais estáveis e capacidade de carga útil (payload) de até 150g na garra mecânica terminal.
+      </p>
+    </div>
+
+    <div class="page-footer">
+      <div>Projeto Braço Robótico 4-DOF • Edição Bambu Lab A1</div>
+      <div class="page-number">Página 2 de 16</div>
+    </div>
+  </div>
+
+  <!-- PÁGINA 3: LISTA COMPLETA DE MATERIAIS (BOM) -->
+  <div class="page">
+    <div class="page-header">
+      <div class="brand">
+        <span class="tag">BAMBU A1</span>
+        <span>Braço Robótico 4-DOF • Manual de Fabricação</span>
+      </div>
+      <div class="doc-id">DOC-BR-01 • SEÇÃO 02</div>
+    </div>
+
+    <div class="section-title">
+      <span class="num-badge">2</span>
+      Lista Completa de Materiais (Bill of Materials • BOM)
+    </div>
+    <div class="section-subtitle">
+      Relação exata de parafusos, porcas, servomotores, eletrônica de controle e insumos de impressão.
+    </div>
+
+    <!-- BOM Table 1: Electronic Hardware -->
+    <div style="margin-bottom: 12px;">
+      <h4 style="font-size: 10.5px; font-weight: 800; color: #FF5E00; text-transform: uppercase; margin-bottom: 4px;">
+        1. Componentes Eletrônicos & Atuadores
+      </h4>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width: 25%;">Item / Componente</th>
+            <th style="width: 35%;">Especificação Técnica</th>
+            <th style="width: 15%; text-align: center;">Qtd</th>
+            <th style="width: 25%;">Função no Projeto</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>Micro Servomotor SG90 / MG90S</b></td>
+            <td>Torque 1.8-2.2 kg·cm, 4.8V-6V, dentes de nylon/metal</td>
+            <td style="text-align: center; font-weight: 700;">4 un</td>
+            <td>Juntas de Giro, Ombro, Cotovelo e Garra</td>
+          </tr>
+          <tr>
+            <td><b>Microcontrolador Arduino Uno R3</b></td>
+            <td>ATmega328P, 16 MHz, cabo USB de programação</td>
+            <td style="text-align: center; font-weight: 700;">1 un</td>
+            <td>Controle cinemático e geração de PWM</td>
+          </tr>
+          <tr>
+            <td><b>Sensor Shield v5.0</b></td>
+            <td>Expansor I/O para 14 servos com borne externo</td>
+            <td style="text-align: center; font-weight: 700;">1 un</td>
+            <td>Alimentação dedicada evitando ruídos</td>
+          </tr>
+          <tr>
+            <td><b>Módulo Joystick Analógico 2-Eixos</b></td>
+            <td>Potenciômetros 10k duplos + Botão Push (KY-023)</td>
+            <td style="text-align: center; font-weight: 700;">2 un</td>
+            <td>Controle manual dos 4 graus de liberdade</td>
+          </tr>
+          <tr>
+            <td><b>Fonte Chaveada 5V 3A (DC)</b></td>
+            <td>Conector P4 fêmea / Bornes (Plugue padrão BR)</td>
+            <td style="text-align: center; font-weight: 700;">1 un</td>
+            <td>Potência para os 4 servos simultâneos</td>
+          </tr>
+          <tr>
+            <td><b>Jumpers Fêmea-Fêmea 20cm</b></td>
+            <td>Fios flexíveis coloridos com terminais Dupont</td>
+            <td style="text-align: center; font-weight: 700;">10 un</td>
+            <td>Interligação dos joysticks ao Shield</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- BOM Table 2: Fasteners & Fastening Hardware -->
+    <div style="margin-bottom: 12px;">
+      <h4 style="font-size: 10.5px; font-weight: 800; color: #FF5E00; text-transform: uppercase; margin-bottom: 4px;">
+        2. Elementos de Fixação Mecânica (Fixadores M3 em Aço Inox)
+      </h4>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width: 25%;">Fixador</th>
+            <th style="width: 35%;">Tipo / Norma / Dimensão</th>
+            <th style="width: 15%; text-align: center;">Qtd</th>
+            <th style="width: 25%;">Local de Aplicação</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>Parafuso Allen M3 × 30 mm</b></td>
+            <td>Cabeça Cilíndrica (DIN 912), Rosca Total</td>
+            <td style="text-align: center; font-weight: 700;">2 un</td>
+            <td>Travamento passante das torres e espaçador</td>
+          </tr>
+          <tr>
+            <td><b>Parafuso Allen M3 × 16 mm</b></td>
+            <td>Cabeça Cilíndrica (DIN 912), Rosca Total</td>
+            <td style="text-align: center; font-weight: 700;">4 un</td>
+            <td>Eixos principais do ombro e cotovelo</td>
+          </tr>
+          <tr>
+            <td><b>Parafuso Allen M3 × 12 mm</b></td>
+            <td>Cabeça Abaulada (ISO 7380)</td>
+            <td style="text-align: center; font-weight: 700;">8 un</td>
+            <td>Articulações dos tirantes e balancim</td>
+          </tr>
+          <tr>
+            <td><b>Parafuso Allen M3 × 10 mm</b></td>
+            <td>Cabeça Abaulada (ISO 7380)</td>
+            <td style="text-align: center; font-weight: 700;">6 un</td>
+            <td>Fixação do berço do servo e mesa giratória</td>
+          </tr>
+          <tr>
+            <td><b>Parafuso Allen M3 × 8 mm</b></td>
+            <td>Cabeça Abaulada (ISO 7380)</td>
+            <td style="text-align: center; font-weight: 700;">4 un</td>
+            <td>Estrutura da garra e travamento dos dedos</td>
+          </tr>
+          <tr>
+            <td><b>Porca Auto-Travante M3 (Nyloc)</b></td>
+            <td>Com anel de nylon anti-vibração (DIN 985)</td>
+            <td style="text-align: center; font-weight: 700;">14 un</td>
+            <td>Todas as juntas móveis com giro suave</td>
+          </tr>
+          <tr>
+            <td><b>Porca Sextavada Comum M3</b></td>
+            <td>Aço zincado classe 6 (DIN 934)</td>
+            <td style="text-align: center; font-weight: 700;">8 un</td>
+            <td>Alojamentos hexagonais da base e travas</td>
+          </tr>
+          <tr>
+            <td><b>Espaçador Metálico Sextavado M3 × 24 mm</b></td>
+            <td>Latão Niquelado / Aço Inox (Fêmea-Fêmea ou Macho-Fêmea M3)</td>
+            <td style="text-align: center; font-weight: 700;">4 un</td>
+            <td>Sustentação estrutural da base (elevação de 24mm para o servo yaw)</td>
+          </tr>
+          <tr>
+            <td><b>Arruelas de Nylon M3 (0.5 mm)</b></td>
+            <td>Arruela lisa em poliamida (Øext 7mm)</td>
+            <td style="text-align: center; font-weight: 700;">16 un</td>
+            <td>Isolamento de atrito plástico contra plástico</td>
+          </tr>
+          <tr>
+            <td><b>Arruela Lisa M3 em Aço Inox</b></td>
+            <td>Aço inox A2 padrão DIN 125 (Øext 7mm)</td>
+            <td style="text-align: center; font-weight: 700;">12 un</td>
+            <td>Assento de aperto dos espaçadores e parafusos de pivô</td>
+          </tr>
+          <tr>
+            <td><b>Micro Parafusos do Servo SG90</b></td>
+            <td>Ponta fina e parafuso central do horn M2</td>
+            <td style="text-align: center; font-weight: 700;">12 un</td>
+            <td>Inclusos no pacote original de cada SG90</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- BOM Table 3: 3D Printing Filament & Supplies -->
+    <div>
+      <h4 style="font-size: 10.5px; font-weight: 800; color: #FF5E00; text-transform: uppercase; margin-bottom: 4px;">
+        3. Insumos de Manufatura Aditiva & Ferramentas
+      </h4>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width: 25%;">Item</th>
+            <th style="width: 35%;">Especificação Recomendada</th>
+            <th style="width: 15%; text-align: center;">Consumo</th>
+            <th style="width: 25%;">Observações Técnicas</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>Filamento PLA Bicolor Técnico</b></td>
+            <td>Bambu PLA Basic Preto (#22262C) e Azul (#0077D4) 1.75mm</td>
+            <td style="text-align: center; font-weight: 700;">~56 g</td>
+            <td>14 peças Pretas (~28g) e 14 peças Azuis (~28g) para máximo contraste e legibilidade</td>
+          </tr>
+          <tr>
+            <td><b>Filamento TPU 95A (Opcional)</b></td>
+            <td>Para os 4 pés de apoio de canto na base</td>
+            <td style="text-align: center; font-weight: 700;">~4 g</td>
+            <td>Amortecimento de vibrações de bancada</td>
+          </tr>
+          <tr>
+            <td><b>Chave Allen 2.0 mm / 2.5 mm</b></td>
+            <td>Aço cromo-vanádio com ponta esférica</td>
+            <td style="text-align: center; font-weight: 700;">1 kit</td>
+            <td>Montagem e ajuste de torque dos parafusos M3</td>
+          </tr>
+          <tr>
+            <td><b>Graxa de Silicone ou Vaselina</b></td>
+            <td>Lubrificante neutro para plásticos de engenharia</td>
+            <td style="text-align: center; font-weight: 700;">1 gota</td>
+            <td>Engrenagens da garra e mesa giratória</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="page-footer">
+      <div>Projeto Braço Robótico 4-DOF • Edição Bambu Lab A1</div>
+      <div class="page-number">Página 3 de 16</div>
+    </div>
+  </div>
+
+  <!-- PÁGINA 4: CATÁLOGO DE PEÇAS (01 A 04) -->
+  <div class="page">
+    <div class="page-header">
+      <div class="brand">
+        <span class="tag">BAMBU A1</span>
+        <span>Braço Robótico 4-DOF • Catálogo de Componentes</span>
+      </div>
+      <div class="doc-id">DOC-BR-01 • PEÇAS 01-04/28</div>
+    </div>
+
+    <div class="section-title">
+      <span class="num-badge">3</span>
+      Catálogo das Peças de Impressão 3D (01 a 04 de 28)
+    </div>
+    <div class="section-subtitle">
+      Visualização 3D individual, especificações métricas e diretrizes de montagem de cada componente STL.
+    </div>
+
+    <div class="parts-grid">
+
+      <div class="part-card">
+        <div class="part-card-header">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <div class="part-name">01_Base_Chassi_Inferior.stl</div>
+          </div>
+          <div class="part-cat">Base & Chassi</div>
+        </div>
+
+        <div class="part-body">
+          <div class="part-img-box">
+            <img src="pdf_assets/parts/part_01_Base_Chassi_Inferior.png" alt="01_Base_Chassi_Inferior">
+          </div>
+
+          <div class="specs-table">
+            <div class="spec-item">
+              <div class="spec-k">Dimensões (XYZ)</div>
+              <div class="spec-v">95.0 × 145.0 × 3.0 mm</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Peso PLA</div>
+              <div class="spec-v">9.9 g</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Tempo Estimado</div>
+              <div class="spec-v">~18 min</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Prato Bambu</div>
+              <div class="spec-v">1</div>
+            </div>
+            <div class="spec-item" style="grid-column: span 2;">
+              <div class="spec-k">Furação & Encaixe</div>
+              <div class="spec-v" style="font-size: 8px;">8x Furos Ø3.2mm + 4x Encaixes TPU</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="part-desc" style="border-left: 3px solid #22262C;">
+          <b>Função Técnica:</b> Base rígida de ancoragem estrutural com furação para pés antivibração.
+        </div>
+
+        <div class="part-meta-footer">
+          <span><b>Orientação:</b> Face inferior plana apoiada no prato PEI</span>
+          <span style="font-weight: 700; color: #22262C;">Preto Técnico • Bambu A1</span>
+        </div>
+      </div>
+
+      <div class="part-card">
+        <div class="part-card-header">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <div class="part-name">02_Braco_Principal_Esquerdo.stl</div>
+          </div>
+          <div class="part-cat">Estrutura do Braço</div>
+        </div>
+
+        <div class="part-body">
+          <div class="part-img-box">
+            <img src="pdf_assets/parts/part_02_Braco_Principal_Esquerdo.png" alt="02_Braco_Principal_Esquerdo">
+          </div>
+
+          <div class="specs-table">
+            <div class="spec-item">
+              <div class="spec-k">Dimensões (XYZ)</div>
+              <div class="spec-v">114.8 × 49.8 × 4.8 mm</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Peso PLA</div>
+              <div class="spec-v">6.6 g</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Tempo Estimado</div>
+              <div class="spec-v">~13 min</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Prato Bambu</div>
+              <div class="spec-v">2</div>
+            </div>
+            <div class="spec-item" style="grid-column: span 2;">
+              <div class="spec-k">Furação & Encaixe</div>
+              <div class="spec-v" style="font-size: 8px;">3x Mancais M3 com bucha integrada 0.8mm</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="part-desc" style="border-left: 3px solid #22262C;">
+          <b>Função Técnica:</b> Haste de sustentação principal com perfil reforçado em I para suportar flexão.
+        </div>
+
+        <div class="part-meta-footer">
+          <span><b>Orientação:</b> Deitado lateralmente na mesa (eixo Y longo)</span>
+          <span style="font-weight: 700; color: #22262C;">Preto Técnico • Bambu A1</span>
+        </div>
+      </div>
+
+      <div class="part-card">
+        <div class="part-card-header">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <div class="part-name">03_Tirante_Paralelogramo_Longo.stl</div>
+          </div>
+          <div class="part-cat">Articulações & Bielas</div>
+        </div>
+
+        <div class="part-body">
+          <div class="part-img-box">
+            <img src="pdf_assets/parts/part_03_Tirante_Paralelogramo_Longo.png" alt="03_Tirante_Paralelogramo_Longo">
+          </div>
+
+          <div class="specs-table">
+            <div class="spec-item">
+              <div class="spec-k">Dimensões (XYZ)</div>
+              <div class="spec-v">103.0 × 15.6 × 3.5 mm</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Peso PLA</div>
+              <div class="spec-v">1.3 g</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Tempo Estimado</div>
+              <div class="spec-v">~4 min</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Prato Bambu</div>
+              <div class="spec-v">2</div>
+            </div>
+            <div class="spec-item" style="grid-column: span 2;">
+              <div class="spec-k">Furação & Encaixe</div>
+              <div class="spec-v" style="font-size: 8px;">2x Ilhoses Ø3.2mm para pivôs M3</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="part-desc" style="border-left: 3px solid #22262C;">
+          <b>Função Técnica:</b> Tirante longo da cinemática paralela (103mm) mantendo o nível do efetuador.
+        </div>
+
+        <div class="part-meta-footer">
+          <span><b>Orientação:</b> Plano no leito PEI, sem suportes</span>
+          <span style="font-weight: 700; color: #22262C;">Preto Técnico • Bambu A1</span>
+        </div>
+      </div>
+
+      <div class="part-card">
+        <div class="part-card-header">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="background: #0077D4; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">AZUL</span>
+            <div class="part-name">04_Tirante_Paralelogramo_Medio.stl</div>
+          </div>
+          <div class="part-cat">Articulações & Bielas</div>
+        </div>
+
+        <div class="part-body">
+          <div class="part-img-box">
+            <img src="pdf_assets/parts/part_04_Tirante_Paralelogramo_Medio.png" alt="04_Tirante_Paralelogramo_Medio">
+          </div>
+
+          <div class="specs-table">
+            <div class="spec-item">
+              <div class="spec-k">Dimensões (XYZ)</div>
+              <div class="spec-v">94.0 × 15.6 × 3.1 mm</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Peso PLA</div>
+              <div class="spec-v">1.2 g</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Tempo Estimado</div>
+              <div class="spec-v">~4 min</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Prato Bambu</div>
+              <div class="spec-v">2</div>
+            </div>
+            <div class="spec-item" style="grid-column: span 2;">
+              <div class="spec-k">Furação & Encaixe</div>
+              <div class="spec-v" style="font-size: 8px;">2x Ilhoses Ø3.2mm para pivôs M3</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="part-desc" style="border-left: 3px solid #0077D4;">
+          <b>Função Técnica:</b> Tirante intermediário de transmissão de esforço para o balancim triangular.
+        </div>
+
+        <div class="part-meta-footer">
+          <span><b>Orientação:</b> Plano no leito PEI, sem suportes</span>
+          <span style="font-weight: 700; color: #0077D4;">Azul Técnico • Bambu A1</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="page-footer">
+      <div>Projeto Braço Robótico 4-DOF • Edição Bambu Lab A1</div>
+      <div class="page-number">Página 4 de 16</div>
+    </div>
+  </div>
+
+  <!-- PÁGINA 5: CATÁLOGO DE PEÇAS (05 A 08) -->
+  <div class="page">
+    <div class="page-header">
+      <div class="brand">
+        <span class="tag">BAMBU A1</span>
+        <span>Braço Robótico 4-DOF • Catálogo de Componentes</span>
+      </div>
+      <div class="doc-id">DOC-BR-01 • PEÇAS 05-08/28</div>
+    </div>
+
+    <div class="section-title">
+      <span class="num-badge">4</span>
+      Catálogo das Peças de Impressão 3D (05 a 08 de 28)
+    </div>
+    <div class="section-subtitle">
+      Visualização 3D individual, especificações métricas e diretrizes de montagem de cada componente STL.
+    </div>
+
+    <div class="parts-grid">
+
+      <div class="part-card">
+        <div class="part-card-header">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="background: #0077D4; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">AZUL</span>
+            <div class="part-name">05_Haste_Acionamento_Servo_Braco.stl</div>
+          </div>
+          <div class="part-cat">Articulações & Bielas</div>
+        </div>
+
+        <div class="part-body">
+          <div class="part-img-box">
+            <img src="pdf_assets/parts/part_05_Haste_Acionamento_Servo_Braco.png" alt="05_Haste_Acionamento_Servo_Braco">
+          </div>
+
+          <div class="specs-table">
+            <div class="spec-item">
+              <div class="spec-k">Dimensões (XYZ)</div>
+              <div class="spec-v">87.0 × 7.7 × 3.6 mm</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Peso PLA</div>
+              <div class="spec-v">1.2 g</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Tempo Estimado</div>
+              <div class="spec-v">~4 min</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Prato Bambu</div>
+              <div class="spec-v">2</div>
+            </div>
+            <div class="spec-item" style="grid-column: span 2;">
+              <div class="spec-k">Furação & Encaixe</div>
+              <div class="spec-v" style="font-size: 8px;">2x Furos M3 com alívio chanfrado</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="part-desc" style="border-left: 3px solid #0077D4;">
+          <b>Função Técnica:</b> Biela curta de acoplamento direto entre o horn do servo e o braço mestre.
+        </div>
+
+        <div class="part-meta-footer">
+          <span><b>Orientação:</b> Plano no leito PEI</span>
+          <span style="font-weight: 700; color: #0077D4;">Azul Técnico • Bambu A1</span>
+        </div>
+      </div>
+
+      <div class="part-card">
+        <div class="part-card-header">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="background: #0077D4; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">AZUL</span>
+            <div class="part-name">06_Antebraco_Esquerdo.stl</div>
+          </div>
+          <div class="part-cat">Estrutura do Braço</div>
+        </div>
+
+        <div class="part-body">
+          <div class="part-img-box">
+            <img src="pdf_assets/parts/part_06_Antebraco_Esquerdo.png" alt="06_Antebraco_Esquerdo">
+          </div>
+
+          <div class="specs-table">
+            <div class="spec-item">
+              <div class="spec-k">Dimensões (XYZ)</div>
+              <div class="spec-v">85.8 × 21.4 × 3.2 mm</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Peso PLA</div>
+              <div class="spec-v">1.4 g</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Tempo Estimado</div>
+              <div class="spec-v">~4 min</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Prato Bambu</div>
+              <div class="spec-v">2</div>
+            </div>
+            <div class="spec-item" style="grid-column: span 2;">
+              <div class="spec-k">Furação & Encaixe</div>
+              <div class="spec-v" style="font-size: 8px;">3x Furos pivô M3 com tolerância suave</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="part-desc" style="border-left: 3px solid #0077D4;">
+          <b>Função Técnica:</b> Haste esquerda do antebraço conectando a articulação do cotovelo à garra.
+        </div>
+
+        <div class="part-meta-footer">
+          <span><b>Orientação:</b> Lateral plana apoiada na mesa</span>
+          <span style="font-weight: 700; color: #0077D4;">Azul Técnico • Bambu A1</span>
+        </div>
+      </div>
+
+      <div class="part-card">
+        <div class="part-card-header">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <div class="part-name">07_Braco_Principal_Direito.stl</div>
+          </div>
+          <div class="part-cat">Estrutura do Braço</div>
+        </div>
+
+        <div class="part-body">
+          <div class="part-img-box">
+            <img src="pdf_assets/parts/part_07_Braco_Principal_Direito.png" alt="07_Braco_Principal_Direito">
+          </div>
+
+          <div class="specs-table">
+            <div class="spec-item">
+              <div class="spec-k">Dimensões (XYZ)</div>
+              <div class="spec-v">84.4 × 39.1 × 3.2 mm</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Peso PLA</div>
+              <div class="spec-v">2.5 g</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Tempo Estimado</div>
+              <div class="spec-v">~6 min</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Prato Bambu</div>
+              <div class="spec-v">2</div>
+            </div>
+            <div class="spec-item" style="grid-column: span 2;">
+              <div class="spec-k">Furação & Encaixe</div>
+              <div class="spec-v" style="font-size: 8px;">2x Furos M3 + Encaixe para servo</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="part-desc" style="border-left: 3px solid #22262C;">
+          <b>Função Técnica:</b> Braço mestre direito com berço de fixação do servo motor do cotovelo.
+        </div>
+
+        <div class="part-meta-footer">
+          <span><b>Orientação:</b> Lateral plana apoiada na mesa</span>
+          <span style="font-weight: 700; color: #22262C;">Preto Técnico • Bambu A1</span>
+        </div>
+      </div>
+
+      <div class="part-card">
+        <div class="part-card-header">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="background: #0077D4; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">AZUL</span>
+            <div class="part-name">08_Antebraco_Direito.stl</div>
+          </div>
+          <div class="part-cat">Estrutura do Braço</div>
+        </div>
+
+        <div class="part-body">
+          <div class="part-img-box">
+            <img src="pdf_assets/parts/part_08_Antebraco_Direito.png" alt="08_Antebraco_Direito">
+          </div>
+
+          <div class="specs-table">
+            <div class="spec-item">
+              <div class="spec-k">Dimensões (XYZ)</div>
+              <div class="spec-v">81.6 × 36.4 × 3.1 mm</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Peso PLA</div>
+              <div class="spec-v">2.2 g</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Tempo Estimado</div>
+              <div class="spec-v">~6 min</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Prato Bambu</div>
+              <div class="spec-v">2</div>
+            </div>
+            <div class="spec-item" style="grid-column: span 2;">
+              <div class="spec-k">Furação & Encaixe</div>
+              <div class="spec-v" style="font-size: 8px;">3x Mancais M3 com ressalto 0.8mm</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="part-desc" style="border-left: 3px solid #0077D4;">
+          <b>Função Técnica:</b> Haste direita do antebraço, simétrica e alinhada ao paralelogramo.
+        </div>
+
+        <div class="part-meta-footer">
+          <span><b>Orientação:</b> Lateral plana apoiada na mesa</span>
+          <span style="font-weight: 700; color: #0077D4;">Azul Técnico • Bambu A1</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="page-footer">
+      <div>Projeto Braço Robótico 4-DOF • Edição Bambu Lab A1</div>
+      <div class="page-number">Página 5 de 16</div>
+    </div>
+  </div>
+
+  <!-- PÁGINA 6: CATÁLOGO DE PEÇAS (09 A 12) -->
+  <div class="page">
+    <div class="page-header">
+      <div class="brand">
+        <span class="tag">BAMBU A1</span>
+        <span>Braço Robótico 4-DOF • Catálogo de Componentes</span>
+      </div>
+      <div class="doc-id">DOC-BR-01 • PEÇAS 09-12/28</div>
+    </div>
+
+    <div class="section-title">
+      <span class="num-badge">5</span>
+      Catálogo das Peças de Impressão 3D (09 a 12 de 28)
+    </div>
+    <div class="section-subtitle">
+      Visualização 3D individual, especificações métricas e diretrizes de montagem de cada componente STL.
+    </div>
+
+    <div class="parts-grid">
+
+      <div class="part-card">
+        <div class="part-card-header">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <div class="part-name">09_Torre_Suporte_Servo_Direita.stl</div>
+          </div>
+          <div class="part-cat">Base Giratória</div>
+        </div>
+
+        <div class="part-body">
+          <div class="part-img-box">
+            <img src="pdf_assets/parts/part_09_Torre_Suporte_Servo_Direita.png" alt="09_Torre_Suporte_Servo_Direita">
+          </div>
+
+          <div class="specs-table">
+            <div class="spec-item">
+              <div class="spec-k">Dimensões (XYZ)</div>
+              <div class="spec-v">52.5 × 60.2 × 3.6 mm</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Peso PLA</div>
+              <div class="spec-v">2.7 g</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Tempo Estimado</div>
+              <div class="spec-v">~6 min</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Prato Bambu</div>
+              <div class="spec-v">1</div>
+            </div>
+            <div class="spec-item" style="grid-column: span 2;">
+              <div class="spec-k">Furação & Encaixe</div>
+              <div class="spec-v" style="font-size: 8px;">Nicho SG90 + 2x Furos M3 parafusamento</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="part-desc" style="border-left: 3px solid #22262C;">
+          <b>Função Técnica:</b> Torre lateral direita estrutural de ancoragem do servo de elevação do ombro.
+        </div>
+
+        <div class="part-meta-footer">
+          <span><b>Orientação:</b> Base apoiada na mesa, vertical</span>
+          <span style="font-weight: 700; color: #22262C;">Preto Técnico • Bambu A1</span>
+        </div>
+      </div>
+
+      <div class="part-card">
+        <div class="part-card-header">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <div class="part-name">10_Balancim_Triangular_Articulador.stl</div>
+          </div>
+          <div class="part-cat">Articulações & Bielas</div>
+        </div>
+
+        <div class="part-body">
+          <div class="part-img-box">
+            <img src="pdf_assets/parts/part_10_Balancim_Triangular_Articulador.png" alt="10_Balancim_Triangular_Articulador">
+          </div>
+
+          <div class="specs-table">
+            <div class="spec-item">
+              <div class="spec-k">Dimensões (XYZ)</div>
+              <div class="spec-v">25.4 × 60.1 × 3.1 mm</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Peso PLA</div>
+              <div class="spec-v">1.2 g</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Tempo Estimado</div>
+              <div class="spec-v">~4 min</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Prato Bambu</div>
+              <div class="spec-v">2</div>
+            </div>
+            <div class="spec-item" style="grid-column: span 2;">
+              <div class="spec-k">Furação & Encaixe</div>
+              <div class="spec-v" style="font-size: 8px;">3x Pivôs M3 triangulados a 60°/120°</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="part-desc" style="border-left: 3px solid #22262C;">
+          <b>Função Técnica:</b> Elemento de transferência de torque e manutenção da paralelidade cinemática.
+        </div>
+
+        <div class="part-meta-footer">
+          <span><b>Orientação:</b> Face plana apoiada no prato</span>
+          <span style="font-weight: 700; color: #22262C;">Preto Técnico • Bambu A1</span>
+        </div>
+      </div>
+
+      <div class="part-card">
+        <div class="part-card-header">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <div class="part-name">11_Torre_Suporte_Servo_Esquerda.stl</div>
+          </div>
+          <div class="part-cat">Base Giratória</div>
+        </div>
+
+        <div class="part-body">
+          <div class="part-img-box">
+            <img src="pdf_assets/parts/part_11_Torre_Suporte_Servo_Esquerda.png" alt="11_Torre_Suporte_Servo_Esquerda">
+          </div>
+
+          <div class="specs-table">
+            <div class="spec-item">
+              <div class="spec-k">Dimensões (XYZ)</div>
+              <div class="spec-v">43.5 × 60.0 × 3.9 mm</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Peso PLA</div>
+              <div class="spec-v">2.4 g</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Tempo Estimado</div>
+              <div class="spec-v">~6 min</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Prato Bambu</div>
+              <div class="spec-v">1</div>
+            </div>
+            <div class="spec-item" style="grid-column: span 2;">
+              <div class="spec-k">Furação & Encaixe</div>
+              <div class="spec-v" style="font-size: 8px;">Nicho SG90 + Furações de alinhamento</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="part-desc" style="border-left: 3px solid #22262C;">
+          <b>Função Técnica:</b> Torre lateral esquerda de fixação com nervura externa anti-torção.
+        </div>
+
+        <div class="part-meta-footer">
+          <span><b>Orientação:</b> Base apoiada na mesa, vertical</span>
+          <span style="font-weight: 700; color: #22262C;">Preto Técnico • Bambu A1</span>
+        </div>
+      </div>
+
+      <div class="part-card">
+        <div class="part-card-header">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="background: #0077D4; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">AZUL</span>
+            <div class="part-name">12_Mesa_Giratoria_Turntable.stl</div>
+          </div>
+          <div class="part-cat">Base Giratória</div>
+        </div>
+
+        <div class="part-body">
+          <div class="part-img-box">
+            <img src="pdf_assets/parts/part_12_Mesa_Giratoria_Turntable.png" alt="12_Mesa_Giratoria_Turntable">
+          </div>
+
+          <div class="specs-table">
+            <div class="spec-item">
+              <div class="spec-k">Dimensões (XYZ)</div>
+              <div class="spec-v">58.0 × 58.0 × 3.0 mm</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Peso PLA</div>
+              <div class="spec-v">2.4 g</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Tempo Estimado</div>
+              <div class="spec-v">~6 min</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Prato Bambu</div>
+              <div class="spec-v">1</div>
+            </div>
+            <div class="spec-item" style="grid-column: span 2;">
+              <div class="spec-k">Furação & Encaixe</div>
+              <div class="spec-v" style="font-size: 8px;">Pista circular de deslizamento + Eixo M3</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="part-desc" style="border-left: 3px solid #0077D4;">
+          <b>Função Técnica:</b> Prato giratório que suporta as duas torres e rotaciona 180° sobre o chassi.
+        </div>
+
+        <div class="part-meta-footer">
+          <span><b>Orientação:</b> Face circular plana na mesa PEI</span>
+          <span style="font-weight: 700; color: #0077D4;">Azul Técnico • Bambu A1</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="page-footer">
+      <div>Projeto Braço Robótico 4-DOF • Edição Bambu Lab A1</div>
+      <div class="page-number">Página 6 de 16</div>
+    </div>
+  </div>
+
+  <!-- PÁGINA 7: CATÁLOGO DE PEÇAS (13 A 16) -->
+  <div class="page">
+    <div class="page-header">
+      <div class="brand">
+        <span class="tag">BAMBU A1</span>
+        <span>Braço Robótico 4-DOF • Catálogo de Componentes</span>
+      </div>
+      <div class="doc-id">DOC-BR-01 • PEÇAS 13-16/28</div>
+    </div>
+
+    <div class="section-title">
+      <span class="num-badge">6</span>
+      Catálogo das Peças de Impressão 3D (13 a 16 de 28)
+    </div>
+    <div class="section-subtitle">
+      Visualização 3D individual, especificações métricas e diretrizes de montagem de cada componente STL.
+    </div>
+
+    <div class="parts-grid">
+
+      <div class="part-card">
+        <div class="part-card-header">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="background: #0077D4; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">AZUL</span>
+            <div class="part-name">13_Tirante_Superior_Garra.stl</div>
+          </div>
+          <div class="part-cat">Articulações & Bielas</div>
+        </div>
+
+        <div class="part-body">
+          <div class="part-img-box">
+            <img src="pdf_assets/parts/part_13_Tirante_Superior_Garra.png" alt="13_Tirante_Superior_Garra">
+          </div>
+
+          <div class="specs-table">
+            <div class="spec-item">
+              <div class="spec-k">Dimensões (XYZ)</div>
+              <div class="spec-v">56.1 × 12.0 × 3.2 mm</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Peso PLA</div>
+              <div class="spec-v">1.2 g</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Tempo Estimado</div>
+              <div class="spec-v">~4 min</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Prato Bambu</div>
+              <div class="spec-v">2</div>
+            </div>
+            <div class="spec-item" style="grid-column: span 2;">
+              <div class="spec-k">Furação & Encaixe</div>
+              <div class="spec-v" style="font-size: 8px;">2x Furos M3 nas extremidades</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="part-desc" style="border-left: 3px solid #0077D4;">
+          <b>Função Técnica:</b> Transfere a inclinação angular diretamente para o cabeçote fixo da garra.
+        </div>
+
+        <div class="part-meta-footer">
+          <span><b>Orientação:</b> Plano na mesa, sem suportes</span>
+          <span style="font-weight: 700; color: #0077D4;">Azul Técnico • Bambu A1</span>
+        </div>
+      </div>
+
+      <div class="part-card">
+        <div class="part-card-header">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="background: #0077D4; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">AZUL</span>
+            <div class="part-name">14_Separador_Espacador_Central_Base.stl</div>
+          </div>
+          <div class="part-cat">Base Giratória</div>
+        </div>
+
+        <div class="part-body">
+          <div class="part-img-box">
+            <img src="pdf_assets/parts/part_14_Separador_Espacador_Central_Base.png" alt="14_Separador_Espacador_Central_Base">
+          </div>
+
+          <div class="specs-table">
+            <div class="spec-item">
+              <div class="spec-k">Dimensões (XYZ)</div>
+              <div class="spec-v">34.5 × 54.4 × 3.8 mm</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Peso PLA</div>
+              <div class="spec-v">1.7 g</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Tempo Estimado</div>
+              <div class="spec-v">~5 min</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Prato Bambu</div>
+              <div class="spec-v">1</div>
+            </div>
+            <div class="spec-item" style="grid-column: span 2;">
+              <div class="spec-k">Furação & Encaixe</div>
+              <div class="spec-v" style="font-size: 8px;">2x Passagens M3x30mm parafusos longos</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="part-desc" style="border-left: 3px solid #0077D4;">
+          <b>Função Técnica:</b> Garante espaçamento exato entre as duas torres evitando flexão dos mancais.
+        </div>
+
+        <div class="part-meta-footer">
+          <span><b>Orientação:</b> Face plana inferior na mesa</span>
+          <span style="font-weight: 700; color: #0077D4;">Azul Técnico • Bambu A1</span>
+        </div>
+      </div>
+
+      <div class="part-card">
+        <div class="part-card-header">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <div class="part-name">15_Suporte_Cabeca_Garra.stl</div>
+          </div>
+          <div class="part-cat">Garra Robótica</div>
+        </div>
+
+        <div class="part-body">
+          <div class="part-img-box">
+            <img src="pdf_assets/parts/part_15_Suporte_Cabeca_Garra.png" alt="15_Suporte_Cabeca_Garra">
+          </div>
+
+          <div class="specs-table">
+            <div class="spec-item">
+              <div class="spec-k">Dimensões (XYZ)</div>
+              <div class="spec-v">27.0 × 53.5 × 3.0 mm</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Peso PLA</div>
+              <div class="spec-v">1.2 g</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Tempo Estimado</div>
+              <div class="spec-v">~4 min</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Prato Bambu</div>
+              <div class="spec-v">2</div>
+            </div>
+            <div class="spec-item" style="grid-column: span 2;">
+              <div class="spec-k">Furação & Encaixe</div>
+              <div class="spec-v" style="font-size: 8px;">Furações de engrenamento e fixação servo</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="part-desc" style="border-left: 3px solid #22262C;">
+          <b>Função Técnica:</b> Placa de ancoragem do micro servomotor responsável pelo acionamento da pinça.
+        </div>
+
+        <div class="part-meta-footer">
+          <span><b>Orientação:</b> Apoio plano traseiro na mesa</span>
+          <span style="font-weight: 700; color: #22262C;">Preto Técnico • Bambu A1</span>
+        </div>
+      </div>
+
+      <div class="part-card">
+        <div class="part-card-header">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="background: #0077D4; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">AZUL</span>
+            <div class="part-name">16_Berco_Servo_Rotacao_Base.stl</div>
+          </div>
+          <div class="part-cat">Base & Chassi</div>
+        </div>
+
+        <div class="part-body">
+          <div class="part-img-box">
+            <img src="pdf_assets/parts/part_16_Berco_Servo_Rotacao_Base.png" alt="16_Berco_Servo_Rotacao_Base">
+          </div>
+
+          <div class="specs-table">
+            <div class="spec-item">
+              <div class="spec-k">Dimensões (XYZ)</div>
+              <div class="spec-v">52.1 × 48.2 × 3.1 mm</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Peso PLA</div>
+              <div class="spec-v">1.9 g</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Tempo Estimado</div>
+              <div class="spec-v">~5 min</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Prato Bambu</div>
+              <div class="spec-v">1</div>
+            </div>
+            <div class="spec-item" style="grid-column: span 2;">
+              <div class="spec-k">Furação & Encaixe</div>
+              <div class="spec-v" style="font-size: 8px;">Encaixe SG90 justo (12.2 x 23.0 mm)</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="part-desc" style="border-left: 3px solid #0077D4;">
+          <b>Função Técnica:</b> Alojamento central do servo de giro da base inferior (Eixo 1 - Yaw).
+        </div>
+
+        <div class="part-meta-footer">
+          <span><b>Orientação:</b> Face de flange na mesa</span>
+          <span style="font-weight: 700; color: #0077D4;">Azul Técnico • Bambu A1</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="page-footer">
+      <div>Projeto Braço Robótico 4-DOF • Edição Bambu Lab A1</div>
+      <div class="page-number">Página 7 de 16</div>
+    </div>
+  </div>
+
+  <!-- PÁGINA 8: CATÁLOGO DE PEÇAS (17 A 20) -->
+  <div class="page">
+    <div class="page-header">
+      <div class="brand">
+        <span class="tag">BAMBU A1</span>
+        <span>Braço Robótico 4-DOF • Catálogo de Componentes</span>
+      </div>
+      <div class="doc-id">DOC-BR-01 • PEÇAS 17-20/28</div>
+    </div>
+
+    <div class="section-title">
+      <span class="num-badge">7</span>
+      Catálogo das Peças de Impressão 3D (17 a 20 de 28)
+    </div>
+    <div class="section-subtitle">
+      Visualização 3D individual, especificações métricas e diretrizes de montagem de cada componente STL.
+    </div>
+
+    <div class="parts-grid">
+
+      <div class="part-card">
+        <div class="part-card-header">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <div class="part-name">17_Travessa_Reforco_Base_Frontal.stl</div>
+          </div>
+          <div class="part-cat">Base & Chassi</div>
+        </div>
+
+        <div class="part-body">
+          <div class="part-img-box">
+            <img src="pdf_assets/parts/part_17_Travessa_Reforco_Base_Frontal.png" alt="17_Travessa_Reforco_Base_Frontal">
+          </div>
+
+          <div class="specs-table">
+            <div class="spec-item">
+              <div class="spec-k">Dimensões (XYZ)</div>
+              <div class="spec-v">51.5 × 18.8 × 3.8 mm</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Peso PLA</div>
+              <div class="spec-v">1.2 g</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Tempo Estimado</div>
+              <div class="spec-v">~4 min</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Prato Bambu</div>
+              <div class="spec-v">1</div>
+            </div>
+            <div class="spec-item" style="grid-column: span 2;">
+              <div class="spec-k">Furação & Encaixe</div>
+              <div class="spec-v" style="font-size: 8px;">2x Nichos sextavados cativos M3</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="part-desc" style="border-left: 3px solid #22262C;">
+          <b>Função Técnica:</b> Trava estrutural dianteira que elimina folga longitudinal do chassi.
+        </div>
+
+        <div class="part-meta-footer">
+          <span><b>Orientação:</b> Plano na mesa</span>
+          <span style="font-weight: 700; color: #22262C;">Preto Técnico • Bambu A1</span>
+        </div>
+      </div>
+
+      <div class="part-card">
+        <div class="part-card-header">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <div class="part-name">18_Travessa_Reforco_Base_Traseira.stl</div>
+          </div>
+          <div class="part-cat">Base & Chassi</div>
+        </div>
+
+        <div class="part-body">
+          <div class="part-img-box">
+            <img src="pdf_assets/parts/part_18_Travessa_Reforco_Base_Traseira.png" alt="18_Travessa_Reforco_Base_Traseira">
+          </div>
+
+          <div class="specs-table">
+            <div class="spec-item">
+              <div class="spec-k">Dimensões (XYZ)</div>
+              <div class="spec-v">51.4 × 18.8 × 3.8 mm</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Peso PLA</div>
+              <div class="spec-v">1.2 g</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Tempo Estimado</div>
+              <div class="spec-v">~4 min</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Prato Bambu</div>
+              <div class="spec-v">1</div>
+            </div>
+            <div class="spec-item" style="grid-column: span 2;">
+              <div class="spec-k">Furação & Encaixe</div>
+              <div class="spec-v" style="font-size: 8px;">2x Nichos sextavados cativos M3</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="part-desc" style="border-left: 3px solid #22262C;">
+          <b>Função Técnica:</b> Trava estrutural traseira de contenção dos esforços de tração do braço.
+        </div>
+
+        <div class="part-meta-footer">
+          <span><b>Orientação:</b> Plano na mesa</span>
+          <span style="font-weight: 700; color: #22262C;">Preto Técnico • Bambu A1</span>
+        </div>
+      </div>
+
+      <div class="part-card">
+        <div class="part-card-header">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="background: #0077D4; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">AZUL</span>
+            <div class="part-name">19_Garra_Base_Suporte_Fixo.stl</div>
+          </div>
+          <div class="part-cat">Garra Robótica</div>
+        </div>
+
+        <div class="part-body">
+          <div class="part-img-box">
+            <img src="pdf_assets/parts/part_19_Garra_Base_Suporte_Fixo.png" alt="19_Garra_Base_Suporte_Fixo">
+          </div>
+
+          <div class="specs-table">
+            <div class="spec-item">
+              <div class="spec-k">Dimensões (XYZ)</div>
+              <div class="spec-v">25.1 × 50.7 × 3.2 mm</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Peso PLA</div>
+              <div class="spec-v">1.2 g</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Tempo Estimado</div>
+              <div class="spec-v">~4 min</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Prato Bambu</div>
+              <div class="spec-v">2</div>
+            </div>
+            <div class="spec-item" style="grid-column: span 2;">
+              <div class="spec-k">Furação & Encaixe</div>
+              <div class="spec-v" style="font-size: 8px;">2x Eixos pivô M3 + Encaixe guia</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="part-desc" style="border-left: 3px solid #0077D4;">
+          <b>Função Técnica:</b> Corpo de suporte principal da pinça mecânica onde se articulam os dedos.
+        </div>
+
+        <div class="part-meta-footer">
+          <span><b>Orientação:</b> Plano na mesa</span>
+          <span style="font-weight: 700; color: #0077D4;">Azul Técnico • Bambu A1</span>
+        </div>
+      </div>
+
+      <div class="part-card">
+        <div class="part-card-header">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="background: #0077D4; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">AZUL</span>
+            <div class="part-name">20_Garra_Dedo_Movel_Direito.stl</div>
+          </div>
+          <div class="part-cat">Garra Robótica</div>
+        </div>
+
+        <div class="part-body">
+          <div class="part-img-box">
+            <img src="pdf_assets/parts/part_20_Garra_Dedo_Movel_Direito.png" alt="20_Garra_Dedo_Movel_Direito">
+          </div>
+
+          <div class="specs-table">
+            <div class="spec-item">
+              <div class="spec-k">Dimensões (XYZ)</div>
+              <div class="spec-v">21.3 × 47.6 × 3.2 mm</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Peso PLA</div>
+              <div class="spec-v">1.2 g</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Tempo Estimado</div>
+              <div class="spec-v">~4 min</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Prato Bambu</div>
+              <div class="spec-v">2</div>
+            </div>
+            <div class="spec-item" style="grid-column: span 2;">
+              <div class="spec-k">Furação & Encaixe</div>
+              <div class="spec-v" style="font-size: 8px;">Pivô M3 + Engrenagem acoplada</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="part-desc" style="border-left: 3px solid #0077D4;">
+          <b>Função Técnica:</b> Dedo móvel direito com perfil semicircular dentado de alta precisão.
+        </div>
+
+        <div class="part-meta-footer">
+          <span><b>Orientação:</b> Face lateral de dentes voltada para cima</span>
+          <span style="font-weight: 700; color: #0077D4;">Azul Técnico • Bambu A1</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="page-footer">
+      <div>Projeto Braço Robótico 4-DOF • Edição Bambu Lab A1</div>
+      <div class="page-number">Página 8 de 16</div>
+    </div>
+  </div>
+
+  <!-- PÁGINA 9: CATÁLOGO DE PEÇAS (21 A 24) -->
+  <div class="page">
+    <div class="page-header">
+      <div class="brand">
+        <span class="tag">BAMBU A1</span>
+        <span>Braço Robótico 4-DOF • Catálogo de Componentes</span>
+      </div>
+      <div class="doc-id">DOC-BR-01 • PEÇAS 21-24/28</div>
+    </div>
+
+    <div class="section-title">
+      <span class="num-badge">8</span>
+      Catálogo das Peças de Impressão 3D (21 a 24 de 28)
+    </div>
+    <div class="section-subtitle">
+      Visualização 3D individual, especificações métricas e diretrizes de montagem de cada componente STL.
+    </div>
+
+    <div class="parts-grid">
+
+      <div class="part-card">
+        <div class="part-card-header">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <div class="part-name">21_Garra_Dedo_Movel_Esquerdo.stl</div>
+          </div>
+          <div class="part-cat">Garra Robótica</div>
+        </div>
+
+        <div class="part-body">
+          <div class="part-img-box">
+            <img src="pdf_assets/parts/part_21_Garra_Dedo_Movel_Esquerdo.png" alt="21_Garra_Dedo_Movel_Esquerdo">
+          </div>
+
+          <div class="specs-table">
+            <div class="spec-item">
+              <div class="spec-k">Dimensões (XYZ)</div>
+              <div class="spec-v">20.3 × 47.1 × 3.2 mm</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Peso PLA</div>
+              <div class="spec-v">1.2 g</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Tempo Estimado</div>
+              <div class="spec-v">~4 min</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Prato Bambu</div>
+              <div class="spec-v">2</div>
+            </div>
+            <div class="spec-item" style="grid-column: span 2;">
+              <div class="spec-k">Furação & Encaixe</div>
+              <div class="spec-v" style="font-size: 8px;">Pivô M3 + Engrenagem conjugada</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="part-desc" style="border-left: 3px solid #22262C;">
+          <b>Função Técnica:</b> Dedo móvel esquerdo espelhado sincronizado pela engrenagem intermediária.
+        </div>
+
+        <div class="part-meta-footer">
+          <span><b>Orientação:</b> Face lateral plana no prato</span>
+          <span style="font-weight: 700; color: #22262C;">Preto Técnico • Bambu A1</span>
+        </div>
+      </div>
+
+      <div class="part-card">
+        <div class="part-card-header">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="background: #0077D4; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">AZUL</span>
+            <div class="part-name">22_Biela_Conexao_Horn_Direito.stl</div>
+          </div>
+          <div class="part-cat">Articulações & Bielas</div>
+        </div>
+
+        <div class="part-body">
+          <div class="part-img-box">
+            <img src="pdf_assets/parts/part_22_Biela_Conexao_Horn_Direito.png" alt="22_Biela_Conexao_Horn_Direito">
+          </div>
+
+          <div class="specs-table">
+            <div class="spec-item">
+              <div class="spec-k">Dimensões (XYZ)</div>
+              <div class="spec-v">25.6 × 39.5 × 3.6 mm</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Peso PLA</div>
+              <div class="spec-v">1.2 g</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Tempo Estimado</div>
+              <div class="spec-v">~4 min</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Prato Bambu</div>
+              <div class="spec-v">2</div>
+            </div>
+            <div class="spec-item" style="grid-column: span 2;">
+              <div class="spec-k">Furação & Encaixe</div>
+              <div class="spec-v" style="font-size: 8px;">2x Furos de tração M2.5 / M3</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="part-desc" style="border-left: 3px solid #0077D4;">
+          <b>Função Técnica:</b> Transmite o torque do servo do ombro para a haste mestra de elevação.
+        </div>
+
+        <div class="part-meta-footer">
+          <span><b>Orientação:</b> Plano na mesa</span>
+          <span style="font-weight: 700; color: #0077D4;">Azul Técnico • Bambu A1</span>
+        </div>
+      </div>
+
+      <div class="part-card">
+        <div class="part-card-header">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="background: #0077D4; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">AZUL</span>
+            <div class="part-name">23_Biela_Conexao_Horn_Esquerdo.stl</div>
+          </div>
+          <div class="part-cat">Articulações & Bielas</div>
+        </div>
+
+        <div class="part-body">
+          <div class="part-img-box">
+            <img src="pdf_assets/parts/part_23_Biela_Conexao_Horn_Esquerdo.png" alt="23_Biela_Conexao_Horn_Esquerdo">
+          </div>
+
+          <div class="specs-table">
+            <div class="spec-item">
+              <div class="spec-k">Dimensões (XYZ)</div>
+              <div class="spec-v">25.5 × 39.4 × 3.6 mm</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Peso PLA</div>
+              <div class="spec-v">1.2 g</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Tempo Estimado</div>
+              <div class="spec-v">~4 min</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Prato Bambu</div>
+              <div class="spec-v">2</div>
+            </div>
+            <div class="spec-item" style="grid-column: span 2;">
+              <div class="spec-k">Furação & Encaixe</div>
+              <div class="spec-v" style="font-size: 8px;">2x Furos de tração M2.5 / M3</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="part-desc" style="border-left: 3px solid #0077D4;">
+          <b>Função Técnica:</b> Transmite o movimento do servo do cotovelo para o sistema de paralelogramo.
+        </div>
+
+        <div class="part-meta-footer">
+          <span><b>Orientação:</b> Plano na mesa</span>
+          <span style="font-weight: 700; color: #0077D4;">Azul Técnico • Bambu A1</span>
+        </div>
+      </div>
+
+      <div class="part-card">
+        <div class="part-card-header">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <div class="part-name">24_Suporte_Encaixe_Servo_Garra.stl</div>
+          </div>
+          <div class="part-cat">Garra Robótica</div>
+        </div>
+
+        <div class="part-body">
+          <div class="part-img-box">
+            <img src="pdf_assets/parts/part_24_Suporte_Encaixe_Servo_Garra.png" alt="24_Suporte_Encaixe_Servo_Garra">
+          </div>
+
+          <div class="specs-table">
+            <div class="spec-item">
+              <div class="spec-k">Dimensões (XYZ)</div>
+              <div class="spec-v">25.0 × 36.8 × 3.1 mm</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Peso PLA</div>
+              <div class="spec-v">1.2 g</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Tempo Estimado</div>
+              <div class="spec-v">~4 min</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Prato Bambu</div>
+              <div class="spec-v">2</div>
+            </div>
+            <div class="spec-item" style="grid-column: span 2;">
+              <div class="spec-k">Furação & Encaixe</div>
+              <div class="spec-v" style="font-size: 8px;">Flange de travamento SG90</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="part-desc" style="border-left: 3px solid #22262C;">
+          <b>Função Técnica:</b> Presilha de engate rápido do servomotor da pinça garantindo rigidez.
+        </div>
+
+        <div class="part-meta-footer">
+          <span><b>Orientação:</b> Face plana na mesa</span>
+          <span style="font-weight: 700; color: #22262C;">Preto Técnico • Bambu A1</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="page-footer">
+      <div>Projeto Braço Robótico 4-DOF • Edição Bambu Lab A1</div>
+      <div class="page-number">Página 9 de 16</div>
+    </div>
+  </div>
+
+  <!-- PÁGINA 10: CATÁLOGO DE PEÇAS (25 A 28) -->
+  <div class="page">
+    <div class="page-header">
+      <div class="brand">
+        <span class="tag">BAMBU A1</span>
+        <span>Braço Robótico 4-DOF • Catálogo de Componentes</span>
+      </div>
+      <div class="doc-id">DOC-BR-01 • PEÇAS 25-28/28</div>
+    </div>
+
+    <div class="section-title">
+      <span class="num-badge">9</span>
+      Catálogo das Peças de Impressão 3D (25 a 28 de 28)
+    </div>
+    <div class="section-subtitle">
+      Visualização 3D individual, especificações métricas e diretrizes de montagem de cada componente STL.
+    </div>
+
+    <div class="parts-grid">
+
+      <div class="part-card">
+        <div class="part-card-header">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <div class="part-name">25_Trava_Horn_Servo_Base.stl</div>
+          </div>
+          <div class="part-cat">Base Giratória</div>
+        </div>
+
+        <div class="part-body">
+          <div class="part-img-box">
+            <img src="pdf_assets/parts/part_25_Trava_Horn_Servo_Base.png" alt="25_Trava_Horn_Servo_Base">
+          </div>
+
+          <div class="specs-table">
+            <div class="spec-item">
+              <div class="spec-k">Dimensões (XYZ)</div>
+              <div class="spec-v">24.3 × 31.6 × 3.0 mm</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Peso PLA</div>
+              <div class="spec-v">1.2 g</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Tempo Estimado</div>
+              <div class="spec-v">~4 min</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Prato Bambu</div>
+              <div class="spec-v">1</div>
+            </div>
+            <div class="spec-item" style="grid-column: span 2;">
+              <div class="spec-k">Furação & Encaixe</div>
+              <div class="spec-v" style="font-size: 8px;">Cavidade cruzeta servo SG90</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="part-desc" style="border-left: 3px solid #22262C;">
+          <b>Função Técnica:</b> Trava mecânica que solidariza o horn cruciforme à mesa giratória.
+        </div>
+
+        <div class="part-meta-footer">
+          <span><b>Orientação:</b> Plano na mesa</span>
+          <span style="font-weight: 700; color: #22262C;">Preto Técnico • Bambu A1</span>
+        </div>
+      </div>
+
+      <div class="part-card">
+        <div class="part-card-header">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="background: #0077D4; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">AZUL</span>
+            <div class="part-name">26_Engrenagem_Acionadora_Garra.stl</div>
+          </div>
+          <div class="part-cat">Garra Robótica</div>
+        </div>
+
+        <div class="part-body">
+          <div class="part-img-box">
+            <img src="pdf_assets/parts/part_26_Engrenagem_Acionadora_Garra.png" alt="26_Engrenagem_Acionadora_Garra">
+          </div>
+
+          <div class="specs-table">
+            <div class="spec-item">
+              <div class="spec-k">Dimensões (XYZ)</div>
+              <div class="spec-v">27.8 × 26.2 × 2.5 mm</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Peso PLA</div>
+              <div class="spec-v">1.2 g</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Tempo Estimado</div>
+              <div class="spec-v">~4 min</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Prato Bambu</div>
+              <div class="spec-v">2</div>
+            </div>
+            <div class="spec-item" style="grid-column: span 2;">
+              <div class="spec-k">Furação & Encaixe</div>
+              <div class="spec-v" style="font-size: 8px;">1x Furo pivô Ø3.2mm + 1x Rasgo oblongo guia</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="part-desc" style="border-left: 3px solid #0077D4;">
+          <b>Função Técnica:</b> Alavanca acionadora articulada da garra que conecta o servo ao mecanismo dos dedos móveis.
+        </div>
+
+        <div class="part-meta-footer">
+          <span><b>Orientação:</b> Plano no prato PEI, face lisa voltada para baixo</span>
+          <span style="font-weight: 700; color: #0077D4;">Azul Técnico • Bambu A1</span>
+        </div>
+      </div>
+
+      <div class="part-card">
+        <div class="part-card-header">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <div class="part-name">27_Guia_Articulacao_Garra.stl</div>
+          </div>
+          <div class="part-cat">Garra Robótica</div>
+        </div>
+
+        <div class="part-body">
+          <div class="part-img-box">
+            <img src="pdf_assets/parts/part_27_Guia_Articulacao_Garra.png" alt="27_Guia_Articulacao_Garra">
+          </div>
+
+          <div class="specs-table">
+            <div class="spec-item">
+              <div class="spec-k">Dimensões (XYZ)</div>
+              <div class="spec-v">24.8 × 25.6 × 3.0 mm</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Peso PLA</div>
+              <div class="spec-v">1.2 g</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Tempo Estimado</div>
+              <div class="spec-v">~4 min</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Prato Bambu</div>
+              <div class="spec-v">2</div>
+            </div>
+            <div class="spec-item" style="grid-column: span 2;">
+              <div class="spec-k">Furação & Encaixe</div>
+              <div class="spec-v" style="font-size: 8px;">Furo pivô M3 com rebaixo</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="part-desc" style="border-left: 3px solid #22262C;">
+          <b>Função Técnica:</b> Plaqueta de contenção axial que impede o desalinhamento dos dedos móveis.
+        </div>
+
+        <div class="part-meta-footer">
+          <span><b>Orientação:</b> Plano na mesa</span>
+          <span style="font-weight: 700; color: #22262C;">Preto Técnico • Bambu A1</span>
+        </div>
+      </div>
+
+      <div class="part-card">
+        <div class="part-card-header">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="background: #0077D4; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">AZUL</span>
+            <div class="part-name">28_Biela_Articulacao_Curta.stl</div>
+          </div>
+          <div class="part-cat">Articulações & Bielas</div>
+        </div>
+
+        <div class="part-body">
+          <div class="part-img-box">
+            <img src="pdf_assets/parts/part_28_Biela_Articulacao_Curta.png" alt="28_Biela_Articulacao_Curta">
+          </div>
+
+          <div class="specs-table">
+            <div class="spec-item">
+              <div class="spec-k">Dimensões (XYZ)</div>
+              <div class="spec-v">8.1 × 23.7 × 3.3 mm</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Peso PLA</div>
+              <div class="spec-v">1.2 g</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Tempo Estimado</div>
+              <div class="spec-v">~4 min</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-k">Prato Bambu</div>
+              <div class="spec-v">2</div>
+            </div>
+            <div class="spec-item" style="grid-column: span 2;">
+              <div class="spec-k">Furação & Encaixe</div>
+              <div class="spec-v" style="font-size: 8px;">2x Furos M3 lisos</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="part-desc" style="border-left: 3px solid #0077D4;">
+          <b>Função Técnica:</b> Micro tirante de estabilização da cinemática terminal da garra.
+        </div>
+
+        <div class="part-meta-footer">
+          <span><b>Orientação:</b> Plano na mesa</span>
+          <span style="font-weight: 700; color: #0077D4;">Azul Técnico • Bambu A1</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="page-footer">
+      <div>Projeto Braço Robótico 4-DOF • Edição Bambu Lab A1</div>
+      <div class="page-number">Página 10 de 16</div>
+    </div>
+  </div>
+
+  <!-- PÁGINA 11: DIRETRIZES DE FATIAMENTO & ARRANJO DE PRATOS -->
+  <div class="page">
+    <div class="page-header">
+      <div class="brand">
+        <span class="tag">BAMBU A1</span>
+        <span>Braço Robótico 4-DOF • Manual de Fabricação</span>
+      </div>
+      <div class="doc-id">DOC-BR-01 • SEÇÃO 04</div>
+    </div>
+
+    <div class="section-title">
+      <span class="num-badge">4</span>
+      Diretrizes de Fatiamento no Bambu Studio & Arranjo dos Pratos
+    </div>
+    <div class="section-subtitle">
+      Configurações de fatiamento otimizadas para a Bambu Lab A1 e distribuição dos dois pratos de manufatura.
+    </div>
+
+    <!-- FIGURA 4.1 Panorama Widescreen -->
+    <div style="background: #0f172a; border: 1.5px solid #334155; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <div style="font-size: 11px; font-weight: 800; color: #ffffff; text-transform: uppercase;">
+          FIGURA 4.1 — Arranjo Completo de Impressão na Mesa PEI Bambu Lab A1 (256×256 mm)
+        </div>
+        <div style="background: #FF5E00; color: #ffffff; font-size: 8.5px; font-weight: 800; padding: 2px 8px; border-radius: 4px;">
+          2 PRATOS • DIVISÃO OTMIZADA
+        </div>
+      </div>
+      <div style="background: #1e242d; border: 1px solid #334155; border-radius: 6px; padding: 6px; display: flex; align-items: center; justify-content: center;">
+        <img src="pdf_assets/renders/mesa_bambu_knolled.png" style="width: 100%; height: 180px; object-fit: contain; border-radius: 4px;" alt="Mesa Bambu Knolled Widescreen">
+      </div>
+    </div>
+
+    <!-- 2 Column Breakdown -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+      <!-- Slicer Specs -->
+      <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 10px;">
+        <h4 style="font-size: 10.5px; font-weight: 800; color: #FF5E00; text-transform: uppercase; margin-bottom: 6px;">
+          Configurações Recomendadas no Bambu Studio
+        </h4>
+        <table style="width: 100%; font-size: 9px; border-collapse: collapse;">
+          <tr style="border-bottom: 1px solid #e2e8f0;">
+            <td style="padding: 3px 0; color: #64748b;">Diâmetro do Bico (Nozzle):</td>
+            <td style="padding: 3px 0; font-weight: 700; text-align: right;">0.40 mm Aço Temperado</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #e2e8f0;">
+            <td style="padding: 3px 0; color: #64748b;">Altura de Camada (Layer Height):</td>
+            <td style="padding: 3px 0; font-weight: 700; text-align: right;">0.16 mm (Garra) / 0.20 mm (Base)</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #e2e8f0;">
+            <td style="padding: 3px 0; color: #64748b;">Paredes Perimetrais (Wall Loops):</td>
+            <td style="padding: 3px 0; font-weight: 700; text-align: right;">4 paredes (Rigidez nos furos M3)</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #e2e8f0;">
+            <td style="padding: 3px 0; color: #64748b;">Densidade de Preenchimento (Infill):</td>
+            <td style="padding: 3px 0; font-weight: 700; text-align: right;">25% Gyroid (Isotrópico)</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #e2e8f0;">
+            <td style="padding: 3px 0; color: #64748b;">Tipo de Filamento Indicado:</td>
+            <td style="padding: 3px 0; font-weight: 700; text-align: right;">PLA Tough, PETG ou PLA Basic</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #e2e8f0;">
+            <td style="padding: 3px 0; color: #64748b;">Temperatura da Mesa (Bed):</td>
+            <td style="padding: 3px 0; font-weight: 700; text-align: right;">65°C (Textured PEI Plate)</td>
+          </tr>
+          <tr>
+            <td style="padding: 3px 0; color: #64748b;">Compensação de Furo (X-Y Hole):</td>
+            <td style="padding: 3px 0; font-weight: 700; text-align: right;">+0.05 mm (Folga suave para eixos M3)</td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- Plates Comparison Table -->
+      <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 10px;">
+        <h4 style="font-size: 10.5px; font-weight: 800; color: #FF5E00; text-transform: uppercase; margin-bottom: 6px;">
+          Divisão Operacional de Fabricação
+        </h4>
+        <div style="display: flex; flex-direction: column; gap: 8px; font-size: 9px;">
+          <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-left: 3px solid #22262C; border-radius: 6px; padding: 6px 8px;">
+            <div style="font-weight: 800; color: #0f172a; display: flex; justify-content: space-between;">
+              <span>PRATO 1: CHASSI, BASE & TORRES</span>
+              <span style="color: #0f172a;">9 PEÇAS (6 Pretas + 3 Azuis)</span>
+            </div>
+            <div style="color: #64748b; margin-top: 2px;">Pretas: 01, 09, 11, 17, 18, 25 • Azuis: 12 (Mesa), 14 (Espaçador), 16 (Berço).</div>
+            <div style="display: flex; gap: 12px; margin-top: 4px; font-weight: 700; color: #334155;">
+              <span>Massa: ~31.5 g</span>
+              <span>Tempo: ~58 min</span>
+              <span>Camada: 0.20 mm</span>
+            </div>
+          </div>
+
+          <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-left: 3px solid #0077D4; border-radius: 6px; padding: 6px 8px;">
+            <div style="font-weight: 800; color: #0f172a; display: flex; justify-content: space-between;">
+              <span>PRATO 2: BRAÇO, BIELAS & GARRA</span>
+              <span style="color: #0077D4;">19 PEÇAS (8 Pretas + 11 Azuis)</span>
+            </div>
+            <div style="color: #64748b; margin-top: 2px;">Pretas: 02, 03, 07, 10, 15, 21, 24, 27 • Azuis: 04, 05, 06, 08, 13, 19, 20, 22, 23, 26, 28.</div>
+            <div style="display: flex; gap: 12px; margin-top: 4px; font-weight: 700; color: #334155;">
+              <span>Massa: ~23.9 g</span>
+              <span>Tempo: ~47 min</span>
+              <span>Camada: 0.16 mm</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bambu A1 Calibration Notes -->
+    <div style="background: #fffbeb; border: 1px solid #fef3c7; border-left: 3px solid #f59e0b; border-radius: 6px; padding: 8px 12px; font-size: 8.5px; color: #92400e;">
+      <b>RECOMENDAÇÃO DE QUALIDADE BAMBU LAB A1:</b> Habilite a Calibração Dinâmica de Fluxo (Flow Dynamics Calibration / Pressure Advance) antes de iniciar o Prato 2. As tolerâncias finas das engrenagens da garra (peças 20, 21 e 26) dependem de uma extrusão uniforme sem sobre-extrusão nos cantos vivos.
+    </div>
+
+    <div class="page-footer">
+      <div>Projeto Braço Robótico 4-DOF • Edição Bambu Lab A1</div>
+      <div class="page-number">Página 11 de 16</div>
+    </div>
+  </div>
+
+  <!-- PÁGINA 12: GUIA DE MONTAGEM — ETAPA 1: CHASSI, BASE & EIXO YAW -->
+  <div class="page">
+    <div class="page-header">
+      <div class="brand">
+        <span class="tag">BAMBU A1</span>
+        <span>Braço Robótico 4-DOF • Manual de Montagem</span>
+      </div>
+      <div class="doc-id">DOC-BR-01 • ETAPA 01</div>
+    </div>
+
+    <div class="section-title">
+      <span class="num-badge">5</span>
+      Etapa 1: Chassi, Base & Mecanismo de Rotação (Eixo 1 - Yaw)
+    </div>
+    <div class="section-subtitle">
+      Montagem da fundação estrutural, berço de rotação e acoplamento da mesa giratória ao Servomotor 1.
+    </div>
+
+    <div style="display: grid; grid-template-columns: 140px 1fr; gap: 14px; margin-bottom: 12px; align-items: center;">
+      <div style="background: radial-gradient(circle, #f8fafc 0%, #e2e8f0 100%); border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 6px; height: 140px; display: flex; align-items: center; justify-content: center;">
+        <img src="pdf_assets/renders/braco_completo_com_componentes_base.png" style="max-width: 100%; max-height: 100%; object-fit: contain;" alt="Subconjunto 1 - Base e Espaçadores">
+      </div>
+      <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; font-size: 9px;">
+        <div style="font-weight: 800; color: #FF5E00; margin-bottom: 4px; text-transform: uppercase;">
+          Componentes & Hardware desta Etapa
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px;">
+          <div><b>Peças 3D:</b> 01 (Preto), 12 (Azul), 16 (Azul), 17 (Preto), 18 (Preto), 25 (Preto)</div>
+          <div><b>Servomotor:</b> 1x SG90 (Servo 1 - Yaw)</div>
+          <div><b>Espaçadores:</b> 4x Espaçadores Metálicos M3x24mm</div>
+          <div><b>Parafusos M3:</b> 4x M3x10mm, 4x M3x12mm</div>
+          <div><b>Porcas & Arruelas:</b> 8x Porcas M3 + 4x Arruelas Nylon M3</div>
+          <div><b>Pés:</b> 4x Sapatas Antivibração TPU 95A</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step by Step -->
+    <div class="step-box">
+      <div class="step-header">
+        <span class="step-badge">PASSO 1.1</span>
+        Inserção das Porcas Cativas M3 no Chassi e Travessas
+      </div>
+      <div class="step-text">
+        Insira 4 porcas sextavadas M3 nos alojamentos hexagonais na face inferior da peça <b>01_Base_Chassi_Inferior</b> e 2 porcas em cada extremidade das travessas <b>17_Travessa_Reforco_Base_Frontal</b> e <b>18_Travessa_Reforco_Base_Traseira</b>. Caso o encaixe esteja justo, utilize um parafuso M3 com arruela para puxar a porca até o fundo do nicho (técnica <i>nut-pull</i>).
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-header">
+        <span class="step-badge">PASSO 1.2</span>
+        Instalação dos 4 Espaçadores Metálicos da Base & Travessas
+      </div>
+      <div class="step-text">
+        Rosqueie os <b>4 espaçadores metálicos M3x24mm</b> nos 4 cantos da base chassi inferior (01) através da face inferior utilizando parafusos M3 com arruelas de aço. Esses 4 espaçadores elevam o conjunto do braço e mesa giratória garantindo vão de 24mm livre para alojamento do servomotor da base. Em seguida, fixe as travessas frontal (17) e traseira (18) utilizando 4 parafusos M3x12mm.
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-header">
+        <span class="step-badge">PASSO 1.3</span>
+        Instalação do Berço e Servomotor SG90 de Rotação (Servo 1)
+      </div>
+      <div class="step-text">
+        Encaixe o Servomotor SG90 no nicho retangular da peça <b>16_Berco_Servo_Rotacao_Base</b> com o eixo estriado voltado para CIMA. Passe o cabo de sinal pelo rasgo lateral para não sofrer prensamento. Aparafuse o berço (16) sobre a base (01) utilizando 4 parafusos M3x10mm.
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-header">
+        <span class="step-badge">PASSO 1.4</span>
+        Acoplamento do Horn na Mesa Giratória (Turntable)
+      </div>
+      <div class="step-text">
+        Pegue a cruzeta plástica de 4 pontas (horn) do kit SG90 e encaixe-a no relevo correspondente na face inferior da <b>12_Mesa_Giratoria_Turntable</b>. Sobreponha a peça <b>25_Trava_Horn_Servo_Base</b> e trave com 2 micro parafusos auto-atarraxantes 1.7×6mm. A trava 25 impede que a cruzeta deslize ou escape durante rotações rápidas.
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-header">
+        <span class="step-badge">PASSO 1.5</span>
+        Centralização de 90° e Travamento Axial do Eixo Yaw
+      </div>
+      <div class="step-text">
+        <b>ATENÇÃO CRÍTICA:</b> Antes de encaixar a mesa, conecte o Servo 1 ao testador ou Arduino e envie o pulso de neutro (90° / 1500 µs). Com o servo travado em 90°, encaixe a Mesa Giratória (12) perfeitamente alinhada para a frente. Insira o parafuso central M2×4mm pelo orifício superior da mesa e aperte até fixar no eixo estriado.
+      </div>
+    </div>
+
+    <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 6px 10px; font-size: 8.5px; color: #1e40af; margin-top: auto;">
+      <b>DICA DE AJUSTE:</b> Teste o giro manual da mesa giratória (com o servo desenergizado). O conjunto deve rotacionar suavemente 90° para a esquerda e 90° para a direita (180° de curso total) sem atrito excessivo com o chassi.
+    </div>
+
+    <div class="page-footer">
+      <div>Projeto Braço Robótico 4-DOF • Edição Bambu Lab A1</div>
+      <div class="page-number">Página 12 de 16</div>
+    </div>
+  </div>
+
+  <!-- PÁGINA 13: GUIA DE MONTAGEM — ETAPA 2: TORRES & SERVOS CENTRAIS -->
+  <div class="page">
+    <div class="page-header">
+      <div class="brand">
+        <span class="tag">BAMBU A1</span>
+        <span>Braço Robótico 4-DOF • Manual de Montagem</span>
+      </div>
+      <div class="doc-id">DOC-BR-01 • ETAPA 02</div>
+    </div>
+
+    <div class="section-title">
+      <span class="num-badge">6</span>
+      Etapa 2: Torres Centrais & Mecanismo de Elevação (Ombro / Cotovelo)
+    </div>
+    <div class="section-subtitle">
+      Instalação dos servomotores principais de sustentação e união estrutural rígida das torres.
+    </div>
+
+    <div style="display: grid; grid-template-columns: 140px 1fr; gap: 14px; margin-bottom: 12px; align-items: center;">
+      <div style="background: radial-gradient(circle, #f8fafc 0%, #e2e8f0 100%); border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 6px; height: 140px; display: flex; align-items: center; justify-content: center;">
+        <img src="pdf_assets/renders/subconjunto_2_torres.png" style="max-width: 100%; max-height: 100%; object-fit: contain;" alt="Subconjunto 2">
+      </div>
+      <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; font-size: 9px;">
+        <div style="font-weight: 800; color: #FF5E00; margin-bottom: 4px; text-transform: uppercase;">
+          Componentes & Hardware desta Etapa
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px;">
+          <div><b>Peças 3D:</b> 09 (Preto), 11 (Preto), 12 (Azul), 14 (Azul), 22 (Azul), 23 (Azul)</div>
+          <div><b>Servomotores:</b> 2x SG90 (Servos 2 e 3)</div>
+          <div><b>Parafusos M3:</b> 2x M3x30mm, 2x M3x10mm</div>
+          <div><b>Porcas:</b> 4x Auto-Travantes Nyloc M3</div>
+          <div><b>Parafusos do Servo:</b> 4x Parafusos de aba SG90</div>
+          <div><b>Chave:</b> Allen 2.5 mm + Chave de boca 5.5mm</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step by Step -->
+    <div class="step-box">
+      <div class="step-header">
+        <span class="step-badge">PASSO 2.1</span>
+        Instalação do Servo 2 (Elevação do Ombro) na Torre Direita
+      </div>
+      <div class="step-text">
+        Pegue a <b>09_Torre_Suporte_Servo_Direita</b>. Encaixe o segundo Servomotor SG90 pelo lado interno da torre, de modo que o eixo estriado de saída atravesse o nicho e fique exposto pelo lado externo direito. Aparafuse as abas de fixação do servo utilizando 2 parafusos ponta fina originais do kit.
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-header">
+        <span class="step-badge">PASSO 2.2</span>
+        Instalação do Servo 3 (Articulação do Cotovelo) na Torre Esquerda
+      </div>
+      <div class="step-text">
+        Pegue a <b>11_Torre_Suporte_Servo_Esquerda</b>. Encaixe o terceiro Servomotor SG90 pelo lado interno da torre, com o eixo estriado saindo para o lado externo esquerdo (configuração em espelho em relação à torre direita). Fixe as abas laterais do servo com 2 parafusos originais.
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-header">
+        <span class="step-badge">PASSO 2.3</span>
+        União Estrutural com o Espaçador Central e Parafusos M3x30mm
+      </div>
+      <div class="step-text">
+        Posicione a peça <b>14_Separador_Espacador_Central_Base</b> entre as duas torres. Roteie os cabos de ambos os servos por dentro do canal central do espaçador, direcionando-os para a saída inferior. Atravesse 2 parafusos longos M3x30mm pelos orifícios da torre direita (09), cruzando o espaçador (14) até a torre esquerda (11). Rosqueie 2 porcas Nyloc M3 e aperte com firmeza.
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-header">
+        <span class="step-badge">PASSO 2.4</span>
+        Fixação das Torres na Mesa Giratória (12)
+      </div>
+      <div class="step-text">
+        Encaixe as espigas inferiores das torres nos rasgos guias da <b>12_Mesa_Giratoria_Turntable</b>. Pela face inferior da mesa, passe 2 parafusos M3x10mm e trave com porcas sextavadas. A coluna de torres está agora solidária à mesa giratória.
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-header">
+        <span class="step-badge">PASSO 2.5</span>
+        Instalação das Bielas dos Servos (22 e 23)
+      </div>
+      <div class="step-text">
+        Com os servos 2 e 3 energizados em 90°, encaixe os braços de acionamento:
+        <br>• No Servo 2 (Direito): Horn apontando a 45° para trás, acoplado à <b>22_Biela_Conexao_Horn_Direito</b>.
+        <br>• No Servo 3 (Esquerdo): Horn apontando para cima a 90°, acoplado à <b>23_Biela_Conexao_Horn_Esquerdo</b>.
+      </div>
+    </div>
+
+    <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 6px 10px; font-size: 8.5px; color: #991b1b; margin-top: auto;">
+      <b>CUIDADO COM CABOS:</b> Certifique-se de que os cabos dos servos não fiquem prensados entre o espaçador 14 e as paredes das torres. Deixe uma leve folga para acomodar a rotação completa do eixo Yaw sem tracionar a fiação.
+    </div>
+
+    <div class="page-footer">
+      <div>Projeto Braço Robótico 4-DOF • Edição Bambu Lab A1</div>
+      <div class="page-number">Página 13 de 16</div>
+    </div>
+  </div>
+
+  <!-- PÁGINA 14: GUIA DE MONTAGEM — ETAPA 3: BRAÇO PRINCIPAL & PARALELOGRAMO -->
+  <div class="page">
+    <div class="page-header">
+      <div class="brand">
+        <span class="tag">BAMBU A1</span>
+        <span>Braço Robótico 4-DOF • Manual de Montagem</span>
+      </div>
+      <div class="doc-id">DOC-BR-01 • ETAPA 03</div>
+    </div>
+
+    <div class="section-title">
+      <span class="num-badge">7</span>
+      Etapa 3: Cinemática do Braço Principal & Paralelogramo Duplo
+    </div>
+    <div class="section-subtitle">
+      Montagem das hastes mestras, antebraço, balancim triangular e tirantes de paralelismo cinemático.
+    </div>
+
+    <div style="display: grid; grid-template-columns: 140px 1fr; gap: 14px; margin-bottom: 12px; align-items: center;">
+      <div style="background: radial-gradient(circle, #f8fafc 0%, #e2e8f0 100%); border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 6px; height: 140px; display: flex; align-items: center; justify-content: center;">
+        <img src="pdf_assets/renders/subconjunto_3_braco.png" style="max-width: 100%; max-height: 100%; object-fit: contain;" alt="Subconjunto 3">
+      </div>
+      <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; font-size: 9px;">
+        <div style="font-weight: 800; color: #FF5E00; margin-bottom: 4px; text-transform: uppercase;">
+          Componentes & Hardware desta Etapa
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px;">
+          <div><b>Peças 3D:</b> 02 (Preto), 03 (Preto), 04 (Azul), 05 (Azul), 06 (Azul), 07 (Preto), 08 (Azul), 10 (Preto), 13 (Azul)</div>
+          <div><b>Parafusos M3:</b> 4x M3x16mm, 6x M3x12mm</div>
+          <div><b>Porcas:</b> 10x Auto-Travantes Nyloc M3</div>
+          <div><b>Arruelas:</b> 14x Arruelas de Nylon M3 (0.5mm)</div>
+          <div><b>Mancais:</b> Furos calibrados com broca 3.0mm</div>
+          <div><b>Ajuste:</b> Aperto manual com folga livre</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step by Step -->
+    <div class="step-box">
+      <div class="step-header">
+        <span class="step-badge">PASSO 3.1</span>
+        Montagem do Braço Principal Direito (Mancal do Ombro)
+      </div>
+      <div class="step-text">
+        Posicione o <b>07_Braco_Principal_Direito</b> no mancal da torre direita (09). Insira 1 arruela de nylon M3 entre a torre e o braço para evitar atrito PLA-PLA. Passe um parafuso M3x16mm de fora para dentro e rosqueie uma porca auto-travante Nyloc M3. Conecte a <b>05_Haste_Acionamento_Servo_Braco</b> entre a biela do servo (22) e o furo excêntrico do braço 07 com parafuso M3x12mm e arruela de nylon.
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-header">
+        <span class="step-badge">PASSO 3.2</span>
+        Montagem do Braço Principal Esquerdo e Tirante Longo
+      </div>
+      <div class="step-text">
+        Articule o <b>02_Braco_Principal_Esquerdo</b> na torre esquerda (11) com parafuso M3x16mm e arruela de nylon. Em paralelo, monte a extremidade inferior do <b>03_Tirante_Paralelogramo_Longo</b> (103mm) na biela do servo esquerdo (23) usando parafuso M3x12mm e porca Nyloc.
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-header">
+        <span class="step-badge">PASSO 3.3</span>
+        Instalação do Balancim Triangular (10) — O Coração Cinemático
+      </div>
+      <div class="step-text">
+        O <b>10_Balancim_Triangular_Articulador</b> coordena o paralelismo. Ele possui 3 pontos de articulação:
+        <br>• Pivô 1 (Centro): Conecte ao furo superior do braço principal esquerdo (02) com parafuso M3x12mm.
+        <br>• Pivô 2 (Traseiro): Conecte à extremidade superior do tirante longo (03).
+        <br>• Pivô 3 (Superior): Conecte o <b>13_Tirante_Superior_Garra</b> e o <b>04_Tirante_Paralelogramo_Medio</b>.
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-header">
+        <span class="step-badge">PASSO 3.4</span>
+        Articulação do Cotovelo & União do Antebraço
+      </div>
+      <div class="step-text">
+        Una o <b>06_Antebraco_Esquerdo</b> e o <b>08_Antebraco_Direito</b> na articulação do cotovelo do braço principal. Utilize um parafuso M3x16mm, colocando arruelas de nylon entre cada elemento em movimento relativo. Conecte o tirante intermediário (04) na articulação central do antebraço.
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-header">
+        <span class="step-badge">PASSO 3.5</span>
+        Ajuste Fino de Torque nas Porcas Nyloc
+      </div>
+      <div class="step-text">
+        <b>REGRA DE OURO DAS PORCAS NYLOC:</b> Nunca aperte as porcas até prensar o plástico. Rosqueie até que o anel de nylon engate completamente na rosca do parafuso, garantindo zero folga axial, mas permitindo que as hastes girem livremente sob a gravidade quando desengatadas dos servos.
+      </div>
+    </div>
+
+    <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 6px 10px; font-size: 8.5px; color: #065f46; margin-top: auto;">
+      <b>TESTE DE PARALELISMO:</b> Segure o conjunto da base e eleve o braço principal manualmente. A haste terminal onde a garra será acoplada deve permanecer rigorosamente horizontal em qualquer altura do curso mecânico.
+    </div>
+
+    <div class="page-footer">
+      <div>Projeto Braço Robótico 4-DOF • Edição Bambu Lab A1</div>
+      <div class="page-number">Página 14 de 16</div>
+    </div>
+  </div>
+
+  <!-- PÁGINA 15: GUIA DE MONTAGEM — ETAPA 4: CABEÇOTE & GARRA ROBÓTICA -->
+  <div class="page">
+    <div class="page-header">
+      <div class="brand">
+        <span class="tag">BAMBU A1</span>
+        <span>Braço Robótico 4-DOF • Manual de Montagem</span>
+      </div>
+      <div class="doc-id">DOC-BR-01 • ETAPA 04</div>
+    </div>
+
+    <div class="section-title">
+      <span class="num-badge">8</span>
+      Etapa 4: Cabeçote Terminal & Mecanismo da Garra Robótica (Gripper)
+    </div>
+    <div class="section-subtitle">
+      Montagem da pinça mecânica, engrenagens sincronizadas e acoplamento do quarto servomotor.
+    </div>
+
+    <div style="display: grid; grid-template-columns: 140px 1fr; gap: 14px; margin-bottom: 12px; align-items: center;">
+      <div style="background: radial-gradient(circle, #f8fafc 0%, #e2e8f0 100%); border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 6px; height: 140px; display: flex; align-items: center; justify-content: center;">
+        <img src="pdf_assets/renders/subconjunto_4_garra.png" style="max-width: 100%; max-height: 100%; object-fit: contain;" alt="Subconjunto 4">
+      </div>
+      <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; font-size: 9px;">
+        <div style="font-weight: 800; color: #FF5E00; margin-bottom: 4px; text-transform: uppercase;">
+          Componentes & Hardware desta Etapa
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px;">
+          <div><b>Peças 3D:</b> 15 (Preto), 19 (Azul), 20 (Azul), 21 (Preto), 24 (Preto), 26 (Azul), 27 (Preto), 28 (Azul)</div>
+          <div><b>Servomotor:</b> 1x SG90 (Servo 4 - Garra)</div>
+          <div><b>Parafusos M3:</b> 4x M3x10mm, 2x M3x12mm, 2x M3x8mm</div>
+          <div><b>Porcas:</b> 6x Porcas Auto-Travantes Nyloc M3</div>
+          <div><b>Arruelas:</b> 6x Arruelas de Nylon M3</div>
+          <div><b>Lubrificante:</b> 1 gota de graxa de silicone</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step by Step -->
+    <div class="step-box">
+      <div class="step-header">
+        <span class="step-badge">PASSO 4.1</span>
+        Instalação do Servomotor no Suporte da Garra (Servo 4)
+      </div>
+      <div class="step-text">
+        Encaixe o quarto Servomotor SG90 no <b>24_Suporte_Encaixe_Servo_Garra</b> (Preto). Fixe as abas do motor com os micro parafusos originais. Una o suporte 24 à peça <b>19_Garra_Base_Suporte_Fixo</b> (Azul) utilizando 2 parafusos M3x10mm e porcas Nyloc. O eixo estriado do servo deve apontar para frente.
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-header">
+        <span class="step-badge">PASSO 4.2</span>
+        Calibração do Servo em 0° (Posição Fechada) e Alavanca Acionadora (26)
+      </div>
+      <div class="step-text">
+        Conecte o Servo 4 ao Arduino e envie o pulso de 0° (1000 µs), que representa a garra 100% FECHADA. Com o servo calibrado em 0°, encaixe a alavanca <b>26_Engrenagem_Acionadora_Garra</b> (Azul) no horn do servomotor e aperte o micro parafuso central M2×4mm. O rasgo oblongo permite o curso suave do pino de acionamento.
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-header">
+        <span class="step-badge">PASSO 4.3</span>
+        Sincronismo dos Dedos Móveis (Engrenamento Simétrico Preto & Azul)
+      </div>
+      <div class="step-text">
+        <b>PASSO CRÍTICO:</b> Posicione o <b>20_Garra_Dedo_Movel_Direito</b> (Azul) e o <b>21_Garra_Dedo_Movel_Esquerdo</b> (Preto) de modo que as duas pontas da pinça fiquem em contato direto (fechadas). Engrene os setores dentados de ambos os dedos — a alternância entre o dente preto e o dente azul permite confirmar visualmente o alinhamento de cada dente.
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-header">
+        <span class="step-badge">PASSO 4.4</span>
+        Fixação dos Eixos dos Dedos e Aplicação de Lubrificante
+      </div>
+      <div class="step-text">
+        Passe 2 parafusos M3x12mm com arruelas de nylon pelos pivôs dos dedos móveis na base da garra (19). Rosqueie porcas Nyloc M3 na face oposta até eliminar folga de balanço sem prender os dentes. Aplique uma leve gota de graxa de silicone ou vaselina nos dentes das engrenagens plásticas.
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-header">
+        <span class="step-badge">PASSO 4.5</span>
+        Instalação da Guia de Contenção e Biela Curta (27 e 28)
+      </div>
+      <div class="step-text">
+        Instale a <b>27_Guia_Articulacao_Garra</b> e a <b>28_Biela_Articulacao_Curta</b> sobre os dedos usando 2 parafusos M3x8mm. A guia 27 impede que os dentes das engrenagens sofram desengrazamento quando a pinça apertar objetos com força máxima.
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-header">
+        <span class="step-badge">PASSO 4.6</span>
+        Acoplamento Final da Garra ao Antebraço do Robô
+      </div>
+      <div class="step-text">
+        Una a base da garra montada à peça <b>15_Suporte_Cabeca_Garra</b> com 2 parafusos M3x10mm. Por fim, conecte o cabeçote (15) às extremidades do antebraço (06 e 08) e ao tirante superior (13) com 2 parafusos M3x12mm e porcas Nyloc.
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <div>Projeto Braço Robótico 4-DOF • Edição Bambu Lab A1</div>
+      <div class="page-number">Página 15 de 16</div>
+    </div>
+  </div>
+
+  <!-- PÁGINA 16: CALIBRAÇÃO, ELETRÔNICA, CÓDIGO ARDUINO & CHECKLIST -->
+  <div class="page">
+    <div class="page-header">
+      <div class="brand">
+        <span class="tag">BAMBU A1</span>
+        <span>Braço Robótico 4-DOF • Comissionamento</span>
+      </div>
+      <div class="doc-id">DOC-BR-01 • SEÇÃO 06</div>
+    </div>
+
+    <div class="section-title">
+      <span class="num-badge">9</span>
+      Calibração dos Servos, Esquema Elétrico & Código de Teste
+    </div>
+    <div class="section-subtitle">
+      Pinagem oficial no Arduino Uno com Sensor Shield v5, código C++ de controle e checklist final de validação.
+    </div>
+
+    <!-- Pinout Table -->
+    <div style="margin-bottom: 10px;">
+      <h4 style="font-size: 10.5px; font-weight: 800; color: #FF5E00; text-transform: uppercase; margin-bottom: 4px;">
+        Pinagem Oficial das Conexões (Arduino Uno + Sensor Shield v5)
+      </h4>
+      <table class="data-table" style="font-size: 8.5px;">
+        <thead>
+          <tr>
+            <th>Atuador / Sensor</th>
+            <th>Pino Arduino</th>
+            <th>Alimentação (VCC / GND)</th>
+            <th>Posição Inicial de Neutro (90°)</th>
+            <th>Faixa Operacional</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>Servo 1: Giro Base (Yaw)</b></td>
+            <td><b>Pino Digital D9 (PWM)</b></td>
+            <td>Barramento Externo 5V Shield</td>
+            <td>90° (Apontando reto para frente)</td>
+            <td>0° a 180°</td>
+          </tr>
+          <tr>
+            <td><b>Servo 2: Ombro (Shoulder)</b></td>
+            <td><b>Pino Digital D10 (PWM)</b></td>
+            <td>Barramento Externo 5V Shield</td>
+            <td>90° (Braço mestre a 45° elevação)</td>
+            <td>30° a 150°</td>
+          </tr>
+          <tr>
+            <td><b>Servo 3: Cotovelo (Elbow)</b></td>
+            <td><b>Pino Digital D11 (PWM)</b></td>
+            <td>Barramento Externo 5V Shield</td>
+            <td>90° (Antebraço nivelado no horizonte)</td>
+            <td>20° a 160°</td>
+          </tr>
+          <tr>
+            <td><b>Servo 4: Garra (Claw)</b></td>
+            <td><b>Pino Digital D6 (PWM)</b></td>
+            <td>Barramento Externo 5V Shield</td>
+            <td>0° (Pinça completamente fechada)</td>
+            <td>0° a 90° (Abertura 50mm)</td>
+          </tr>
+          <tr>
+            <td><b>Joystick 1 (Base e Ombro)</b></td>
+            <td><b>Pinos A0 (X) e A1 (Y)</b></td>
+            <td>5V e GND do Arduino Uno</td>
+            <td>Leitura central analógica ~512</td>
+            <td>0 a 1023</td>
+          </tr>
+          <tr>
+            <td><b>Joystick 2 (Cotovelo e Garra)</b></td>
+            <td><b>Pinos A2 (X) e A3 (Y)</b></td>
+            <td>5V e GND do Arduino Uno</td>
+            <td>Leitura central analógica ~512</td>
+            <td>0 a 1023</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Arduino Source Code Snippet -->
+    <div style="margin-bottom: 10px;">
+      <h4 style="font-size: 10.5px; font-weight: 800; color: #0f172a; text-transform: uppercase; margin-bottom: 4px;">
+        Código-Fonte Arduino C++ (Sketch de Centralização e Teste com Suavização)
+      </h4>
+      <div style="background: #0f172a; color: #f8fafc; font-family: 'JetBrains Mono', monospace; font-size: 7.5px; padding: 8px 10px; border-radius: 6px; line-height: 1.35; overflow: hidden;">
+        <span style="color: #64748b;">// Braço Robótico 4-DOF • Sketch de Teste & Calibração (Bambu Lab A1 Edition)</span><br>
+        #include &lt;Servo.h&gt;<br>
+        Servo sBase, sOmbro, sCotovelo, sGarra;<br>
+        float angBase = 90, angOmbro = 90, angCotovelo = 90, angGarra = 0;<br>
+        void setup() {<br>
+        &nbsp;&nbsp;sBase.attach(9); sOmbro.attach(10); sCotovelo.attach(11); sGarra.attach(6);<br>
+        &nbsp;&nbsp;sBase.write(90); sOmbro.write(90); sCotovelo.write(90); sGarra.write(0); <span style="color: #64748b;">// Posição de repouso segura</span><br>
+        &nbsp;&nbsp;Serial.begin(115200);<br>
+        }<br>
+        void loop() {<br>
+        &nbsp;&nbsp;int joy1X = analogRead(A0); int joy1Y = analogRead(A1);<br>
+        &nbsp;&nbsp;int joy2X = analogRead(A2); int joy2Y = analogRead(A3);<br>
+        &nbsp;&nbsp;<span style="color: #64748b;">// Filtro de zona morta (deadzone) e incremento com rampa suave</span><br>
+        &nbsp;&nbsp;if (abs(joy1X - 512) > 60) angBase += (joy1X - 512) * 0.003;<br>
+        &nbsp;&nbsp;if (abs(joy1Y - 512) > 60) angOmbro += (joy1Y - 512) * 0.003;<br>
+        &nbsp;&nbsp;if (abs(joy2Y - 512) > 60) angCotovelo += (joy2Y - 512) * 0.003;<br>
+        &nbsp;&nbsp;if (abs(joy2X - 512) > 60) angGarra += (joy2X - 512) * 0.004;<br>
+        &nbsp;&nbsp;<span style="color: #64748b;">// Limites de segurança mecânica</span><br>
+        &nbsp;&nbsp;angBase = constrain(angBase, 5, 175); angOmbro = constrain(angOmbro, 35, 145);<br>
+        &nbsp;&nbsp;angCotovelo = constrain(angCotovelo, 25, 155); angGarra = constrain(angGarra, 0, 85);<br>
+        &nbsp;&nbsp;sBase.write((int)angBase); sOmbro.write((int)angOmbro);<br>
+        &nbsp;&nbsp;sCotovelo.write((int)angCotovelo); sGarra.write((int)angGarra);<br>
+        &nbsp;&nbsp;delay(15); <span style="color: #64748b;">// Frequência de atualização estável (~66 Hz)</span><br>
+        }
+      </div>
+    </div>
+
+    <!-- Commissioning Checklist -->
+    <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 8px 12px; margin-bottom: 8px;">
+      <h4 style="font-size: 10px; font-weight: 800; color: #0f172a; text-transform: uppercase; margin-bottom: 4px;">
+        Checklist de Validação & Comissionamento Mecânico
+      </h4>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; font-size: 8px; color: #334155;">
+        <div>☑ <b>Giro Livre:</b> Articulações giram sem emperramento mecânico.</div>
+        <div>☑ <b>Jumper Shield:</b> Jumper PWR/VCC removido para isolar a fonte 5V.</div>
+        <div>☑ <b>Arruelas de Nylon:</b> Todas as 14 juntas contêm arruelas de baixo atrito.</div>
+        <div>☑ <b>Fonte Externa:</b> Alimentação 5V 3A conectada no borne azul do shield.</div>
+        <div>☑ <b>Porcas Nyloc:</b> Nenhuma porca excessivamente apertada.</div>
+        <div>☑ <b>Organização de Cabos:</b> Fios agrupados com abraçadeiras sem puxar.</div>
+        <div>☑ <b>Sincronismo da Garra:</b> Dedos fecham perfeitamente no centro.</div>
+        <div>☑ <b>Fixação na Bancada:</b> Pés em TPU ou parafusos instalados no chassi.</div>
+      </div>
+    </div>
+
+    <div style="background: #fffbeb; border: 1px solid #fef3c7; border-left: 3px solid #f59e0b; border-radius: 4px; padding: 5px 10px; font-size: 8px; color: #92400e;">
+      <b>AVISO FINAL DE OPERAÇÃO:</b> Nunca force as articulações com a mão enquanto os servomotores estiverem energizados. O esforço reverso danifica imediatamente os dentes de engrenagem internos dos micro servos SG90.
+    </div>
+
+    <div class="page-footer">
+      <div>Projeto Braço Robótico 4-DOF • Edição Bambu Lab A1</div>
+      <div class="page-number">Página 16 de 16</div>
+    </div>
+  </div>
+
+</body>
+</html>

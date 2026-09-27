@@ -1,0 +1,363 @@
+{
+  "total_parts": 38,
+  "components": [
+    {
+      "id": "printed_01_Base_Chassi_Inferior",
+      "name": "01 Base Chassi Inferior",
+      "category": "Peças Impressas PLA (Bambu Lab A1)",
+      "color": "#22262C",
+      "desc": "Placa base estrutural de apoio na bancada com furações para pés de TPU e parafusos de fixação M3.",
+      "plate": 1,
+      "material": "PLA Basic Technical (Preto)"
+    },
+    {
+      "id": "printed_02_Braco_Principal_Esquerdo",
+      "name": "02 Braco Principal Esquerdo",
+      "category": "Peças Impressas PLA (Bambu Lab A1)",
+      "color": "#22262C",
+      "desc": "Haste longa principal esquerda com nervura de reforço e furações usinadas para mancais M3.",
+      "plate": 2,
+      "material": "PLA Basic Technical (Preto)"
+    },
+    {
+      "id": "printed_03_Tirante_Paralelogramo_Longo",
+      "name": "03 Tirante Paralelogramo Longo",
+      "category": "Peças Impressas PLA (Bambu Lab A1)",
+      "color": "#22262C",
+      "desc": "Tirante longo da cinemática paralela (103mm) que mantém o plano angular do antebraço.",
+      "plate": 2,
+      "material": "PLA Basic Technical (Preto)"
+    },
+    {
+      "id": "printed_04_Tirante_Paralelogramo_Medio",
+      "name": "04 Tirante Paralelogramo Medio",
+      "category": "Peças Impressas PLA (Bambu Lab A1)",
+      "color": "#0077D4",
+      "desc": "Tirante secundário intermediário da articulação do cotovelo.",
+      "plate": 2,
+      "material": "PLA Basic Technical (Azul)"
+    },
+    {
+      "id": "printed_05_Haste_Acionamento_Servo_Braco",
+      "name": "05 Haste Acionamento Servo Braco",
+      "category": "Peças Impressas PLA (Bambu Lab A1)",
+      "color": "#0077D4",
+      "desc": "Biela de transmissão direta entre o braço do servo direito e a elevação principal.",
+      "plate": 2,
+      "material": "PLA Basic Technical (Azul)"
+    },
+    {
+      "id": "printed_06_Antebraco_Esquerdo",
+      "name": "06 Antebraco Esquerdo",
+      "category": "Peças Impressas PLA (Bambu Lab A1)",
+      "color": "#0077D4",
+      "desc": "Haste lateral esquerda do antebraço com encaixe para mancal pivotante.",
+      "plate": 2,
+      "material": "PLA Basic Technical (Azul)"
+    },
+    {
+      "id": "printed_07_Braco_Principal_Direito",
+      "name": "07 Braco Principal Direito",
+      "category": "Peças Impressas PLA (Bambu Lab A1)",
+      "color": "#22262C",
+      "desc": "Braço triangular estrutural direito com suporte para o servomotor de cotovelo.",
+      "plate": 2,
+      "material": "PLA Basic Technical (Preto)"
+    },
+    {
+      "id": "printed_08_Antebraco_Direito",
+      "name": "08 Antebraco Direito",
+      "category": "Peças Impressas PLA (Bambu Lab A1)",
+      "color": "#0077D4",
+      "desc": "Braço triangular do antebraço direito que ancora o cabeçote da garra.",
+      "plate": 2,
+      "material": "PLA Basic Technical (Azul)"
+    },
+    {
+      "id": "printed_09_Torre_Suporte_Servo_Direita",
+      "name": "09 Torre Suporte Servo Direita",
+      "category": "Peças Impressas PLA (Bambu Lab A1)",
+      "color": "#22262C",
+      "desc": "Flange vertical da base com berço dedicado para fixação do servo de elevação direito.",
+      "plate": 1,
+      "material": "PLA Basic Technical (Preto)"
+    },
+    {
+      "id": "printed_10_Balancim_Triangular_Articulador",
+      "name": "10 Balancim Triangular Articulador",
+      "category": "Peças Impressas PLA (Bambu Lab A1)",
+      "color": "#22262C",
+      "desc": "Balancim triangular intermediário que coordena os dois paralelogramos do braço.",
+      "plate": 2,
+      "material": "PLA Basic Technical (Preto)"
+    },
+    {
+      "id": "printed_11_Torre_Suporte_Servo_Esquerda",
+      "name": "11 Torre Suporte Servo Esquerda",
+      "category": "Peças Impressas PLA (Bambu Lab A1)",
+      "color": "#22262C",
+      "desc": "Flange vertical da base com berço dedicado para o servo de elevação esquerdo.",
+      "plate": 1,
+      "material": "PLA Basic Technical (Preto)"
+    },
+    {
+      "id": "printed_12_Mesa_Giratoria_Turntable",
+      "name": "12 Mesa Giratoria Turntable",
+      "category": "Peças Impressas PLA (Bambu Lab A1)",
+      "color": "#0077D4",
+      "desc": "Disco giratório da base com flange de apoio para alívio de carga axial no servo yaw.",
+      "plate": 1,
+      "material": "PLA Basic Technical (Azul)"
+    },
+    {
+      "id": "printed_13_Tirante_Superior_Garra",
+      "name": "13 Tirante Superior Garra",
+      "category": "Peças Impressas PLA (Bambu Lab A1)",
+      "color": "#0077D4",
+      "desc": "Haste de paralelismo superior responsável por manter a garra sempre na horizontal.",
+      "plate": 2,
+      "material": "PLA Basic Technical (Azul)"
+    },
+    {
+      "id": "printed_14_Separador_Espacador_Central_Base",
+      "name": "14 Separador Espacador Central Base",
+      "category": "Peças Impressas PLA (Bambu Lab A1)",
+      "color": "#0077D4",
+      "desc": "Parede estrutural de rigidez central da base giratória que une as torres laterais.",
+      "plate": 1,
+      "material": "PLA Basic Technical (Azul)"
+    },
+    {
+      "id": "printed_15_Suporte_Cabeca_Garra",
+      "name": "15 Suporte Cabeca Garra",
+      "category": "Peças Impressas PLA (Bambu Lab A1)",
+      "color": "#22262C",
+      "desc": "Placa frontal adaptadora que ancora o conjunto da pinça e mandíbulas.",
+      "plate": 2,
+      "material": "PLA Basic Technical (Preto)"
+    },
+    {
+      "id": "printed_16_Berco_Servo_Rotacao_Base",
+      "name": "16 Berco Servo Rotacao Base",
+      "category": "Peças Impressas PLA (Bambu Lab A1)",
+      "color": "#0077D4",
+      "desc": "Berço de travamento do servomotor SG90 da base de giro yaw.",
+      "plate": 1,
+      "material": "PLA Basic Technical (Azul)"
+    },
+    {
+      "id": "printed_17_Travessa_Reforco_Base_Frontal",
+      "name": "17 Travessa Reforco Base Frontal",
+      "category": "Peças Impressas PLA (Bambu Lab A1)",
+      "color": "#22262C",
+      "desc": "Pilar de reforço frontal da base inferior com encaixes de alta precisão.",
+      "plate": 1,
+      "material": "PLA Basic Technical (Preto)"
+    },
+    {
+      "id": "printed_18_Travessa_Reforco_Base_Traseira",
+      "name": "18 Travessa Reforco Base Traseira",
+      "category": "Peças Impressas PLA (Bambu Lab A1)",
+      "color": "#22262C",
+      "desc": "Pilar de reforço traseiro da base inferior com travas anti-torção.",
+      "plate": 1,
+      "material": "PLA Basic Technical (Preto)"
+    },
+    {
+      "id": "printed_19_Garra_Base_Suporte_Fixo",
+      "name": "19 Garra Base Suporte Fixo",
+      "category": "Peças Impressas PLA (Bambu Lab A1)",
+      "color": "#0077D4",
+      "desc": "Estrutura base da garra com trilhos guias para as mandíbulas móveis.",
+      "plate": 2,
+      "material": "PLA Basic Technical (Azul)"
+    },
+    {
+      "id": "printed_20_Garra_Dedo_Movel_Direito",
+      "name": "20 Garra Dedo Movel Direito",
+      "category": "Peças Impressas PLA (Bambu Lab A1)",
+      "color": "#0077D4",
+      "desc": "Mandíbula móvel direita com engrenagem envolvente e dentes de agarre reforçados.",
+      "plate": 2,
+      "material": "PLA Basic Technical (Azul)"
+    },
+    {
+      "id": "printed_21_Garra_Dedo_Movel_Esquerdo",
+      "name": "21 Garra Dedo Movel Esquerdo",
+      "category": "Peças Impressas PLA (Bambu Lab A1)",
+      "color": "#22262C",
+      "desc": "Mandíbula móvel esquerda com engrenagem sincronizada e perfil antiderrapante.",
+      "plate": 2,
+      "material": "PLA Basic Technical (Preto)"
+    },
+    {
+      "id": "printed_22_Biela_Conexao_Horn_Direito",
+      "name": "22 Biela Conexao Horn Direito",
+      "category": "Peças Impressas PLA (Bambu Lab A1)",
+      "color": "#0077D4",
+      "desc": "Braço de ligação rígido entre a cruzeta do servo e o braço direito.",
+      "plate": 2,
+      "material": "PLA Basic Technical (Azul)"
+    },
+    {
+      "id": "printed_23_Biela_Conexao_Horn_Esquerdo",
+      "name": "23 Biela Conexao Horn Esquerdo",
+      "category": "Peças Impressas PLA (Bambu Lab A1)",
+      "color": "#0077D4",
+      "desc": "Braço de ligação rígido entre a cruzeta do servo e o braço esquerdo.",
+      "plate": 2,
+      "material": "PLA Basic Technical (Azul)"
+    },
+    {
+      "id": "printed_24_Suporte_Encaixe_Servo_Garra",
+      "name": "24 Suporte Encaixe Servo Garra",
+      "category": "Peças Impressas PLA (Bambu Lab A1)",
+      "color": "#22262C",
+      "desc": "Berço compacto para encaixe firme do micro-servo atuador da pinça.",
+      "plate": 2,
+      "material": "PLA Basic Technical (Preto)"
+    },
+    {
+      "id": "printed_25_Trava_Horn_Servo_Base",
+      "name": "25 Trava Horn Servo Base",
+      "category": "Peças Impressas PLA (Bambu Lab A1)",
+      "color": "#22262C",
+      "desc": "Disco de trava do horn/cruzeta do servo yaw na base giratória.",
+      "plate": 1,
+      "material": "PLA Basic Technical (Preto)"
+    },
+    {
+      "id": "printed_26_Engrenagem_Acionadora_Garra",
+      "name": "26 Engrenagem Acionadora Garra",
+      "category": "Peças Impressas PLA (Bambu Lab A1)",
+      "color": "#0077D4",
+      "desc": "Engrenagem primária de dentes involutos acoplada ao eixo do servo da garra.",
+      "plate": 2,
+      "material": "PLA Basic Technical (Azul)"
+    },
+    {
+      "id": "printed_27_Guia_Articulacao_Garra",
+      "name": "27 Guia Articulacao Garra",
+      "category": "Peças Impressas PLA (Bambu Lab A1)",
+      "color": "#22262C",
+      "desc": "Pino e guia de alinhamento axial para rotação suave da mandíbula.",
+      "plate": 2,
+      "material": "PLA Basic Technical (Preto)"
+    },
+    {
+      "id": "printed_28_Biela_Articulacao_Curta",
+      "name": "28 Biela Articulacao Curta",
+      "category": "Peças Impressas PLA (Bambu Lab A1)",
+      "color": "#0077D4",
+      "desc": "Biela curta de compensação angular do mecanismo de acionamento.",
+      "plate": 2,
+      "material": "PLA Basic Technical (Azul)"
+    },
+    {
+      "id": "espacadores_base_m3",
+      "name": "Espaçadores Metálicos de Sustentação da Base M3x24mm (4 un)",
+      "category": "Fixadores & Hardware M3",
+      "color": "#B4B9BE",
+      "material": "Aço Inox / Latão Niquelado Sextavado M3x24mm",
+      "desc": "Colunas metálicas de sustentação que unem firmemente a base chassi inferior ao conjunto giratório do braço, eliminando qualquer folga e acomodando o servomotor da base."
+    },
+    {
+      "id": "servo_01_base",
+      "name": "Servomotor 1: Rotação da Base (Yaw 180°)",
+      "category": "Servomotores SG90",
+      "color": "#1873E6",
+      "material": "Micro Servo SG90 / MG90S 9g",
+      "desc": "Acionamento do giro da base em 180°, alojado com segurança entre os 4 espaçadores estruturais da base.",
+      "pin": "D8 (PWM)"
+    },
+    {
+      "id": "servo_02_ombro",
+      "name": "Servomotor 2: Ombro / Braço Principal (Pitch 1)",
+      "category": "Servomotores SG90",
+      "color": "#1873E6",
+      "material": "Micro Servo SG90 / MG90S 9g",
+      "desc": "Elevação do braço principal, conectado à biela esquerda e torre estrutural.",
+      "pin": "D9 (PWM)"
+    },
+    {
+      "id": "servo_03_cotovelo",
+      "name": "Servomotor 3: Cotovelo / Antebraço (Pitch 2)",
+      "category": "Servomotores SG90",
+      "color": "#1873E6",
+      "material": "Micro Servo SG90 / MG90S 9g",
+      "desc": "Articulação do antebraço via balancim triangular e hastes de acionamento.",
+      "pin": "D10 (PWM)"
+    },
+    {
+      "id": "servo_04_garra",
+      "name": "Servomotor 4: Atuador da Garra (End-Effector)",
+      "category": "Servomotores SG90",
+      "color": "#1873E6",
+      "material": "Micro Servo SG90 / MG90S 9g",
+      "desc": "Abertura e fechamento sincronizado dos dedos móveis através de engrenagem acionadora.",
+      "pin": "D11 (PWM)"
+    },
+    {
+      "id": "fixadores_m3",
+      "name": "Conjunto de Fixadores M3 Inox (Parafusos Allen + Porcas Nyloc + Arruelas)",
+      "category": "Fixadores & Hardware M3",
+      "color": "#B4B9BE",
+      "material": "Aço Inoxidável A2 (DIN 912 / ISO 7380 / DIN 985)",
+      "desc": "Parafusos Allen M3 com porcas autotravantes Nyloc e arruelas inox em todas as articulações mecânicas."
+    },
+    {
+      "id": "espacadores_nylon_m3",
+      "name": "Arruelas de Nylon M3 (0.5 mm) — 16 un",
+      "category": "Fixadores & Hardware M3",
+      "color": "#F0F5FA",
+      "material": "Poliamida (Nylon) — Øext 7mm, espessura 0.5mm",
+      "desc": "Arruelas isoladoras de atrito plástico-contra-plástico em todas as juntas móveis pivotantes."
+    },
+    {
+      "id": "eletronica_arduino_shield",
+      "name": "Arduino Uno R3 + Sensor Shield v5.0",
+      "category": "Controle & Eletrônica",
+      "color": "#008791",
+      "material": "PCB / Microcontrolador ATmega328P 16MHz",
+      "desc": "Placa controladora com shield de expansão para servos montada na parte frontal do chassi inferior.",
+      "pin": "Alimentação 5V 3A Externa"
+    },
+    {
+      "id": "pes_tpu",
+      "name": "Pés de Apoio Antivibração TPU 95A (4 un)",
+      "category": "Isolamento & Acessórios",
+      "color": "#1E1E22",
+      "material": "Filamento TPU 95A Flexível",
+      "desc": "Sapatas amortecedoras que eliminam escorregamentos e vibrações na bancada de trabalho."
+    },
+    {
+      "id": "cabos_ribbon",
+      "name": "Chicote Elétrico dos Servomotores (4 Cabos Ribbon Flat 3-Vias)",
+      "category": "Fiação & Chicote Elétrico",
+      "color": "#E53935",
+      "material": "Cabo Flat 3-Vias (Marrom GND, Vermelho 5V, Laranja PWM)",
+      "desc": "Fiação organizada conectando cada atuador diretamente aos conectores dedicados do Sensor Shield v5.0."
+    }
+  ],
+  "statistics": {
+    "total_triangles": 28565,
+    "total_vertices": 14492,
+    "dimensions_mm": {
+      "width_x": 101.36,
+      "depth_y": 218.1999969482422,
+      "height_z": 190.86000061035156
+    },
+    "bounds": {
+      "min": [
+        -50.65,
+        9.0,
+        0.0
+      ],
+      "max": [
+        50.71,
+        227.1999969482422,
+        190.86000061035156
+      ]
+    }
+  }
+}
