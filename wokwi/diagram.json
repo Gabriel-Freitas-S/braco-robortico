@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "author": "Projeto braço robótico 4-DOF",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "wokwi-arduino-uno", "id": "uno", "top": 100, "left": 20, "attrs": {} },
+    { "type": "wokwi-analog-joystick", "id": "joy1", "top": 20, "left": 390, "attrs": {} },
+    { "type": "wokwi-analog-joystick", "id": "joy2", "top": 190, "left": 390, "attrs": {} },
+    { "type": "wokwi-servo", "id": "servo_base", "top": 20, "left": 700, "attrs": {} },
+    { "type": "wokwi-servo", "id": "servo_ombro", "top": 110, "left": 700, "attrs": {} },
+    { "type": "wokwi-servo", "id": "servo_cotovelo", "top": 200, "left": 700, "attrs": {} },
+    { "type": "wokwi-servo", "id": "servo_garra", "top": 290, "left": 700, "attrs": {} }
+  ],
+  "connections": [
+    [ "joy1:VCC", "uno:5V", "red", [] ],
+    [ "joy1:GND", "uno:GND.1", "black", [] ],
+    [ "joy1:HORZ", "uno:A0", "blue", [] ],
+    [ "joy1:VERT", "uno:A1", "green", [] ],
+    [ "joy2:VCC", "uno:5V", "red", [] ],
+    [ "joy2:GND", "uno:GND.1", "black", [] ],
+    [ "joy2:HORZ", "uno:A2", "blue", [] ],
+    [ "joy2:VERT", "uno:A3", "green", [] ],
+    [ "servo_base:PWM", "uno:9", "orange", [] ],
+    [ "servo_base:V+", "uno:5V", "red", [] ],
+    [ "servo_base:GND", "uno:GND.2", "black", [] ],
+    [ "servo_ombro:PWM", "uno:10", "orange", [] ],
+    [ "servo_ombro:V+", "uno:5V", "red", [] ],
+    [ "servo_ombro:GND", "uno:GND.2", "black", [] ],
+    [ "servo_cotovelo:PWM", "uno:11", "orange", [] ],
+    [ "servo_cotovelo:V+", "uno:5V", "red", [] ],
+    [ "servo_cotovelo:GND", "uno:GND.2", "black", [] ],
+    [ "servo_garra:PWM", "uno:6", "orange", [] ],
+    [ "servo_garra:V+", "uno:5V", "red", [] ],
+    [ "servo_garra:GND", "uno:GND.2", "black", [] ]
+  ],
+  "dependencies": {}
+}

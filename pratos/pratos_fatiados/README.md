@@ -25,8 +25,8 @@ Fatiados com Bambu Studio 02.08.02.61 · `0.20mm Standard @BBL A1` · PLA · 0.4
 | 18 | Travessa_Reforco_Base_Traseira | Preto (Bambu PLA Basic) |
 | 25 | Trava_Horn_Servo_Base | Preto (Bambu PLA Basic) |
 
-- ⏱️ **Tempo de Impressão:** ~2h 23min (8.607 s, incl. sequência de início, calibração de vibração e nivelamento)
-- 🧵 **Filamento Utilizado:** 82.8 g Bambu PLA Basic Preto (#22262C)
+- ⏱️ **Tempo de Impressão:** ~2h 00min (7.175 s, incl. sequência de início, calibração de vibração e nivelamento)
+- 🧵 **Filamento Utilizado:** 58.8 g Bambu PLA Basic Preto (#22262C)
 - 📐 **Altura de Camada:** 0.20 mm Standard
 
 ---
@@ -57,8 +57,8 @@ Fatiados com Bambu Studio 02.08.02.61 · `0.20mm Standard @BBL A1` · PLA · 0.4
 | 27 | Guia_Articulacao_Garra | Preto (Bambu PLA Basic) |
 | 28 | Biela_Articulacao_Curta | Preto (Bambu PLA Basic) |
 
-- ⏱️ **Tempo de Impressão:** ~1h 38min (5.883 s, incl. sequência de início)
-- 🧵 **Filamento Utilizado:** 32.6 g Bambu PLA Basic Preto (#22262C)
+- ⏱️ **Tempo de Impressão:** ~1h 39min (5.943 s, incl. sequência de início)
+- 🧵 **Filamento Utilizado:** 32.8 g Bambu PLA Basic Preto (#22262C)
 - 📐 **Altura de Camada:** 0.20 mm Standard
 
 ---
@@ -67,9 +67,9 @@ Fatiados com Bambu Studio 02.08.02.61 · `0.20mm Standard @BBL A1` · PLA · 0.4
 
 | Prato | Peças | Tempo Estimado | Filamento (PLA Preto) | Status |
 |-------|-------|----------------|-----------------------|--------|
-| **Prato 1 (Chassi/Base)** | 9 peças | 2h 23min | 82.8 g | ✅ Pronto para Envio |
-| **Prato 2 (Braço/Garra)** | 19 peças | 1h 38min | 32.6 g | ✅ Pronto para Envio |
-| **TOTAL CONJUNTO** | **28 peças** | **~4h 01min** | **~115.3 g PLA Preto** | **1 Carretel de 1kg é suficiente** |
+| **Prato 1 (Chassi/Base)** | 9 peças | 2h 00min | 58.8 g | ✅ Pronto para Envio |
+| **Prato 2 (Braço/Garra)** | 19 peças | 1h 39min | 32.8 g | ✅ Pronto para Envio |
+| **TOTAL CONJUNTO** | **28 peças** | **~3h 39min** | **~91.5 g PLA Preto** | **1 Carretel de 1kg é suficiente** |
 
 > 💡 **Nota Operacional:** Com o projeto 100% em Filamento Preto, não há trocas de filamento ou purgas de torre AMS, maximizando a eficiência de tempo e eliminando qualquer desperdício de material.
 >

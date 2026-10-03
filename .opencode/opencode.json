@@ -1,0 +1,78 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "build123d-mcp": {
+      "type": "local",
+      "command": [
+        "C:\\Users\\gabri\\.local\\bin\\uv.exe",
+        "tool",
+        "run",
+        "--python",
+        "3.12",
+        "build123d-mcp@latest"
+      ],
+      "enabled": true
+    },
+    "arduino": {
+      "type": "local",
+      "command": ["npx", "-y", "arduino-mcp-server"],
+      "enabled": true,
+      "timeout": 120000,
+      "environment": {
+        "ARDUINO_CLI_PATH": "C:\\Users\\gabri\\.local\\bin\\arduino-cli.exe",
+        "ARDUINO_SKETCH_ROOT": "D:\\braco-robortico\\firmware"
+      }
+    }
+  },
+  "permission": {
+    "edit": {
+      "*": "ask",
+      "cad-output/**/*.step": "deny",
+      "cad-output/**/*.stl": "deny",
+      "cad-output/**/*.3mf": "deny",
+      "bambu-output/**/*.step": "deny",
+      "bambu-output/**/*.stl": "deny",
+      "bambu-output/**/*.3mf": "deny",
+      "**/cad-output/**/*.step": "deny",
+      "**/cad-output/**/*.stl": "deny",
+      "**/cad-output/**/*.3mf": "deny",
+      "**/bambu-output/**/*.step": "deny",
+      "**/bambu-output/**/*.stl": "deny",
+      "**/bambu-output/**/*.3mf": "deny"
+    },
+    "bash": {
+      "*": "ask",
+      "git status*": "allow",
+      "git diff*": "allow",
+      "git log*": "allow",
+      "rg *": "allow",
+      "python .agents/skills/bambu-studio-ai/scripts/doctor.py": "allow",
+      "python .agents/skills/bambu-studio-ai/scripts/analyze.py * --repair *": "allow",
+      "python .agents/skills/bambu-studio-ai/scripts/preview.py *": "allow",
+      "python .agents/skills/bambu-studio-ai/scripts/bambu.py open": "allow",
+      "python .agents/skills/bambu-studio-ai/scripts/bambu.py status": "allow",
+      "rm *": "deny",
+      "rmdir *": "deny",
+      "del *": "deny",
+      "erase *": "deny",
+      "rd *": "deny",
+      "Remove-Item *": "deny",
+      "format *": "deny",
+      "git clean *": "deny",
+      "git reset --hard*": "deny",
+      "git restore *": "deny",
+      "* > *cad-output/*.step*": "deny",
+      "* > *cad-output/*.stl*": "deny",
+      "* > *cad-output/*.3mf*": "deny",
+      "* >> *cad-output/*.step*": "deny",
+      "* >> *cad-output/*.stl*": "deny",
+      "* >> *cad-output/*.3mf*": "deny",
+      "Set-Content *cad-output/*.step*": "deny",
+      "Set-Content *cad-output/*.stl*": "deny",
+      "Set-Content *cad-output/*.3mf*": "deny",
+      "Out-File *cad-output/*.step*": "deny",
+      "Out-File *cad-output/*.stl*": "deny",
+      "Out-File *cad-output/*.3mf*": "deny"
+    }
+  }
+}
