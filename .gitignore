@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+*.venv/
+.venv/
+env/
+
+# Large extracted reference files
+ref_mdf/extracted/
+*.tmp
