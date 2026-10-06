@@ -133,6 +133,10 @@ const int JOY_CENTER = 512;
 //  de garra.
 const int JOY_DEADZONE = 60;
 
+//  Tempo parado antes de voltar ao repouso e intervalo entre cada passo.
+const unsigned long IDLE_TIMEOUT_MS = 3000;
+const unsigned long RETURN_STEP_MS = 20;
+
 // ===========================================================================
 //  3. POSIÇÃO DE REPOUSO ("parking")
 // ===========================================================================
@@ -147,6 +151,10 @@ const float PARK_BASE    = 90.0;
 const float PARK_OMBRO   = 90.0;
 const float PARK_COTOVEL = 90.0;
 const float PARK_GARRA   = 0.0;
+
+bool retornoAtivo = false;
+unsigned long inicioInatividade = 0;
+unsigned long ultimoPassoRetorno = 0;
 
 // ===========================================================================
 //  4. OS DOIS ÂNGULOS DE CADA JUNTA
@@ -311,6 +319,13 @@ float suaviza(float atual, float alvo) {
   float d = alvo - atual;
   if (d > -0.01 && d < 0.01) return alvo;
   return atual + d * PASSO_SMOOTH;
+}
+
+//  Avança uma junta em passos de 1° até a posição de repouso.
+float passoRetorno(float atual, float origem) {
+  if (atual < origem) return (origem - atual <= 1.0) ? origem : atual + 1.0;
+  if (atual > origem) return (atual - origem <= 1.0) ? origem : atual - 1.0;
+  return origem;
 }
 
 //  --- Converte uma faixa de valores em outra (versão do "map" nativo)
@@ -570,11 +585,26 @@ void loop() {
   int joy2X = analogRead(PIN_JOY2_X);
   int joy2Y = analogRead(PIN_JOY2_Y);
 
-  //  --- ETAPA C: joystick altera os ÂNGULOS ALVO ----------------------
+  //  --- ETAPA C: detectar inatividade ou cancelar o retorno ------------
+  unsigned long agora = millis();
+  bool joystickCentrado =
+    abs(joy1X - JOY_CENTER) <= JOY_DEADZONE &&
+    abs(joy1Y - JOY_CENTER) <= JOY_DEADZONE &&
+    abs(joy2X - JOY_CENTER) <= JOY_DEADZONE &&
+    abs(joy2Y - JOY_CENTER) <= JOY_DEADZONE;
+
+  if (!joystickCentrado) {
+    retornoAtivo = false;
+    inicioInatividade = agora;
+  } else if (!retornoAtivo && agora - inicioInatividade >= IDLE_TIMEOUT_MS) {
+    retornoAtivo = true;
+    ultimoPassoRetorno = agora;
+  }
+
+  //  --- ETAPA D: joystick altera os ALVOS ou inicia o retorno ----------
   //
-  //  Repare que alteramos sempre alvo* (nunca ang*). O joystick decide
-  //  ONDE a junta deve estar; a suavização (próxima etapa) decide COMO
-  //  chegar lá.
+  //  Fora do retorno, o joystick altera alvo* e a suavização decide como
+  //  chegar lá. Durante o retorno, cada junta avança em passos de 1°.
   //
   //  Mapeamento dos controles:
   //    joy1Y → Base       (esquerdo, vertical)   gira o braço
@@ -586,32 +616,37 @@ void loop() {
   //  elétrica. Se ficar mais confortável trocar, por exemplo, a base para o
   //  joystick direito, basta trocar a linha inteira.
 
-  alvoBase = aplicaEixo(joy1Y, alvoBase, limBaseMin, limBaseMax, GANHO_BASE);
-  alvoOmbro = aplicaEixo(joy2Y, alvoOmbro, limOmbroMin, limOmbroMax, GANHO_OMBRO);
+  if (!retornoAtivo) {
+    alvoBase = aplicaEixo(joy1Y, alvoBase, limBaseMin, limBaseMax, GANHO_BASE);
+    alvoOmbro = aplicaEixo(joy2Y, alvoOmbro, limOmbroMin, limOmbroMax, GANHO_OMBRO);
+    alvoCotovelo = aplicaEixo(joy1X, alvoCotovelo, limCotoveloMin, limCotoveloMax, GANHO_COTOVEL);
 
-  alvoCotovelo = aplicaEixo(joy1X, alvoCotovelo, limCotoveloMin, limCotoveloMax, GANHO_COTOVEL);
+    //  O sinal de MENOS antes do ganho INVERTE este eixo. O atuador da garra
+    //  tem curso de apenas 90°, e invertê-lo ficaria ruim para a ergonomia:
+    //  preferimos que empurrar para BAIXO abra a pinça e para CIMA feche.
+    //  Se a garra funcionar ao contrário no seu braço, remova o sinal de menos.
+    alvoGarra = aplicaEixo(joy2X, alvoGarra, limGarraMin, limGarraMax, -GANHO_GARRA);
 
-  //  O sinal de MENOS antes do ganho INVERTE este eixo. O atuador da garra
-  //  tem curso de apenas 90°, e invertê-lo ficaria ruim para a ergonomia:
-  //  preferimos que empurrar para BAIXO abra a pinça (movimento de soltar
-  //  para pegar) e para CIMA feche (movimento de segurar).
-  //  Se a garra funcionar ao contrário no seu braço, remova o sinal de menos.
-  alvoGarra = aplicaEixo(joy2X, alvoGarra, limGarraMin, limGarraMax, -GANHO_GARRA);
+    //  --- ETAPA E: SUAVIZAÇÃO — atual caminha até o alvo ----------------
+    //  Cada junta dá um passo de 15% da distância que falta.
 
-  //  --- ETAPA D: SUAVIZAÇÃO — atual caminha até o alvo -----------------
-  //
-  //  Aqui está o movimento suave. Cada junta dá um passo de 15% da
-  //  distância que falta, a cada volta do loop. Como o loop repete
-  //  milhares de vezes por segundo, o resultado é um movimento contínuo.
-  //
-  //  É aqui que as linhas ang* = suaviza(ang*, alvo*) fazem sentido: o
-  //  alvo está longe, mas o atual parte em direção a ele um degrau de cada
-  //  vez.
-
-  angBase     = suaviza(angBase, alvoBase);
-  angOmbro    = suaviza(angOmbro, alvoOmbro);
-  angCotovelo = suaviza(angCotovelo, alvoCotovelo);
-  angGarra    = suaviza(angGarra, alvoGarra);
+    angBase     = suaviza(angBase, alvoBase);
+    angOmbro    = suaviza(angOmbro, alvoOmbro);
+    angCotovelo = suaviza(angCotovelo, alvoCotovelo);
+    angGarra    = suaviza(angGarra, alvoGarra);
+  } else {
+    if (agora - ultimoPassoRetorno >= RETURN_STEP_MS) {
+      ultimoPassoRetorno = agora;
+      angBase = passoRetorno(angBase, PARK_BASE);
+      angOmbro = passoRetorno(angOmbro, PARK_OMBRO);
+      angCotovelo = passoRetorno(angCotovelo, PARK_COTOVEL);
+      angGarra = passoRetorno(angGarra, PARK_GARRA);
+    }
+    alvoBase = angBase;
+    alvoOmbro = angOmbro;
+    alvoCotovelo = angCotovelo;
+    alvoGarra = angGarra;
+  }
 
   //  --- ETAPA E: enviar aos servos ------------------------------------
   //
@@ -670,6 +705,7 @@ void setup() {
 
   //  Posiciona o braço com segurança e pisca o LED 3 vezes.
   sequenceInicial();
+  inicioInatividade = millis();
 
   //  Fala no serial o que está pronto e quais comandos existem.
   Serial.println(F("braco_4dof pronto"));
