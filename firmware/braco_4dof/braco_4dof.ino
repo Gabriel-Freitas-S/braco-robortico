@@ -83,6 +83,7 @@
  */
 
 #include <Servo.h>
+#include <EEPROM.h>
 
 // ===========================================================================
 //  1. ATUADORES — os quatro servomotores
@@ -159,13 +160,18 @@ const int JOY_DEADZONE = 18;
 const unsigned long INTERVALO_CONTROLE_MS = 20;
 
 // ===========================================================================
-//  3. POSIÇÃO 0 / REPOUSO ("parking")
+//  3. POSIÇÃO 0 / REPOUSO ("parking" — ajustável e salva na EEPROM)
 // ===========================================================================
+//  Dica: posicione o braço onde quiser com os joysticks e SEGURE o botão do
+//  joystick por 2 segundos para gravar essa posição como a nova Posição 0!
+//  1 clique rápido no botão leva o braço para a Posição 0 salva.
 
-const float PARK_BASE    = 90.0;
-const float PARK_OMBRO   = 90.0;
-const float PARK_COTOVEL = 90.0;
-const float PARK_GARRA   = 0.0;   // posição 0 da garra (fechada)
+float posZeroBase     = 90.0;
+float posZeroOmbro    = 60.0;
+float posZeroCotovelo = 45.0;
+float posZeroGarra    = 0.0;
+
+const uint16_t EEPROM_ZERO_MAGIC = 0x5A30;
 
 // ===========================================================================
 //  4. OS DOIS ÂNGULOS DE CADA JUNTA (protegidos em .noinit contra brownout)
@@ -181,19 +187,19 @@ float __attribute__((section(".noinit"))) angOmbro;
 float __attribute__((section(".noinit"))) angCotovelo;
 float __attribute__((section(".noinit"))) angGarra;
 
-float alvoBase     = PARK_BASE;
-float alvoOmbro    = PARK_OMBRO;
-float alvoCotovelo = PARK_COTOVEL;
-float alvoGarra    = PARK_GARRA;
+float alvoBase     = 90.0;
+float alvoOmbro    = 60.0;
+float alvoCotovelo = 45.0;
+float alvoGarra    = 0.0;
 
 // ===========================================================================
-//  5. LIMITES MECÂNICOS
+//  5. LIMITES MECÂNICOS (0° a 180° liberados para curso completo de descida)
 // ===========================================================================
 
-float limBaseMin     = 5.0,   limBaseMax     = 175.0;
-float limOmbroMin    = 10.0,  limOmbroMax    = 170.0;
-float limCotoveloMin = 10.0,  limCotoveloMax = 170.0;
-float limGarraMin    = 0.0,   limGarraMax    = 90.0;   // 0° permite fechamento completo para segurar objetos
+float limBaseMin     = 0.0,   limBaseMax     = 180.0;
+float limOmbroMin    = 0.0,   limOmbroMax    = 180.0;
+float limCotoveloMin = 0.0,   limCotoveloMax = 180.0;
+float limGarraMin    = 0.0,   limGarraMax    = 95.0;
 
 // ===========================================================================
 //  6. GANHOS — resposta sem delay, porém lenta e precisa (especialmente Cotovelo)
@@ -234,8 +240,8 @@ const float FATOR_SUAVIZACAO = 0.50;   // acompanha o alvo na hora (sem delay ao
 //  Os valores 544 e 2336 evitam bater no fim de curso interno do SG90
 //  (que consome >650 mA e derruba a alimentação USB do Arduino).
 
-const float US_MIN = 544.0;   // microssegundos para 0°
-const float US_MAX = 2336.0;  // microssegundos para 180°
+const float US_MIN = 480.0;   // pulso mínimo completo (0°) para permitir descida total
+const float US_MAX = 2500.0;  // pulso máximo completo (180°)
 
 //  Velocidade do monitor serial. 9600 é o padrão do Serial Monitor do
 //  Arduino IDE (evita caracteres quebrados ao abrir o monitor).
@@ -360,11 +366,52 @@ void calibraJoysticks() {
   if (c2y > 400 && c2y < 620) centroJoy2Y = c2y; else centroJoy2Y = 512;
 }
 
+void carregaPosicaoZeroEEPROM() {
+  uint16_t magic = 0;
+  EEPROM.get(0, magic);
+  if (magic == EEPROM_ZERO_MAGIC) {
+    float b, o, c, g;
+    EEPROM.get(2,  b);
+    EEPROM.get(6,  o);
+    EEPROM.get(10, c);
+    EEPROM.get(14, g);
+    if (b >= 0.0 && b <= 180.0 && o >= 0.0 && o <= 180.0 &&
+        c >= 0.0 && c <= 180.0 && g >= 0.0 && g <= 95.0) {
+      posZeroBase     = b;
+      posZeroOmbro    = o;
+      posZeroCotovelo = c;
+      posZeroGarra    = g;
+    }
+  }
+}
+
+void salvaPosicaoZeroEEPROM() {
+  posZeroBase     = angBase;
+  posZeroOmbro    = angOmbro;
+  posZeroCotovelo = angCotovelo;
+  posZeroGarra    = angGarra;
+  EEPROM.put(0,  EEPROM_ZERO_MAGIC);
+  EEPROM.put(2,  posZeroBase);
+  EEPROM.put(6,  posZeroOmbro);
+  EEPROM.put(10, posZeroCotovelo);
+  EEPROM.put(14, posZeroGarra);
+  Serial.print(F("NOVA POSICAO 0 SALVA: B=")); Serial.print((int)posZeroBase);
+  Serial.print(F(" O=")); Serial.print((int)posZeroOmbro);
+  Serial.print(F(" C=")); Serial.print((int)posZeroCotovelo);
+  Serial.print(F(" G=")); Serial.println((int)posZeroGarra);
+  for (uint8_t i = 0; i < 4; i++) {
+    digitalWrite(PIN_LED, HIGH); delay(60);
+    digitalWrite(PIN_LED, LOW);  delay(60);
+  }
+}
+
 void sequenceInicial() {
   desligaBase();
   if (servoOmbro.attached())    servoOmbro.detach();
   if (servoCotovelo.attached()) servoCotovelo.detach();
   if (servoGarra.attached())    servoGarra.detach();
+
+  carregaPosicaoZeroEEPROM();
 
   // Se foi um micro-reset por queda de tensão (brownout da fonte 12V),
   // restaura imediatamente os ângulos onde o braço estava para não cair!
@@ -380,11 +427,11 @@ void sequenceInicial() {
     return;
   }
 
-  // Primeira ligação a frio: inicia em repouso
-  alvoGarra    = angGarra    = PARK_GARRA;
-  alvoBase     = angBase     = PARK_BASE;
-  alvoOmbro    = angOmbro    = PARK_OMBRO;
-  alvoCotovelo = angCotovelo = PARK_COTOVEL;
+  // Primeira ligação a frio: inicia na Posição 0
+  alvoGarra    = angGarra    = posZeroGarra;
+  alvoBase     = angBase     = posZeroBase;
+  alvoOmbro    = angOmbro    = posZeroOmbro;
+  alvoCotovelo = angCotovelo = posZeroCotovelo;
   savedMagic   = NOINIT_MAGIC;
 
   for (int i = 0; i < 3; i++) {
@@ -396,18 +443,17 @@ void sequenceInicial() {
 }
 
 // ===========================================================================
-//  11. RESET E STATUS — comandos simples pelo Monitor Serial
+//  11. RESET E STATUS — comandos simples pelo Monitor Serial e Botão
 // ===========================================================================
-//  Aperte 'r' para levar o braço suavemente de volta ao repouso (sem tranco).
 
 bool voltandoZero = false;
-uint8_t btn1Ant = HIGH;
-uint8_t btn2Ant = HIGH;
-unsigned long ultimoCliqueMs = 0;
+bool btnPressionado = false;
+bool btnSalvouNoHold = false;
+unsigned long inicioPressaoMs = 0;
 
 void resetPark() {
   voltandoZero = true;
-  Serial.println(F("botao/comando: voltando suavemente para posicao 0"));
+  Serial.println(F("botao/comando: indo suavemente para a Posicao 0"));
 }
 
 void mostraAjuda() {
@@ -502,16 +548,24 @@ void loop() {
   int joy2X = leEixoSuave(PIN_JOY2_X);
   int joy2Y = leEixoSuave(PIN_JOY2_Y);
 
-  //  --- ETAPA B2: Botão de qualquer joystick → ir para Posição 0 ------
-  uint8_t b1 = digitalRead(PIN_BTN_JOY1);
-  uint8_t b2 = digitalRead(PIN_BTN_JOY2);
-  if (((btn1Ant == HIGH && b1 == LOW) || (btn2Ant == HIGH && b2 == LOW)) &&
-      (agora - ultimoCliqueMs > 300)) {
-    ultimoCliqueMs = agora;
-    resetPark();
+  //  --- ETAPA B2: Botão do joystick (Clique = Ir p/ Posição 0 | Segurar 2s = Salvar Posição 0)
+  bool apertadoAgora = (digitalRead(PIN_BTN_JOY1) == LOW) || (digitalRead(PIN_BTN_JOY2) == LOW);
+  if (apertadoAgora && !btnPressionado) {
+    btnPressionado = true;
+    btnSalvouNoHold = false;
+    inicioPressaoMs = agora;
+  } else if (apertadoAgora && btnPressionado) {
+    if (!btnSalvouNoHold && (agora - inicioPressaoMs >= 1800)) {
+      btnSalvouNoHold = true;
+      voltandoZero = false;
+      salvaPosicaoZeroEEPROM();
+    }
+  } else if (!apertadoAgora && btnPressionado) {
+    btnPressionado = false;
+    if (!btnSalvouNoHold && (agora - inicioPressaoMs >= 40)) {
+      resetPark();
+    }
   }
-  btn1Ant = b1;
-  btn2Ant = b2;
 
   //  Se o usuário mexer em qualquer joystick durante o retorno, assume controle manual
   if (voltandoZero) {
@@ -525,15 +579,15 @@ void loop() {
       alvoCotovelo = angCotovelo;
       alvoGarra    = angGarra;
     } else {
-      // Move UMA junta por vez para a Posição 0 (evita pico de corrente na fonte 12V)
-      if (abs(angOmbro - PARK_OMBRO) > 0.5) {
-        alvoOmbro = PARK_OMBRO;
-      } else if (abs(angCotovelo - PARK_COTOVEL) > 0.5) {
-        alvoCotovelo = PARK_COTOVEL;
-      } else if (abs(angBase - PARK_BASE) > 0.5) {
-        alvoBase = PARK_BASE;
-      } else if (abs(angGarra - PARK_GARRA) > 0.5) {
-        alvoGarra = PARK_GARRA;
+      // Move UMA junta por vez para a Posição 0 salva (evita pico de corrente na fonte 12V)
+      if (abs(angCotovelo - posZeroCotovelo) > 0.5) {
+        alvoCotovelo = posZeroCotovelo;
+      } else if (abs(angOmbro - posZeroOmbro) > 0.5) {
+        alvoOmbro = posZeroOmbro;
+      } else if (abs(angBase - posZeroBase) > 0.5) {
+        alvoBase = posZeroBase;
+      } else if (abs(angGarra - posZeroGarra) > 0.5) {
+        alvoGarra = posZeroGarra;
       } else {
         voltandoZero = false;
       }
@@ -638,8 +692,6 @@ void setup() {
   pinMode(PIN_BTN_JOY1, INPUT_PULLUP);
   pinMode(PIN_BTN_JOY2, INPUT_PULLUP);
   delay(5);
-  btn1Ant = digitalRead(PIN_BTN_JOY1);
-  btn2Ant = digitalRead(PIN_BTN_JOY2);
 
   calibraJoysticks();
   sequenceInicial();
