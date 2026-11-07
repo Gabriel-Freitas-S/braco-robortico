@@ -192,19 +192,23 @@ float limCotoveloMin = 10.0,  limCotoveloMax = 170.0;
 float limGarraMin    = 0.0,   limGarraMax    = 90.0;   // 0° permite fechamento completo para segurar objetos
 
 // ===========================================================================
-//  6. GANHOS — resposta rápida e precisa ao joystick
+//  6. GANHOS — resposta sem delay, porém lenta e precisa (especialmente Cotovelo)
 // ===========================================================================
-const float GANHO_BASE    = 1.65;
-const float GANHO_OMBRO   = 1.55;
-const float GANHO_COTOVEL = 1.55;
-const float GANHO_GARRA   = 1.35;
+//  Em ciclos de 20 ms (50 Hz):
+//    GANHO 0.50 = máx 25°/s (Cotovelo: movimento lento e milimétrico)
+//    GANHO 0.65 = máx 32°/s (Ombro: subida e descida controlada)
+//    GANHO 0.75 = máx 37°/s (Base e Garra)
+const float GANHO_BASE    = 0.75;
+const float GANHO_OMBRO   = 0.65;
+const float GANHO_COTOVEL = 0.50;
+const float GANHO_GARRA   = 0.75;
 
 // ===========================================================================
-//  7. VELOCIDADE MÁXIMA E RAMPA DE SUAVIZAÇÃO (sem atraso perceptível)
+//  7. VELOCIDADE MÁXIMA E RAMPA DE SUAVIZAÇÃO (zero delay + velocidade contida)
 // ===========================================================================
 
-const float VEL_SUAVE = 0.08;          // 80°/s máx: acompanha o joystick sem delay
-const float FATOR_SUAVIZACAO = 0.45;   // resposta rápida (20-40 ms) mantendo suavidade
+const float VEL_SUAVE = 0.038;         // teto de 38°/s: impede movimentos rápidos mesmo com joystick no fim
+const float FATOR_SUAVIZACAO = 0.50;   // acompanha o alvo na hora (sem delay ao mexer ou parar)
 
 // ===========================================================================
 //  8. PULSO DO SERVO — o que realmente comanda o motor
@@ -442,8 +446,9 @@ float aplicaEixo(int leitura, int centro, float atual, float min, float max, flo
     float alcance = (float)(512 - dz);
     float norm = constrainAngle((float)excesso / alcance, -1.0, 1.0);
     float absNorm = norm < 0.0 ? -norm : norm;
-    // Resposta imediata (50% linear + 50% quadrática): sem delay e com precisão fina
-    float curva = 0.50 * norm + 0.50 * norm * absNorm;
+    // Curva progressiva (25% linear + 75% quadrática): controle fino na metade
+    // inicial do joystick, sem perder a resposta imediata ao sair do centro
+    float curva = 0.25 * norm + 0.75 * norm * absNorm;
     float delta = curva * ganho;
     return constrainAngle(atual + delta, min, max);
   }
