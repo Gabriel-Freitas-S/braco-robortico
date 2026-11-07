@@ -148,9 +148,8 @@ const uint8_t PIN_JOY2_Y = A2;   // joystick direito:  frente/trás      → Omb
 
 const int JOY_CENTER = 512;
 
-//  Zona morta reduzida (25 ≈ 4.8%) combinada com média de 4 leituras ADC
-//  para resposta imediata ao tocar no joystick, sem atraso na partida.
-const int JOY_DEADZONE = 25;
+//  Zona morta curta (18 ≈ 3.5%) para resposta imediata sem delay ao tocar no joystick.
+const int JOY_DEADZONE = 18;
 
 //  Intervalo fixo de atualização do controle (20 ms = 50 Hz)
 const unsigned long INTERVALO_CONTROLE_MS = 20;
@@ -165,13 +164,18 @@ const float PARK_COTOVEL = 90.0;
 const float PARK_GARRA   = 35.0;  // repousa levemente aberta
 
 // ===========================================================================
-//  4. OS DOIS ÂNGULOS DE CADA JUNTA
+//  4. OS DOIS ÂNGULOS DE CADA JUNTA (protegidos em .noinit contra brownout)
 // ===========================================================================
+//  Com fonte 12V no Jack do Arduino, picos de corrente podem causar micro-reset
+//  (brownout). Guardando os ângulos em .noinit, o Arduino nunca perde a posição
+//  em que o braço estava no alto e não despenca para 90°.
 
-float angBase     = PARK_BASE;
-float angOmbro    = PARK_OMBRO;
-float angCotovelo = PARK_COTOVEL;
-float angGarra    = PARK_GARRA;
+const uint16_t NOINIT_MAGIC = 0xB4AC;
+uint16_t __attribute__((section(".noinit"))) savedMagic;
+float __attribute__((section(".noinit"))) angBase;
+float __attribute__((section(".noinit"))) angOmbro;
+float __attribute__((section(".noinit"))) angCotovelo;
+float __attribute__((section(".noinit"))) angGarra;
 
 float alvoBase     = PARK_BASE;
 float alvoOmbro    = PARK_OMBRO;
@@ -188,21 +192,19 @@ float limCotoveloMin = 10.0,  limCotoveloMax = 170.0;
 float limGarraMin    = 0.0,   limGarraMax    = 90.0;   // 0° permite fechamento completo para segurar objetos
 
 // ===========================================================================
-//  6. GANHOS — velocidade e precisão fina de cada junta
+//  6. GANHOS — resposta rápida e precisa ao joystick
 // ===========================================================================
-//  Ganhos calibrados para precisão milimétrica perto do centro e velocidade
-//  máxima moderada (~45°/s) no fim de curso, sem movimentos bruscos.
-const float GANHO_BASE    = 0.95;
-const float GANHO_OMBRO   = 0.90;
-const float GANHO_COTOVEL = 0.90;
-const float GANHO_GARRA   = 0.80;
+const float GANHO_BASE    = 1.65;
+const float GANHO_OMBRO   = 1.55;
+const float GANHO_COTOVEL = 1.55;
+const float GANHO_GARRA   = 1.35;
 
 // ===========================================================================
-//  7. VELOCIDADE MÁXIMA E RAMPA DE SUAVIZAÇÃO
+//  7. VELOCIDADE MÁXIMA E RAMPA DE SUAVIZAÇÃO (sem atraso perceptível)
 // ===========================================================================
 
-const float VEL_SUAVE = 0.045;         // máx 45°/s: elimina trancos e reduz pico de corrente na fonte
-const float FATOR_SUAVIZACAO = 0.18;   // aceleração e frenagem progressivas
+const float VEL_SUAVE = 0.08;          // 80°/s máx: acompanha o joystick sem delay
+const float FATOR_SUAVIZACAO = 0.45;   // resposta rápida (20-40 ms) mantendo suavidade
 
 // ===========================================================================
 //  8. PULSO DO SERVO — o que realmente comanda o motor
@@ -326,50 +328,62 @@ int mapADC(int x, int in_min, int in_max, int out_min, int out_max) {
 //  Os delays não são desperdício: dão tempo de os motores chegarem
 //  fisicamente à posição antes do próximo comando.
 
-int centroJoy1X = 512;
-int centroJoy1Y = 512;
-int centroJoy2X = 512;
-int centroJoy2Y = 512;
+int __attribute__((section(".noinit"))) centroJoy1X;
+int __attribute__((section(".noinit"))) centroJoy1Y;
+int __attribute__((section(".noinit"))) centroJoy2X;
+int __attribute__((section(".noinit"))) centroJoy2Y;
 
 void calibraJoysticks() {
   long s1x = 0, s1y = 0, s2x = 0, s2y = 0;
-  for (uint8_t i = 0; i < 16; i++) {
+  for (uint8_t i = 0; i < 8; i++) {
     s1x += analogRead(PIN_JOY1_X);
     s1y += analogRead(PIN_JOY1_Y);
     s2x += analogRead(PIN_JOY2_X);
     s2y += analogRead(PIN_JOY2_Y);
-    delay(5);
+    delay(2);
   }
-  int c1x = (int)(s1x / 16);
-  int c1y = (int)(s1y / 16);
-  int c2x = (int)(s2x / 16);
-  int c2y = (int)(s2y / 16);
-  if (c1x > 350 && c1x < 670) centroJoy1X = c1x;
-  if (c1y > 350 && c1y < 670) centroJoy1Y = c1y;
-  if (c2x > 350 && c2x < 670) centroJoy2X = c2x;
-  if (c2y > 350 && c2y < 670) centroJoy2Y = c2y;
+  int c1x = (int)(s1x / 8);
+  int c1y = (int)(s1y / 8);
+  int c2x = (int)(s2x / 8);
+  int c2y = (int)(s2y / 8);
+  if (c1x > 400 && c1x < 620) centroJoy1X = c1x; else centroJoy1X = 512;
+  if (c1y > 400 && c1y < 620) centroJoy1Y = c1y; else centroJoy1Y = 512;
+  if (c2x > 400 && c2x < 620) centroJoy2X = c2x; else centroJoy2X = 512;
+  if (c2y > 400 && c2y < 620) centroJoy2Y = c2y; else centroJoy2Y = 512;
 }
 
 void sequenceInicial() {
-  // Inicializa as variáveis de ângulo em repouso SEM energizar os 4 servos
-  // de uma vez na partida (evita que o robô se mexa sozinho ao ligar e evita
-  // queda de tensão / reset em loop na porta USB).
-  alvoGarra    = angGarra    = PARK_GARRA;
-  alvoBase     = angBase     = PARK_BASE;
-  alvoOmbro    = angOmbro    = PARK_OMBRO;
-  alvoCotovelo = angCotovelo = PARK_COTOVEL;
-
   desligaBase();
   if (servoOmbro.attached())    servoOmbro.detach();
   if (servoCotovelo.attached()) servoCotovelo.detach();
   if (servoGarra.attached())    servoGarra.detach();
 
-  // --- 3 piscadas de confirmação
+  // Se foi um micro-reset por queda de tensão (brownout da fonte 12V),
+  // restaura imediatamente os ângulos onde o braço estava para não cair!
+  if (savedMagic == NOINIT_MAGIC &&
+      angBase >= limBaseMin && angBase <= limBaseMax &&
+      angOmbro >= limOmbroMin && angOmbro <= limOmbroMax &&
+      angCotovelo >= limCotoveloMin && angCotovelo <= limCotoveloMax &&
+      angGarra >= limGarraMin && angGarra <= limGarraMax) {
+    alvoBase     = angBase;
+    alvoOmbro    = angOmbro;
+    alvoCotovelo = angCotovelo;
+    alvoGarra    = angGarra;
+    return;
+  }
+
+  // Primeira ligação a frio: inicia em repouso
+  alvoGarra    = angGarra    = PARK_GARRA;
+  alvoBase     = angBase     = PARK_BASE;
+  alvoOmbro    = angOmbro    = PARK_OMBRO;
+  alvoCotovelo = angCotovelo = PARK_COTOVEL;
+  savedMagic   = NOINIT_MAGIC;
+
   for (int i = 0; i < 3; i++) {
     digitalWrite(PIN_LED, HIGH);
-    delay(100);
+    delay(80);
     digitalWrite(PIN_LED, LOW);
-    delay(100);
+    delay(80);
   }
 }
 
@@ -428,8 +442,8 @@ float aplicaEixo(int leitura, int centro, float atual, float min, float max, flo
     float alcance = (float)(512 - dz);
     float norm = constrainAngle((float)excesso / alcance, -1.0, 1.0);
     float absNorm = norm < 0.0 ? -norm : norm;
-    // Curva quadrática suave: muito precisa perto do centro, sem arranque brusco
-    float curva = 0.18 * norm + 0.82 * norm * absNorm;
+    // Resposta imediata (50% linear + 50% quadrática): sem delay e com precisão fina
+    float curva = 0.50 * norm + 0.50 * norm * absNorm;
     float delta = curva * ganho;
     return constrainAngle(atual + delta, min, max);
   }
@@ -437,10 +451,11 @@ float aplicaEixo(int leitura, int centro, float atual, float min, float max, flo
   return atual;   // joystick no centro: segura a posição onde parou
 }
 
-bool ativoBase     = false;
-bool ativoOmbro    = false;
-bool ativoCotovelo = false;
-bool ativoGarra    = false;
+unsigned long ativoBaseMs     = 0;
+unsigned long ativoOmbroMs    = 0;
+unsigned long ativoCotoveloMs = 0;
+unsigned long ativoGarraMs    = 0;
+const unsigned long TEMPO_HOLD_MS = 240;
 
 // ===========================================================================
 //  13. LOOP — roda para sempre, milhares de vezes por segundo
@@ -454,10 +469,7 @@ void loop() {
     switch (c) {
       case 'h': case 'H': mostraAjuda(); break;
       case 's': case 'S': status();      break;
-      case 'r': case 'R':
-        resetPark();
-        ativoBase = ativoOmbro = ativoCotovelo = ativoGarra = true;
-        break;
+      case 'r': case 'R': resetPark();   break;
       case 'd': case 'D':
         debugOn = !debugOn;   // inverte o valor (liga<->desliga)
         Serial.print(F("debug "));
@@ -480,58 +492,73 @@ void loop() {
   int joy2Y = leEixoSuave(PIN_JOY2_Y);
 
   //  --- ETAPA C: joystick altera os ALVOS proporcionalmente -----------
-  //    joy1X (A0) → Base       (esquerdo, esquerda/direita) gira a base
+  //    joy1X (A0) → Base       (esquerdo, esquerda/direita) gira a base (-GANHO_BASE inverte sentido)
   //    joy1Y (A1) → Cotovelo   (esquerdo, cima/baixo)       movimenta o cotovelo
   //    joy2Y (A2) → Ombro      (direito,  cima/baixo)       sobe/desce o ombro
   //    joy2X (A3) → Garra      (direito,  esquerda/direita) esquerda=fecha, direita=abre
 
-  alvoBase     = aplicaEixo(joy1X, centroJoy1X, alvoBase, limBaseMin, limBaseMax, GANHO_BASE);
+  alvoBase     = aplicaEixo(joy1X, centroJoy1X, alvoBase, limBaseMin, limBaseMax, -GANHO_BASE);
   alvoCotovelo = aplicaEixo(joy1Y, centroJoy1Y, alvoCotovelo, limCotoveloMin, limCotoveloMax, GANHO_COTOVEL);
   alvoOmbro    = aplicaEixo(joy2Y, centroJoy2Y, alvoOmbro, limOmbroMin, limOmbroMax, GANHO_OMBRO);
   alvoGarra    = aplicaEixo(joy2X, centroJoy2X, alvoGarra, limGarraMin, limGarraMax, GANHO_GARRA);
 
-  //  --- ETAPA D: SUAVIZAÇÃO + RETENÇÃO CONTÍNUA DE TORQUE -------------
-  //  Assim que cada junta recebe o primeiro movimento, seu servo permanece
-  //  conectado (attached) enviando pulso PWM contínuo em microssegundos.
-  //  Isso garante que:
-  //    1. A garra mantenha a força segurando o objeto ao soltar o joystick;
-  //    2. O ombro e o cotovelo não cedam com o peso nem deem tranco ao religar.
+  //  --- ETAPA D: SUAVIZAÇÃO + PROTEÇÃO TÉRMICA DO REGULADOR 5V --------
+  //  Com fonte 12V no Arduino, manter todos os servos ligados juntos faz o
+  //  regulador de 5V entrar em corte térmico e o braço perder força e cair.
+  //  Por isso:
+  //    - Base, Ombro e Cotovelo só energizam durante o movimento (+240 ms)
+  //      e depois desligam (a redução mecânica segura a posição sem gastar 5V).
+  //    - A Garra mantém o pulso ativo quando está fechada (< 32°) segurando
+  //      um objeto, mas pausa brevemente durante movimentos das outras juntas
+  //      para nunca somar corrente e derrubar o regulador.
 
   float passoMax = VEL_SUAVE * (float)INTERVALO_CONTROLE_MS;
 
-  if (abs(alvoBase - angBase) > 0.03) {
+  if (abs(alvoBase - angBase) > 0.04) {
     angBase = suaviza(angBase, alvoBase, passoMax);
-    ativoBase = true;
+    ativoBaseMs = agora;
   }
-  if (ativoBase) {
+  if (ativoBaseMs != 0 && (agora - ativoBaseMs <= TEMPO_HOLD_MS)) {
     escreveBase(anguloParaUs(angBase));
+  } else {
+    desligaBase();
   }
 
-  if (abs(alvoOmbro - angOmbro) > 0.03) {
+  if (abs(alvoOmbro - angOmbro) > 0.04) {
     angOmbro = suaviza(angOmbro, alvoOmbro, passoMax);
-    ativoOmbro = true;
+    ativoOmbroMs = agora;
   }
-  if (ativoOmbro) {
+  bool ombroAtivo = (ativoOmbroMs != 0 && (agora - ativoOmbroMs <= TEMPO_HOLD_MS));
+  if (ombroAtivo) {
     if (!servoOmbro.attached()) servoOmbro.attach(PIN_SERVO_OMBRO);
     servoOmbro.writeMicroseconds(anguloParaUs(angOmbro));
+  } else if (servoOmbro.attached()) {
+    servoOmbro.detach();
   }
 
-  if (abs(alvoCotovelo - angCotovelo) > 0.03) {
+  if (abs(alvoCotovelo - angCotovelo) > 0.04) {
     angCotovelo = suaviza(angCotovelo, alvoCotovelo, passoMax);
-    ativoCotovelo = true;
+    ativoCotoveloMs = agora;
   }
-  if (ativoCotovelo) {
+  bool cotoveloAtivo = (ativoCotoveloMs != 0 && (agora - ativoCotoveloMs <= TEMPO_HOLD_MS));
+  if (cotoveloAtivo) {
     if (!servoCotovelo.attached()) servoCotovelo.attach(PIN_SERVO_COTOVEL);
     servoCotovelo.writeMicroseconds(anguloParaUs(angCotovelo));
+  } else if (servoCotovelo.attached()) {
+    servoCotovelo.detach();
   }
 
-  if (abs(alvoGarra - angGarra) > 0.03) {
+  if (abs(alvoGarra - angGarra) > 0.04) {
     angGarra = suaviza(angGarra, alvoGarra, passoMax * 0.85);
-    ativoGarra = true;
+    ativoGarraMs = agora;
   }
-  if (ativoGarra) {
+  bool garraMovendo = (ativoGarraMs != 0 && (agora - ativoGarraMs <= TEMPO_HOLD_MS));
+  bool garraSegurando = (ativoGarraMs != 0 && angGarra < 32.0 && !ombroAtivo && !cotoveloAtivo);
+  if (garraMovendo || garraSegurando) {
     if (!servoGarra.attached()) servoGarra.attach(PIN_SERVO_GARRA);
     servoGarra.writeMicroseconds(anguloParaUs(angGarra));
+  } else if (servoGarra.attached()) {
+    servoGarra.detach();
   }
 
   //  --- ETAPA F: leitura dos joysticks no monitor serial --------------
