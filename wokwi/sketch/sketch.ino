@@ -180,7 +180,7 @@ const uint16_t EEPROM_ZERO_MAGIC = 0x5A30;
 //  (brownout). Guardando os ângulos em .noinit, o Arduino nunca perde a posição
 //  em que o braço estava no alto e não despenca para 90°.
 
-const uint16_t NOINIT_MAGIC = 0xB4AD;
+const uint16_t NOINIT_MAGIC = 0xB4AE;
 uint16_t __attribute__((section(".noinit"))) savedMagic;
 float __attribute__((section(".noinit"))) angBase;
 float __attribute__((section(".noinit"))) angOmbro;
@@ -193,13 +193,13 @@ float alvoCotovelo = 45.0;
 float alvoGarra    = 35.0;
 
 // ===========================================================================
-//  5. LIMITES MECÂNICOS (0° a 180° nas juntas e 10° a 150° na garra)
+//  5. LIMITES MECÂNICOS (0° a 180° nas juntas e 10° a 90° na garra)
 // ===========================================================================
 
 float limBaseMin     = 0.0,   limBaseMax     = 180.0;
 float limOmbroMin    = 0.0,   limOmbroMax    = 180.0;
 float limCotoveloMin = 0.0,   limCotoveloMax = 180.0;
-float limGarraMin    = 10.0,  limGarraMax    = 150.0;
+float limGarraMin    = 10.0,  limGarraMax    = 90.0;
 
 // ===========================================================================
 //  6. GANHOS — resposta sem delay, porém lenta e precisa (especialmente Cotovelo)
@@ -435,6 +435,12 @@ void sequenceInicial() {
   alvoCotovelo = angCotovelo = posZeroCotovelo;
   savedMagic   = NOINIT_MAGIC;
 
+  // Pulso curto de destravamento na garra (35°) ao iniciar
+  servoGarra.attach(PIN_SERVO_GARRA);
+  servoGarra.writeMicroseconds(anguloParaUs(angGarra));
+  delay(220);
+  servoGarra.detach();
+
   for (int i = 0; i < 3; i++) {
     digitalWrite(PIN_LED, HIGH);
     delay(80);
@@ -658,8 +664,9 @@ void loop() {
     angGarra = suaviza(angGarra, alvoGarra, passoMax * 1.5);
     ativoGarraMs = agora;
   }
-  bool garraMovendo = (ativoGarraMs != 0 && (agora - ativoGarraMs <= TEMPO_HOLD_MS));
-  bool garraSegurando = (ativoGarraMs != 0 && angGarra < 38.0 && !ombroAtivo && !cotoveloAtivo);
+  bool garraMovendo = (ativoGarraMs != 0 && (agora - ativoGarraMs <= 400));
+  bool garraSegurando = (ativoGarraMs != 0 && (agora - ativoGarraMs <= 15000) &&
+                         angGarra > 12.0 && angGarra < 38.0 && !ombroAtivo && !cotoveloAtivo);
   if (garraMovendo || garraSegurando) {
     if (!servoGarra.attached()) servoGarra.attach(PIN_SERVO_GARRA);
     servoGarra.writeMicroseconds(anguloParaUs(angGarra));
