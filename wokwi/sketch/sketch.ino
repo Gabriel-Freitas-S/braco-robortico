@@ -146,6 +146,10 @@ const uint8_t PIN_JOY1_Y = A1;   // joystick esquerdo: frente/trás      → Cot
 const uint8_t PIN_JOY2_X = A3;   // joystick direito:  esquerda/direita → Garra (esq=fecha, dir=abre)
 const uint8_t PIN_JOY2_Y = A2;   // joystick direito:  frente/trás      → Ombro
 
+//  Botões dos joysticks na Shield Casa da Robótica (Ref: PD07)
+const uint8_t PIN_BTN_JOY1 = 2;  // botão do joystick esquerdo (INPUT_PULLUP)
+const uint8_t PIN_BTN_JOY2 = 4;  // botão do joystick direito  (INPUT_PULLUP)
+
 const int JOY_CENTER = 512;
 
 //  Zona morta curta (18 ≈ 3.5%) para resposta imediata sem delay ao tocar no joystick.
@@ -155,13 +159,13 @@ const int JOY_DEADZONE = 18;
 const unsigned long INTERVALO_CONTROLE_MS = 20;
 
 // ===========================================================================
-//  3. POSIÇÃO DE REPOUSO ("parking")
+//  3. POSIÇÃO 0 / REPOUSO ("parking")
 // ===========================================================================
 
 const float PARK_BASE    = 90.0;
 const float PARK_OMBRO   = 90.0;
 const float PARK_COTOVEL = 90.0;
-const float PARK_GARRA   = 35.0;  // repousa levemente aberta
+const float PARK_GARRA   = 0.0;   // posição 0 da garra (fechada)
 
 // ===========================================================================
 //  4. OS DOIS ÂNGULOS DE CADA JUNTA (protegidos em .noinit contra brownout)
@@ -396,12 +400,14 @@ void sequenceInicial() {
 // ===========================================================================
 //  Aperte 'r' para levar o braço suavemente de volta ao repouso (sem tranco).
 
+bool voltandoZero = false;
+uint8_t btn1Ant = HIGH;
+uint8_t btn2Ant = HIGH;
+unsigned long ultimoCliqueMs = 0;
+
 void resetPark() {
-  alvoBase = PARK_BASE;
-  alvoOmbro = PARK_OMBRO;
-  alvoCotovelo = PARK_COTOVEL;
-  alvoGarra = PARK_GARRA;
-  Serial.println(F("voltando suavemente para posicao de repouso"));
+  voltandoZero = true;
+  Serial.println(F("botao/comando: voltando suavemente para posicao 0"));
 }
 
 void mostraAjuda() {
@@ -496,16 +502,56 @@ void loop() {
   int joy2X = leEixoSuave(PIN_JOY2_X);
   int joy2Y = leEixoSuave(PIN_JOY2_Y);
 
+  //  --- ETAPA B2: Botão de qualquer joystick → ir para Posição 0 ------
+  uint8_t b1 = digitalRead(PIN_BTN_JOY1);
+  uint8_t b2 = digitalRead(PIN_BTN_JOY2);
+  if (((btn1Ant == HIGH && b1 == LOW) || (btn2Ant == HIGH && b2 == LOW)) &&
+      (agora - ultimoCliqueMs > 300)) {
+    ultimoCliqueMs = agora;
+    resetPark();
+  }
+  btn1Ant = b1;
+  btn2Ant = b2;
+
+  //  Se o usuário mexer em qualquer joystick durante o retorno, assume controle manual
+  if (voltandoZero) {
+    if (abs(joy1X - centroJoy1X) > JOY_DEADZONE * 2 ||
+        abs(joy1Y - centroJoy1Y) > JOY_DEADZONE * 2 ||
+        abs(joy2X - centroJoy2X) > JOY_DEADZONE * 2 ||
+        abs(joy2Y - centroJoy2Y) > JOY_DEADZONE * 2) {
+      voltandoZero = false;
+      alvoBase     = angBase;
+      alvoOmbro    = angOmbro;
+      alvoCotovelo = angCotovelo;
+      alvoGarra    = angGarra;
+    } else {
+      // Move UMA junta por vez para a Posição 0 (evita pico de corrente na fonte 12V)
+      if (abs(angOmbro - PARK_OMBRO) > 0.5) {
+        alvoOmbro = PARK_OMBRO;
+      } else if (abs(angCotovelo - PARK_COTOVEL) > 0.5) {
+        alvoCotovelo = PARK_COTOVEL;
+      } else if (abs(angBase - PARK_BASE) > 0.5) {
+        alvoBase = PARK_BASE;
+      } else if (abs(angGarra - PARK_GARRA) > 0.5) {
+        alvoGarra = PARK_GARRA;
+      } else {
+        voltandoZero = false;
+      }
+    }
+  }
+
   //  --- ETAPA C: joystick altera os ALVOS proporcionalmente -----------
   //    joy1X (A0) → Base       (esquerdo, esquerda/direita) gira a base (-GANHO_BASE inverte sentido)
   //    joy1Y (A1) → Cotovelo   (esquerdo, cima/baixo)       movimenta o cotovelo
   //    joy2Y (A2) → Ombro      (direito,  cima/baixo)       sobe/desce o ombro
   //    joy2X (A3) → Garra      (direito,  esquerda/direita) esquerda=fecha, direita=abre
 
-  alvoBase     = aplicaEixo(joy1X, centroJoy1X, alvoBase, limBaseMin, limBaseMax, -GANHO_BASE);
-  alvoCotovelo = aplicaEixo(joy1Y, centroJoy1Y, alvoCotovelo, limCotoveloMin, limCotoveloMax, GANHO_COTOVEL);
-  alvoOmbro    = aplicaEixo(joy2Y, centroJoy2Y, alvoOmbro, limOmbroMin, limOmbroMax, GANHO_OMBRO);
-  alvoGarra    = aplicaEixo(joy2X, centroJoy2X, alvoGarra, limGarraMin, limGarraMax, GANHO_GARRA);
+  if (!voltandoZero) {
+    alvoBase     = aplicaEixo(joy1X, centroJoy1X, alvoBase, limBaseMin, limBaseMax, -GANHO_BASE);
+    alvoCotovelo = aplicaEixo(joy1Y, centroJoy1Y, alvoCotovelo, limCotoveloMin, limCotoveloMax, GANHO_COTOVEL);
+    alvoOmbro    = aplicaEixo(joy2Y, centroJoy2Y, alvoOmbro, limOmbroMin, limOmbroMax, GANHO_OMBRO);
+    alvoGarra    = aplicaEixo(joy2X, centroJoy2X, alvoGarra, limGarraMin, limGarraMax, GANHO_GARRA);
+  }
 
   //  --- ETAPA D: SUAVIZAÇÃO + PROTEÇÃO TÉRMICA DO REGULADOR 5V --------
   //  Com fonte 12V no Arduino, manter todos os servos ligados juntos faz o
@@ -589,6 +635,11 @@ void loop() {
 void setup() {
   Serial.begin(BAUD);   // inicia o monitor serial a 9600 baud
   pinMode(PIN_LED, OUTPUT);
+  pinMode(PIN_BTN_JOY1, INPUT_PULLUP);
+  pinMode(PIN_BTN_JOY2, INPUT_PULLUP);
+  delay(5);
+  btn1Ant = digitalRead(PIN_BTN_JOY1);
+  btn2Ant = digitalRead(PIN_BTN_JOY2);
 
   calibraJoysticks();
   sequenceInicial();
