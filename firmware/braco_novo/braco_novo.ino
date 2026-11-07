@@ -169,7 +169,7 @@ const unsigned long INTERVALO_CONTROLE_MS = 20;
 float posZeroBase     = 90.0;
 float posZeroOmbro    = 60.0;
 float posZeroCotovelo = 45.0;
-float posZeroGarra    = 0.0;
+float posZeroGarra    = 35.0;
 
 const uint16_t EEPROM_ZERO_MAGIC = 0x5A30;
 
@@ -180,7 +180,7 @@ const uint16_t EEPROM_ZERO_MAGIC = 0x5A30;
 //  (brownout). Guardando os ângulos em .noinit, o Arduino nunca perde a posição
 //  em que o braço estava no alto e não despenca para 90°.
 
-const uint16_t NOINIT_MAGIC = 0xB4AC;
+const uint16_t NOINIT_MAGIC = 0xB4AD;
 uint16_t __attribute__((section(".noinit"))) savedMagic;
 float __attribute__((section(".noinit"))) angBase;
 float __attribute__((section(".noinit"))) angOmbro;
@@ -190,16 +190,16 @@ float __attribute__((section(".noinit"))) angGarra;
 float alvoBase     = 90.0;
 float alvoOmbro    = 60.0;
 float alvoCotovelo = 45.0;
-float alvoGarra    = 0.0;
+float alvoGarra    = 35.0;
 
 // ===========================================================================
-//  5. LIMITES MECÂNICOS (0° a 180° liberados para curso completo de descida)
+//  5. LIMITES MECÂNICOS (0° a 180° nas juntas e 10° a 150° na garra)
 // ===========================================================================
 
 float limBaseMin     = 0.0,   limBaseMax     = 180.0;
 float limOmbroMin    = 0.0,   limOmbroMax    = 180.0;
 float limCotoveloMin = 0.0,   limCotoveloMax = 180.0;
-float limGarraMin    = 0.0,   limGarraMax    = 95.0;
+float limGarraMin    = 10.0,  limGarraMax    = 150.0;
 
 // ===========================================================================
 //  6. GANHOS — resposta sem delay, porém lenta e precisa (especialmente Cotovelo)
@@ -207,17 +207,18 @@ float limGarraMin    = 0.0,   limGarraMax    = 95.0;
 //  Em ciclos de 20 ms (50 Hz):
 //    GANHO 0.50 = máx 25°/s (Cotovelo: movimento lento e milimétrico)
 //    GANHO 0.65 = máx 32°/s (Ombro: subida e descida controlada)
-//    GANHO 0.75 = máx 37°/s (Base e Garra)
+//    GANHO 0.75 = máx 37°/s (Base)
+//    GANHO 1.35 = máx 67°/s (Garra: abre e fecha com firmeza e agilidade)
 const float GANHO_BASE    = 0.75;
 const float GANHO_OMBRO   = 0.65;
 const float GANHO_COTOVEL = 0.50;
-const float GANHO_GARRA   = 0.75;
+const float GANHO_GARRA   = 1.35;
 
 // ===========================================================================
 //  7. VELOCIDADE MÁXIMA E RAMPA DE SUAVIZAÇÃO (zero delay + velocidade contida)
 // ===========================================================================
 
-const float VEL_SUAVE = 0.038;         // teto de 38°/s: impede movimentos rápidos mesmo com joystick no fim
+const float VEL_SUAVE = 0.038;         // teto de 38°/s nas juntas do braço
 const float FATOR_SUAVIZACAO = 0.50;   // acompanha o alvo na hora (sem delay ao mexer ou parar)
 
 // ===========================================================================
@@ -228,7 +229,7 @@ const float FATOR_SUAVIZACAO = 0.50;   // acompanha o alvo na hora (sem delay ao
 //
 //      pulso curto (~544 µs) → eixo todo para um lado   (0°)
 //      pulso médio (~1500 µs) → eixo no meio            (90°)
-//      pulso longo (~2336 µs) → eixo todo para o outro (180°)
+//      pulso longo (~2400 µs) → eixo todo para o outro (180°)
 //
 //  Por que usar microssegundos em vez de servo.write(graus)?
 //  servo.write() só aceita INTEIROS de 0 a 180, então guarda a posição com
@@ -237,11 +238,11 @@ const float FATOR_SUAVIZACAO = 0.50;   // acompanha o alvo na hora (sem delay ao
 //  assumir qualquer posição intermediária. Para um braço com 4 juntas
 //  combinando, essa diferença é visível: os cantos ficam mais contínuos.
 //
-//  Os valores 544 e 2336 evitam bater no fim de curso interno do SG90
-//  (que consome >650 mA e derruba a alimentação USB do Arduino).
+//  Os valores 544 e 2400 respeitam a faixa padrão do SG90 no Arduino, evitando
+//  pulsos inválidos que travam o servo da garra.
 
-const float US_MIN = 480.0;   // pulso mínimo completo (0°) para permitir descida total
-const float US_MAX = 2500.0;  // pulso máximo completo (180°)
+const float US_MIN = 544.0;   // pulso mínimo padrão SG90 (0°)
+const float US_MAX = 2400.0;  // pulso máximo padrão SG90 (180°)
 
 //  Velocidade do monitor serial. 9600 é o padrão do Serial Monitor do
 //  Arduino IDE (evita caracteres quebrados ao abrir o monitor).
@@ -299,7 +300,7 @@ int anguloParaUs(float ang) {
 
 float suaviza(float atual, float alvo, float passoMax) {
   float erro = alvo - atual;
-  if (erro > -0.05 && erro < 0.05) return alvo;
+  if (erro > -0.005 && erro < 0.005) return alvo;
   float d = erro * FATOR_SUAVIZACAO;
   if (d > passoMax) d = passoMax;
   if (d < -passoMax) d = -passoMax;
@@ -375,8 +376,8 @@ void carregaPosicaoZeroEEPROM() {
     EEPROM.get(6,  o);
     EEPROM.get(10, c);
     EEPROM.get(14, g);
-    if (b >= 0.0 && b <= 180.0 && o >= 0.0 && o <= 180.0 &&
-        c >= 0.0 && c <= 180.0 && g >= 0.0 && g <= 95.0) {
+    if (b >= limBaseMin && b <= limBaseMax && o >= limOmbroMin && o <= limOmbroMax &&
+        c >= limCotoveloMin && c <= limCotoveloMax && g >= limGarraMin && g <= limGarraMax) {
       posZeroBase     = b;
       posZeroOmbro    = o;
       posZeroCotovelo = c;
@@ -619,7 +620,7 @@ void loop() {
 
   float passoMax = VEL_SUAVE * (float)INTERVALO_CONTROLE_MS;
 
-  if (abs(alvoBase - angBase) > 0.04) {
+  if (abs(alvoBase - angBase) > 0.005) {
     angBase = suaviza(angBase, alvoBase, passoMax);
     ativoBaseMs = agora;
   }
@@ -629,7 +630,7 @@ void loop() {
     desligaBase();
   }
 
-  if (abs(alvoOmbro - angOmbro) > 0.04) {
+  if (abs(alvoOmbro - angOmbro) > 0.005) {
     angOmbro = suaviza(angOmbro, alvoOmbro, passoMax);
     ativoOmbroMs = agora;
   }
@@ -641,7 +642,7 @@ void loop() {
     servoOmbro.detach();
   }
 
-  if (abs(alvoCotovelo - angCotovelo) > 0.04) {
+  if (abs(alvoCotovelo - angCotovelo) > 0.005) {
     angCotovelo = suaviza(angCotovelo, alvoCotovelo, passoMax);
     ativoCotoveloMs = agora;
   }
@@ -653,12 +654,12 @@ void loop() {
     servoCotovelo.detach();
   }
 
-  if (abs(alvoGarra - angGarra) > 0.04) {
-    angGarra = suaviza(angGarra, alvoGarra, passoMax * 0.85);
+  if (abs(alvoGarra - angGarra) > 0.005) {
+    angGarra = suaviza(angGarra, alvoGarra, passoMax * 1.5);
     ativoGarraMs = agora;
   }
   bool garraMovendo = (ativoGarraMs != 0 && (agora - ativoGarraMs <= TEMPO_HOLD_MS));
-  bool garraSegurando = (ativoGarraMs != 0 && angGarra < 32.0 && !ombroAtivo && !cotoveloAtivo);
+  bool garraSegurando = (ativoGarraMs != 0 && angGarra < 38.0 && !ombroAtivo && !cotoveloAtivo);
   if (garraMovendo || garraSegurando) {
     if (!servoGarra.attached()) servoGarra.attach(PIN_SERVO_GARRA);
     servoGarra.writeMicroseconds(anguloParaUs(angGarra));
