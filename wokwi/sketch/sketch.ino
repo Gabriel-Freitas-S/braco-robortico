@@ -61,8 +61,8 @@
  *
  *    Joystick esquerdo X A0   → Base (esquerda/direita)
  *    Joystick esquerdo Y A1   → Cotovelo (frente/trás)
- *    Joystick direito  X A2   → Garra (esquerda/direita)
- *    Joystick direito  Y A3   → Ombro (frente/trás)
+ *    Joystick direito  X A3   → Garra (esquerda fecha / direita abre)
+ *    Joystick direito  Y A2   → Ombro (frente/trás)
  *
  *    LED de status       D13
  *
@@ -91,14 +91,11 @@
 //  pino: ocupa 1 byte em vez de 2, economizando memória no Arduino.
 
 const uint8_t PIN_SERVO_BASE    = 9;
-//  Todos os pinos digitais livres do Uno que podem estar ligados ao 4º
-//  conector de servo em diferentes versões da Shield Joystick:
+//  Pinos digitais livres candidatos ao 4º conector de servo na Shield Joystick
+//  (sem D2, D3 e D4, que na Shield PD07 da Casa da Robótica são botões e LED):
 const uint8_t PIN_BASE_ALT_D5   = 5;
 const uint8_t PIN_BASE_ALT_D7   = 7;
 const uint8_t PIN_BASE_ALT_D8   = 8;
-const uint8_t PIN_BASE_ALT_D3   = 3;
-const uint8_t PIN_BASE_ALT_D2   = 2;
-const uint8_t PIN_BASE_ALT_D4   = 4;
 const uint8_t PIN_BASE_ALT_D12  = 12;
 
 const uint8_t PIN_SERVO_OMBRO   = 10;
@@ -106,16 +103,10 @@ const uint8_t PIN_SERVO_COTOVEL = 11;
 const uint8_t PIN_SERVO_GARRA   = 6;
 const uint8_t PIN_LED           = 13;
 
-//  Um objeto Servo por pino (Uno suporta até 12).
-//  Espelhamos a Base em todos os pinos digitais livres (D9,D5,D7,D8,D3,D2,D4,D12)
-//  para que qualquer trilha física da Shield receba o sinal da Base.
 Servo servoBase;
 Servo servoBaseD5;
 Servo servoBaseD7;
 Servo servoBaseD8;
-Servo servoBaseD3;
-Servo servoBaseD2;
-Servo servoBaseD4;
 Servo servoBaseD12;
 Servo servoOmbro;
 Servo servoCotovelo;
@@ -127,19 +118,13 @@ void escreveBase(int pulsoUs) {
     servoBaseD5.attach(PIN_BASE_ALT_D5);
     servoBaseD7.attach(PIN_BASE_ALT_D7);
     servoBaseD8.attach(PIN_BASE_ALT_D8);
-    servoBaseD3.attach(PIN_BASE_ALT_D3);
-    servoBaseD2.attach(PIN_BASE_ALT_D2);
-    servoBaseD4.attach(PIN_BASE_ALT_D4);
     servoBaseD12.attach(PIN_BASE_ALT_D12);
   }
-  servoBase.write(pulsoUs);
-  servoBaseD5.write(pulsoUs);
-  servoBaseD7.write(pulsoUs);
-  servoBaseD8.write(pulsoUs);
-  servoBaseD3.write(pulsoUs);
-  servoBaseD2.write(pulsoUs);
-  servoBaseD4.write(pulsoUs);
-  servoBaseD12.write(pulsoUs);
+  servoBase.writeMicroseconds(pulsoUs);
+  servoBaseD5.writeMicroseconds(pulsoUs);
+  servoBaseD7.writeMicroseconds(pulsoUs);
+  servoBaseD8.writeMicroseconds(pulsoUs);
+  servoBaseD12.writeMicroseconds(pulsoUs);
 }
 
 void desligaBase() {
@@ -148,137 +133,76 @@ void desligaBase() {
     servoBaseD5.detach();
     servoBaseD7.detach();
     servoBaseD8.detach();
-    servoBaseD3.detach();
-    servoBaseD2.detach();
-    servoBaseD4.detach();
     servoBaseD12.detach();
   }
 }
 
 // ===========================================================================
-//  2. JOYSTICKS — leitura analógica
+//  2. JOYSTICKS — leitura analógica (Shield Casa da Robótica Ref: PD07)
 // ===========================================================================
-//  Joystick PS2 tem dois potenciômetros: um para X (esquerda/direita) e um
-//  para Y (frente/trás). Cada um é um resistor variável que o Arduino mede
-//  como tensão de 0 a 5 V, convertida em número de 0 a 1023.
 
-const uint8_t PIN_JOY1_X = A0;   // joystick esquerdo, eixo horizontal
-const uint8_t PIN_JOY1_Y = A1;   // joystick esquerdo, eixo vertical
-const uint8_t PIN_JOY2_X = A2;   // joystick direito, eixo horizontal
-const uint8_t PIN_JOY2_Y = A3;   // joystick direito, eixo vertical
+const uint8_t PIN_JOY1_X = A0;   // joystick esquerdo: esquerda/direita → Base
+const uint8_t PIN_JOY1_Y = A1;   // joystick esquerdo: frente/trás      → Cotovelo
+const uint8_t PIN_JOY2_X = A3;   // joystick direito:  esquerda/direita → Garra (esq=fecha, dir=abre)
+const uint8_t PIN_JOY2_Y = A2;   // joystick direito:  frente/trás      → Ombro
 
-//  Valor lido com o joystick no meio. O potenciômetro raramente dá
-//  exatamente 512 (a metade de 0..1023) — pode dar 500 ou 523. Por isso
-//  medimos em torno de 512 em vez de exigir 512.
 const int JOY_CENTER = 512;
 
-//  ZONA MORTA — tolerância em torno do centro.
-//
-//  Quando você solta o joystick, ele não volta a 512: vibração mecânica e
-//  ruído elétrico fazem o valor oscilar alguns pontos. O motor le qualquer
-//  mudança como comando, então o braço treme parado. A zona morta ignora
-//  qualquer variação menor que este valor.
-//
-//  60 de 1023 ≈ 6% do curso para cada lado ≈ 12% no total. É o ponto
-//  ideal: se for pequena demais, o braço treme parado; se for grande
-//  demais, você perde curso de controle e não consegue comandos finos
-//  de garra.
-const int JOY_DEADZONE = 45;
+//  Zona morta reduzida (25 ≈ 4.8%) combinada com média de 4 leituras ADC
+//  para resposta imediata ao tocar no joystick, sem atraso na partida.
+const int JOY_DEADZONE = 25;
 
-//  Intervalo fixo de atualização do controle (20 ms = 50 Hz, sincronizado
-//  com o período de 20 ms do sinal PWM dos servomotores SG90).
+//  Intervalo fixo de atualização do controle (20 ms = 50 Hz)
 const unsigned long INTERVALO_CONTROLE_MS = 20;
 
 // ===========================================================================
 //  3. POSIÇÃO DE REPOUSO ("parking")
 // ===========================================================================
-//  Ângulo em que cada junta fica quando o programa liga e quando você
-//  aperta 'r'. São ângulos CENTRAIS de propósito: a junta fica no meio do
-//  curso, com folga dos dois lados. Se a repousasse num extremo, um
-//  comando errado do joystick poderia travar o mecanismo contra o batente.
-//
-//  A garra repousa FECHADA (0°) para proteger a pinça no transporte.
 
 const float PARK_BASE    = 90.0;
 const float PARK_OMBRO   = 90.0;
 const float PARK_COTOVEL = 90.0;
-const float PARK_GARRA   = 35.0;  // repousa levemente aberta para não forçar/travar em 0°
+const float PARK_GARRA   = 35.0;  // repousa levemente aberta
 
 // ===========================================================================
 //  4. OS DOIS ÂNGULOS DE CADA JUNTA
 // ===========================================================================
-//  (explicado em detalhe no cabeçalho do arquivo — leia lá se ainda não leu)
 
-float angBase     = PARK_BASE;   // ALVO: mudado pelo joystick
+float angBase     = PARK_BASE;
 float angOmbro    = PARK_OMBRO;
 float angCotovelo = PARK_COTOVEL;
 float angGarra    = PARK_GARRA;
 
-float alvoBase     = PARK_BASE;  // ATUAL: caminha em direção ao alvo
+float alvoBase     = PARK_BASE;
 float alvoOmbro    = PARK_OMBRO;
 float alvoCotovelo = PARK_COTOVEL;
 float alvoGarra    = PARK_GARRA;
 
 // ===========================================================================
-//  5. LIMITES MECÂNICOS — a parte mais importante para não QUEBRAR o braço
+//  5. LIMITES MECÂNICOS
 // ===========================================================================
-//  Limites de ângulo REAIS de cada junta, em graus. Vêm do manual do
-//  projeto e correspondem ao espaço físico entre as peças.
-//
-//  Não são programação arbitrária: ultrapassar estes valores faz o servo
-//  forçar contra a articulação impressa em PLA. PLA trincar, entalhar ou
-//  partir é o resultado — e a engrenagem da garra (peças 20, 21, 26) é o
-//  ponto mais frágil do conjunto.
-//
-//  ⚠️  ESTES VALORES NÃO FORAM TESTADOS NO BRAÇO MONTADO.
-//  Antes de usar o comando 't' (teste), confira cada limite aqui contra
-//  o manual e ajuste se o ângulo real do braço diferir. É mais seguro
-//  começar com uma faixa estreita e alargar aos poucos.
 
 float limBaseMin     = 5.0,   limBaseMax     = 175.0;
 float limOmbroMin    = 10.0,  limOmbroMax    = 170.0;
 float limCotoveloMin = 10.0,  limCotoveloMax = 170.0;
-float limGarraMin    = 10.0,  limGarraMax    = 95.0;
+float limGarraMin    = 0.0,   limGarraMax    = 90.0;   // 0° permite fechamento completo para segurar objetos
 
 // ===========================================================================
-//  6. GANHOS — velocidade de resposta de cada junta
+//  6. GANHOS — velocidade e precisão fina de cada junta
 // ===========================================================================
-//  Quantos GRAUS o servo anda por cada unidade de leitura do joystick
-//  (fora da zona morta).
-//
-//  Como funciona a conta, usando o ombro:
-//    leitura 700 (joystick ~40% para cima), JOY_CENTER 512
-//    diferença = 700 - 512 = 188
-//    menos zona morta = 188 - 60 = 128
-//    ângulo por ciclo = 128 × 0.020 = 2.56°
-//
-//  O loop() roda milhares de vezes por segundo, então esses 2.56° se
-//  acumulam rápido e o braço responde bem. Diminuir o ganho = mais lento
-//  e mais suave. Aumentar = mais rápido e mais tremor.
-//
-//  A garra tem ganho pela metade (0.010) porque tem curso curto (0..90°)
-//  e engrenagem: movimento rápido demais aqui faz os dentes de PLA
-//  escorregar ou o servo forçar o mecanismo.
-
-//  Velocidade máxima em graus por ciclo de 20 ms (50 Hz) com joystick em 100%:
-//  1.6° por 20 ms = 80°/s (movimento amplo, fluido e controlado).
-const float GANHO_BASE    = 1.60;
-const float GANHO_OMBRO   = 1.60;
-const float GANHO_COTOVEL = 1.60;
-const float GANHO_GARRA   = 1.00;
+//  Ganhos calibrados para precisão milimétrica perto do centro e velocidade
+//  máxima moderada (~45°/s) no fim de curso, sem movimentos bruscos.
+const float GANHO_BASE    = 0.95;
+const float GANHO_OMBRO   = 0.90;
+const float GANHO_COTOVEL = 0.90;
+const float GANHO_GARRA   = 0.80;
 
 // ===========================================================================
-//  7. VELOCIDADE MÁXIMA — o limite que elimina o tranco
+//  7. VELOCIDADE MÁXIMA E RAMPA DE SUAVIZAÇÃO
 // ===========================================================================
-//  Cada junta anda a uma velocidade FIXA: VEL_SUAVE graus por milissegundo
-//  (0.08 = 80°/s). O filtro exponencial FATOR_SUAVIZACAO cria aceleração e
-//  frenagem suaves ao mover e ao soltar o joystick.
-//
-//  Menor = mais lento e mais suave. Maior = mais rápido e mais bruto.
-//  A garra anda com metade (ver loop) por causa das engrenagens de PLA.
 
-const float VEL_SUAVE = 0.08;          // graus por milissegundo (0.08 → 80°/s)
-const float FATOR_SUAVIZACAO = 0.28;   // rampa suave de partida e parada (0.15..0.35)
+const float VEL_SUAVE = 0.045;         // máx 45°/s: elimina trancos e reduz pico de corrente na fonte
+const float FATOR_SUAVIZACAO = 0.18;   // aceleração e frenagem progressivas
 
 // ===========================================================================
 //  8. PULSO DO SERVO — o que realmente comanda o motor
@@ -486,16 +410,26 @@ void status() {
 //  12. LEITURA DO JOYSTICK → ÂNGULO ALVO
 // ===========================================================================
 
+//  Média de 4 amostras consecutivas para eliminar ruído analógico sem atraso
+int leEixoSuave(uint8_t pino) {
+  long soma = 0;
+  for (uint8_t i = 0; i < 4; i++) {
+    soma += analogRead(pino);
+  }
+  return (int)(soma >> 2);
+}
+
 float aplicaEixo(int leitura, int centro, float atual, float min, float max, float ganho) {
   int e = leitura - centro;
-  const int dz = 65;
+  const int dz = JOY_DEADZONE;
 
   if (abs(e) > dz) {
     int excesso = e - (e > 0 ? dz : -dz);
     float alcance = (float)(512 - dz);
     float norm = constrainAngle((float)excesso / alcance, -1.0, 1.0);
     float absNorm = norm < 0.0 ? -norm : norm;
-    float curva = 0.55 * norm + 0.45 * norm * absNorm;
+    // Curva quadrática suave: muito precisa perto do centro, sem arranque brusco
+    float curva = 0.18 * norm + 0.82 * norm * absNorm;
     float delta = curva * ganho;
     return constrainAngle(atual + delta, min, max);
   }
@@ -503,11 +437,10 @@ float aplicaEixo(int leitura, int centro, float atual, float min, float max, flo
   return atual;   // joystick no centro: segura a posição onde parou
 }
 
-unsigned long ativoBaseMs     = 0;
-unsigned long ativoOmbroMs    = 0;
-unsigned long ativoCotoveloMs = 0;
-unsigned long ativoGarraMs    = 0;
-const unsigned long TEMPO_HOLD_MS = 220;
+bool ativoBase     = false;
+bool ativoOmbro    = false;
+bool ativoCotovelo = false;
+bool ativoGarra    = false;
 
 // ===========================================================================
 //  13. LOOP — roda para sempre, milhares de vezes por segundo
@@ -521,7 +454,10 @@ void loop() {
     switch (c) {
       case 'h': case 'H': mostraAjuda(); break;
       case 's': case 'S': status();      break;
-      case 'r': case 'R': resetPark();   break;
+      case 'r': case 'R':
+        resetPark();
+        ativoBase = ativoOmbro = ativoCotovelo = ativoGarra = true;
+        break;
       case 'd': case 'D':
         debugOn = !debugOn;   // inverte o valor (liga<->desliga)
         Serial.print(F("debug "));
@@ -538,71 +474,64 @@ void loop() {
   }
   ultimoCicloMs = agora;
 
-  int joy1X = analogRead(PIN_JOY1_X);
-  int joy1Y = analogRead(PIN_JOY1_Y);
-  int joy2X = analogRead(PIN_JOY2_X);
-  int joy2Y = analogRead(PIN_JOY2_Y);
+  int joy1X = leEixoSuave(PIN_JOY1_X);
+  int joy1Y = leEixoSuave(PIN_JOY1_Y);
+  int joy2X = leEixoSuave(PIN_JOY2_X);
+  int joy2Y = leEixoSuave(PIN_JOY2_Y);
 
   //  --- ETAPA C: joystick altera os ALVOS proporcionalmente -----------
-  //    joy1X → Base       (esquerdo, esquerda/direita) gira a base
-  //    joy1Y → Cotovelo   (esquerdo, frente/trás)      movimenta o cotovelo
-  //    joy2Y → Ombro      (direito,  frente/trás)      movimenta o ombro
-  //    joy2X → Garra      (direito,  esquerda/direita) abre/fecha a garra
+  //    joy1X (A0) → Base       (esquerdo, esquerda/direita) gira a base
+  //    joy1Y (A1) → Cotovelo   (esquerdo, cima/baixo)       movimenta o cotovelo
+  //    joy2Y (A2) → Ombro      (direito,  cima/baixo)       sobe/desce o ombro
+  //    joy2X (A3) → Garra      (direito,  esquerda/direita) esquerda=fecha, direita=abre
 
   alvoBase     = aplicaEixo(joy1X, centroJoy1X, alvoBase, limBaseMin, limBaseMax, GANHO_BASE);
   alvoCotovelo = aplicaEixo(joy1Y, centroJoy1Y, alvoCotovelo, limCotoveloMin, limCotoveloMax, GANHO_COTOVEL);
   alvoOmbro    = aplicaEixo(joy2Y, centroJoy2Y, alvoOmbro, limOmbroMin, limOmbroMax, GANHO_OMBRO);
-  alvoGarra    = aplicaEixo(joy2X, centroJoy2X, alvoGarra, limGarraMin, limGarraMax, -GANHO_GARRA);
+  alvoGarra    = aplicaEixo(joy2X, centroJoy2X, alvoGarra, limGarraMin, limGarraMax, GANHO_GARRA);
 
-  //  --- ETAPA D: SUAVIZAÇÃO + ACIONAMENTO SOB DEMANDA -----------------
-  //  Cada servo só recebe pulso PWM enquanto está em movimento (e por 220 ms
-  //  após chegar ao alvo). Quando os joysticks estão soltos, todos os servos
-  //  ficam desligados (detach), garantindo consumo ZERO parado e impedindo
-  //  qualquer movimento involuntário ou queda da porta USB.
+  //  --- ETAPA D: SUAVIZAÇÃO + RETENÇÃO CONTÍNUA DE TORQUE -------------
+  //  Assim que cada junta recebe o primeiro movimento, seu servo permanece
+  //  conectado (attached) enviando pulso PWM contínuo em microssegundos.
+  //  Isso garante que:
+  //    1. A garra mantenha a força segurando o objeto ao soltar o joystick;
+  //    2. O ombro e o cotovelo não cedam com o peso nem deem tranco ao religar.
 
   float passoMax = VEL_SUAVE * (float)INTERVALO_CONTROLE_MS;
 
-  if (abs(alvoBase - angBase) > 0.05) {
+  if (abs(alvoBase - angBase) > 0.03) {
     angBase = suaviza(angBase, alvoBase, passoMax);
-    ativoBaseMs = agora;
+    ativoBase = true;
   }
-  if (ativoBaseMs != 0 && (agora - ativoBaseMs <= TEMPO_HOLD_MS)) {
+  if (ativoBase) {
     escreveBase(anguloParaUs(angBase));
-  } else {
-    desligaBase();
   }
 
-  if (abs(alvoOmbro - angOmbro) > 0.05) {
+  if (abs(alvoOmbro - angOmbro) > 0.03) {
     angOmbro = suaviza(angOmbro, alvoOmbro, passoMax);
-    ativoOmbroMs = agora;
+    ativoOmbro = true;
   }
-  if (ativoOmbroMs != 0 && (agora - ativoOmbroMs <= TEMPO_HOLD_MS)) {
+  if (ativoOmbro) {
     if (!servoOmbro.attached()) servoOmbro.attach(PIN_SERVO_OMBRO);
-    servoOmbro.write(anguloParaUs(angOmbro));
-  } else if (servoOmbro.attached()) {
-    servoOmbro.detach();
+    servoOmbro.writeMicroseconds(anguloParaUs(angOmbro));
   }
 
-  if (abs(alvoCotovelo - angCotovelo) > 0.05) {
+  if (abs(alvoCotovelo - angCotovelo) > 0.03) {
     angCotovelo = suaviza(angCotovelo, alvoCotovelo, passoMax);
-    ativoCotoveloMs = agora;
+    ativoCotovelo = true;
   }
-  if (ativoCotoveloMs != 0 && (agora - ativoCotoveloMs <= TEMPO_HOLD_MS)) {
+  if (ativoCotovelo) {
     if (!servoCotovelo.attached()) servoCotovelo.attach(PIN_SERVO_COTOVEL);
-    servoCotovelo.write(anguloParaUs(angCotovelo));
-  } else if (servoCotovelo.attached()) {
-    servoCotovelo.detach();
+    servoCotovelo.writeMicroseconds(anguloParaUs(angCotovelo));
   }
 
-  if (abs(alvoGarra - angGarra) > 0.05) {
-    angGarra = suaviza(angGarra, alvoGarra, passoMax * 0.7);
-    ativoGarraMs = agora;
+  if (abs(alvoGarra - angGarra) > 0.03) {
+    angGarra = suaviza(angGarra, alvoGarra, passoMax * 0.85);
+    ativoGarra = true;
   }
-  if (ativoGarraMs != 0 && (agora - ativoGarraMs <= TEMPO_HOLD_MS)) {
+  if (ativoGarra) {
     if (!servoGarra.attached()) servoGarra.attach(PIN_SERVO_GARRA);
-    servoGarra.write(anguloParaUs(angGarra));
-  } else if (servoGarra.attached()) {
-    servoGarra.detach();
+    servoGarra.writeMicroseconds(anguloParaUs(angGarra));
   }
 
   //  --- ETAPA F: leitura dos joysticks no monitor serial --------------
