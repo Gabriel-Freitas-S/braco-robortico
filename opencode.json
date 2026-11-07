@@ -4,7 +4,7 @@
     "build123d-mcp": {
       "type": "local",
       "command": [
-        "C:\\Users\\gabri\\.local\\bin\\uv.exe",
+        "/home/gabrielfs/.local/bin/uv",
         "tool",
         "run",
         "--python",
@@ -19,8 +19,8 @@
       "enabled": true,
       "timeout": 120000,
       "environment": {
-        "ARDUINO_CLI_PATH": "C:\\Users\\gabri\\.local\\bin\\arduino-cli.exe",
-        "ARDUINO_SKETCH_ROOT": "D:\\braco-robortico\\firmware"
+        "ARDUINO_CLI_PATH": "/usr/bin/arduino-cli",
+        "ARDUINO_SKETCH_ROOT": "/home/gabrielfs/Projetos/braco-robortico/firmware"
       }
     }
   },
