@@ -178,6 +178,7 @@ float posZeroCotovelo = 45.0;
 float posZeroGarra    = 35.0;
 
 const uint16_t EEPROM_ZERO_MAGIC = 0x5A30;
+const uint16_t EEPROM_LIM_MAGIC  = 0x4C4D;
 
 // ===========================================================================
 //  4. OS DOIS ÂNGULOS DE CADA JUNTA (protegidos em .noinit contra brownout)
@@ -186,7 +187,7 @@ const uint16_t EEPROM_ZERO_MAGIC = 0x5A30;
 //  (brownout). Guardando os ângulos em .noinit, o Arduino nunca perde a posição
 //  em que o braço estava no alto e não despenca para 90°.
 
-const uint16_t NOINIT_MAGIC = 0xB4B0;
+const uint16_t NOINIT_MAGIC = 0xB4B1;
 uint16_t __attribute__((section(".noinit"))) savedMagic;
 float __attribute__((section(".noinit"))) angBase;
 float __attribute__((section(".noinit"))) angOmbro;
@@ -200,10 +201,13 @@ float alvoCotovelo = 45.0;
 float alvoGarra    = 35.0;
 
 // ===========================================================================
-//  5. LIMITES MECÂNICOS (0° a 180° nas juntas e 0° a 90° na garra)
+//  5. LIMITES MECÂNICOS (proteção contra batida em parafuso e fim de curso)
 // ===========================================================================
+//  Na Base, 12° a 168° evita que a mesa giratória bata na cabeça do parafuso
+//  ou force o fim de curso interno do servo SG90. Você também pode gravar o
+//  limite exato antes do parafuso segurando o Botão Direito (D4) por 2s!
 
-float limBaseMin     = 0.0,   limBaseMax     = 180.0;
+float limBaseMin     = 12.0,  limBaseMax     = 168.0;
 float limOmbroMin    = 0.0,   limOmbroMax    = 180.0;
 float limCotoveloMin = 0.0,   limCotoveloMax = 180.0;
 float limGarraMin    = 0.0,   limGarraMax    = 90.0;   // 0° permite fechamento 100% completo da garra
@@ -245,11 +249,13 @@ const float FATOR_SUAVIZACAO = 0.50;   // acompanha o alvo na hora (sem delay ao
 //  assumir qualquer posição intermediária. Para um braço com 4 juntas
 //  combinando, essa diferença é visível: os cantos ficam mais contínuos.
 //
-//  Os valores 544 e 2400 respeitam a faixa padrão do SG90 no Arduino, evitando
-//  pulsos inválidos que travam o servo da garra.
+//  Os valores 544 e 2400 respeitam a faixa padrão do SG90 no Arduino nas juntas
+//  (evitando forçar o fim de curso interno da Base), enquanto a Garra usa 500 µs
+//  para garantir fechamento total com pressão firme.
 
-const float US_MIN = 500.0;   // pulso mínimo completo SG90 (0° — garante fechamento total da garra)
-const float US_MAX = 2400.0;  // pulso máximo padrão SG90 (180°)
+const float US_MIN       = 544.0;   // pulso mínimo padrão SG90 para Base/Ombro/Cotovelo (não força o batente)
+const float US_MIN_GARRA = 500.0;   // pulso mínimo estendido exclusivo da Garra (fechamento 100%)
+const float US_MAX       = 2400.0;  // pulso máximo padrão SG90 (180°)
 
 //  Velocidade do monitor serial. 9600 é o padrão do Serial Monitor do
 //  Arduino IDE (evita caracteres quebrados ao abrir o monitor).
@@ -294,6 +300,13 @@ int anguloParaUs(float ang) {
   float us = US_MIN + (ang / 180.0) * (US_MAX - US_MIN);
   if (us < US_MIN) us = US_MIN;
   if (us > US_MAX) us = US_MAX;
+  return (int)us;
+}
+
+int anguloParaUsGarra(float ang) {
+  float us = US_MIN_GARRA + (ang / 180.0) * (US_MAX - US_MIN_GARRA);
+  if (us < US_MIN_GARRA) us = US_MIN_GARRA;
+  if (us > US_MAX)       us = US_MAX;
   return (int)us;
 }
 
@@ -390,6 +403,18 @@ void calibraJoysticks() {
 }
 
 void carregaPosicaoZeroEEPROM() {
+  uint16_t limMagic = 0;
+  EEPROM.get(18, limMagic);
+  if (limMagic == EEPROM_LIM_MAGIC) {
+    float bMin, bMax;
+    EEPROM.get(20, bMin);
+    EEPROM.get(24, bMax);
+    if (bMin >= 0.0 && bMax <= 180.0 && (bMax - bMin) >= 20.0) {
+      limBaseMin = bMin;
+      limBaseMax = bMax;
+    }
+  }
+
   uint16_t magic = 0;
   EEPROM.get(0, magic);
   if (magic == EEPROM_ZERO_MAGIC) {
@@ -398,14 +423,31 @@ void carregaPosicaoZeroEEPROM() {
     EEPROM.get(6,  o);
     EEPROM.get(10, c);
     EEPROM.get(14, g);
-    if (b >= limBaseMin && b <= limBaseMax && o >= limOmbroMin && o <= limOmbroMax &&
+    if (b >= 0.0 && b <= 180.0 && o >= limOmbroMin && o <= limOmbroMax &&
         c >= limCotoveloMin && c <= limCotoveloMax && g >= limGarraMin && g <= limGarraMax) {
-      posZeroBase     = b;
+      posZeroBase     = constrainAngle(b, limBaseMin, limBaseMax);
       posZeroOmbro    = o;
       posZeroCotovelo = c;
       posZeroGarra    = g;
     }
   }
+}
+
+void piscaConfirmacaoLED() {
+  for (uint8_t i = 0; i < 4; i++) {
+    digitalWrite(PIN_LED, HIGH); delay(60);
+    digitalWrite(PIN_LED, LOW);  delay(60);
+  }
+  digitalWrite(PIN_LED, garraTravada ? HIGH : LOW);
+}
+
+void salvaLimitesBaseEEPROM() {
+  EEPROM.put(18, EEPROM_LIM_MAGIC);
+  EEPROM.put(20, limBaseMin);
+  EEPROM.put(24, limBaseMax);
+  Serial.print(F("LIMITES DA BASE SALVOS: Min=")); Serial.print((int)limBaseMin);
+  Serial.print(F(" Max=")); Serial.println((int)limBaseMax);
+  piscaConfirmacaoLED();
 }
 
 void salvaPosicaoZeroEEPROM() {
@@ -422,11 +464,7 @@ void salvaPosicaoZeroEEPROM() {
   Serial.print(F(" O=")); Serial.print((int)posZeroOmbro);
   Serial.print(F(" C=")); Serial.print((int)posZeroCotovelo);
   Serial.print(F(" G=")); Serial.println((int)posZeroGarra);
-  for (uint8_t i = 0; i < 4; i++) {
-    digitalWrite(PIN_LED, HIGH); delay(60);
-    digitalWrite(PIN_LED, LOW);  delay(60);
-  }
-  digitalWrite(PIN_LED, garraTravada ? HIGH : LOW);
+  piscaConfirmacaoLED();
 }
 
 void sequenceInicial() {
@@ -437,10 +475,11 @@ void sequenceInicial() {
   // Se foi um micro-reset por queda de tensão (brownout da fonte 12V),
   // restaura imediatamente os ângulos e mantém o torque ativo para o braço não cair!
   if (savedMagic == NOINIT_MAGIC &&
-      angBase >= limBaseMin && angBase <= limBaseMax &&
+      angBase >= 0.0 && angBase <= 180.0 &&
       angOmbro >= limOmbroMin && angOmbro <= limOmbroMax &&
       angCotovelo >= limCotoveloMin && angCotovelo <= limCotoveloMax &&
       angGarra >= limGarraMin && angGarra <= limGarraMax) {
+    angBase      = constrainAngle(angBase, limBaseMin, limBaseMax);
     alvoBase     = angBase;
     alvoOmbro    = angOmbro;
     alvoCotovelo = angCotovelo;
@@ -457,7 +496,7 @@ void sequenceInicial() {
     servoCotovelo.writeMicroseconds(anguloParaUs(angCotovelo));
     if (garraTravada) {
       servoGarra.attach(PIN_SERVO_GARRA);
-      servoGarra.writeMicroseconds(anguloParaUs(angGarra));
+      servoGarra.writeMicroseconds(anguloParaUsGarra(angGarra));
     }
     digitalWrite(PIN_LED, garraTravada ? HIGH : LOW);
     return;
@@ -469,7 +508,7 @@ void sequenceInicial() {
 
   // Primeira ligação a frio: inicia na Posição 0
   alvoGarra    = angGarra    = posZeroGarra;
-  alvoBase     = angBase     = posZeroBase;
+  alvoBase     = angBase     = constrainAngle(posZeroBase, limBaseMin, limBaseMax);
   alvoOmbro    = angOmbro    = posZeroOmbro;
   alvoCotovelo = angCotovelo = posZeroCotovelo;
   garraTravada = 0;
@@ -477,7 +516,7 @@ void sequenceInicial() {
 
   // Pulso curto de destravamento na garra ao iniciar
   servoGarra.attach(PIN_SERVO_GARRA);
-  servoGarra.writeMicroseconds(anguloParaUs(angGarra));
+  servoGarra.writeMicroseconds(anguloParaUsGarra(angGarra));
   delay(220);
   servoGarra.detach();
 
@@ -499,7 +538,7 @@ bool btn1SalvouNoHold = false;
 unsigned long inicioPressaoBtn1Ms = 0;
 
 bool btn2Pressionado = false;
-bool btn2AcaoExecutada = false;
+bool btn2SalvouNoHold = false;
 unsigned long inicioPressaoBtn2Ms = 0;
 
 void resetPark() {
@@ -512,8 +551,11 @@ void mostraAjuda() {
   Serial.println(F("   BRACO ROBOTICO 4-DOF — CONTROLE POR JOYSTICK (9600)"));
   Serial.println(F("========================================================"));
   Serial.println(F("  Botao Joy Esq (D2): clique = Ir Pos 0 | segurar 2s = Salvar Pos 0"));
-  Serial.println(F("  Botao Joy Dir (D4): 1o clique = Travar pressao da Garra | 2o = Liberar"));
-  Serial.println(F("  s = Mostrar angulos atuais das 4 juntas"));
+  Serial.println(F("  Botao Joy Dir (D4): clique = Travar/Liberar pressao da Garra"));
+  Serial.println(F("                      segurar 2s = Salvar limite lateral da Base (anti-parafuso)"));
+  Serial.println(F("  [ / ] = Salvar limite Min / Max da Base no angulo atual"));
+  Serial.println(F("  l = Restaurar limites amplos da Base (5 a 175 graus)"));
+  Serial.println(F("  s = Mostrar angulos e limites atuais"));
   Serial.println(F("  r = Voltar suavemente para posicao de repouso (Pos 0)"));
   Serial.println(F("  d = Ligar/desligar leitura continua dos joysticks"));
   Serial.println(F("  h = Mostrar este menu"));
@@ -524,7 +566,9 @@ void mostraAjuda() {
 //  está fazendo de verdade agora).
 void status() {
   Serial.print(F("B=")); Serial.print((int)angBase);
-  Serial.print(F(" O=")); Serial.print((int)angOmbro);
+  Serial.print(F(" (Lim:")); Serial.print((int)limBaseMin);
+  Serial.print(F("..")); Serial.print((int)limBaseMax);
+  Serial.print(F(") O=")); Serial.print((int)angOmbro);
   Serial.print(F(" C=")); Serial.print((int)angCotovelo);
   Serial.print(F(" G=")); Serial.print((int)angGarra);
   Serial.print(F(" TravaGarra=")); Serial.println(garraTravada ? F("SIM") : F("NAO"));
@@ -590,6 +634,21 @@ void loop() {
       case 'h': case 'H': mostraAjuda(); break;
       case 's': case 'S': status();      break;
       case 'r': case 'R': resetPark();   break;
+      case '[':
+        limBaseMin = constrainAngle(angBase + 1.5, 0.0, posZeroBase - 5.0);
+        alvoBase = angBase = limBaseMin;
+        salvaLimitesBaseEEPROM();
+        break;
+      case ']':
+        limBaseMax = constrainAngle(angBase - 1.5, posZeroBase + 5.0, 180.0);
+        alvoBase = angBase = limBaseMax;
+        salvaLimitesBaseEEPROM();
+        break;
+      case 'l': case 'L':
+        limBaseMin = 5.0;
+        limBaseMax = 175.0;
+        salvaLimitesBaseEEPROM();
+        break;
       case 'd': case 'D':
         debugOn = !debugOn;   // inverte o valor (liga<->desliga)
         Serial.print(F("debug "));
@@ -632,17 +691,36 @@ void loop() {
     }
   }
 
-  //  --- ETAPA B3: Botão 2 (Joystick Direito, D4) -> Trava de Pressão da Garra
-  //      * 1º clique = Indica objeto na garra: mantém pressão contínua e bloqueia abertura
-  //      * 2º clique = Libera a trava para permitir abrir a garra novamente
+  //  --- ETAPA B3: Botão 2 (Joystick Direito, D4) -> Trava de Pressão da Garra + Limite da Base
+  //      * 1º clique rápido = Indica objeto na garra: mantém pressão contínua e bloqueia abertura
+  //      * 2º clique rápido = Libera a trava para permitir abrir a garra novamente
+  //      * Segurar por ~2s  = Salva o limite lateral da Base antes do parafuso (com recuo de 1.5°
+  //                           para nunca forçar), ou restaura limites se a Base estiver no centro
   bool btn2Agora = (digitalRead(PIN_BTN_JOY2) == LOW);
   if (btn2Agora && !btn2Pressionado) {
     btn2Pressionado = true;
-    btn2AcaoExecutada = false;
+    btn2SalvouNoHold = false;
     inicioPressaoBtn2Ms = agora;
   } else if (btn2Agora && btn2Pressionado) {
-    if (!btn2AcaoExecutada && (agora - inicioPressaoBtn2Ms >= 40)) {
-      btn2AcaoExecutada = true;
+    if (!btn2SalvouNoHold && (agora - inicioPressaoBtn2Ms >= 1800)) {
+      btn2SalvouNoHold = true;
+      if (angBase < posZeroBase - 10.0) {
+        limBaseMin = constrainAngle(angBase + 1.5, 0.0, posZeroBase - 5.0);
+        alvoBase = angBase = limBaseMin;
+        ativoBaseMs = agora;
+      } else if (angBase > posZeroBase + 10.0) {
+        limBaseMax = constrainAngle(angBase - 1.5, posZeroBase + 5.0, 180.0);
+        alvoBase = angBase = limBaseMax;
+        ativoBaseMs = agora;
+      } else {
+        limBaseMin = 5.0;
+        limBaseMax = 175.0;
+      }
+      salvaLimitesBaseEEPROM();
+    }
+  } else if (!btn2Agora && btn2Pressionado) {
+    btn2Pressionado = false;
+    if (!btn2SalvouNoHold && (agora - inicioPressaoBtn2Ms >= 40)) {
       garraTravada = garraTravada ? 0 : 1;
       ativoGarraMs = agora;
       if (garraTravada) {
@@ -656,8 +734,6 @@ void loop() {
         Serial.println(F("GARRA LIBERADA: abertura habilitada no joystick"));
       }
     }
-  } else if (!btn2Agora && btn2Pressionado) {
-    btn2Pressionado = false;
   }
 
   //  Se o usuário mexer em qualquer joystick durante o retorno, assume controle manual
@@ -716,8 +792,8 @@ void loop() {
   }
 
   //  --- ETAPA D: SUAVIZAÇÃO + SUSTENTAÇÃO DO BRAÇO E PRESSÃO DA GARRA --
-  //    - Base: energiza durante o giro (+240 ms) e depois desliga (mesa horizontal
-  //      não sofre ação da gravidade parada).
+  //    - Base: energiza durante o giro e corta em 120 ms ao atingir o limite
+  //      (limBaseMin/limBaseMax) para nunca ficar forçando contra parafuso ou batente.
   //    - Ombro e Cotovelo: mantêm o pulso PWM ativo após acionados e sempre que
   //      a Base gira, sustentando o braço firme sem abaixar durante movimentos laterais.
   //    - Garra: quando `garraTravada` está ativa (Botão 2), mantém o servo ligado
@@ -730,7 +806,9 @@ void loop() {
     angBase = suaviza(angBase, alvoBase, passoMax);
     ativoBaseMs = agora;
   }
-  bool baseAtiva = (ativoBaseMs != 0 && (agora - ativoBaseMs <= TEMPO_HOLD_MS));
+  bool noLimiteBase = (angBase <= limBaseMin + 0.2 || angBase >= limBaseMax - 0.2);
+  unsigned long holdBase = noLimiteBase ? 120 : TEMPO_HOLD_MS;
+  bool baseAtiva = (ativoBaseMs != 0 && (agora - ativoBaseMs <= holdBase));
   if (baseAtiva) {
     escreveBase(anguloParaUs(angBase));
   } else {
@@ -762,7 +840,7 @@ void loop() {
   bool garraMovendo = (ativoGarraMs != 0 && (agora - ativoGarraMs <= 500));
   if (garraMovendo || garraTravada) {
     if (!servoGarra.attached()) servoGarra.attach(PIN_SERVO_GARRA);
-    servoGarra.writeMicroseconds(anguloParaUs(angGarra));
+    servoGarra.writeMicroseconds(anguloParaUsGarra(angGarra));
   } else if (servoGarra.attached()) {
     servoGarra.detach();
   }
