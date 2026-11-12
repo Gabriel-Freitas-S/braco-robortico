@@ -148,6 +148,12 @@ const uint8_t PIN_JOY2_X = A3;   // joystick direito:  esquerda/direita → Garr
 const uint8_t PIN_JOY2_Y = A2;   // joystick direito:  frente/trás      → Ombro
 
 //  Botões dos joysticks na Shield Casa da Robótica (Ref: PD07)
+//  - Botão 1 (PIN_BTN_JOY1 = D2, Joystick Esquerdo):
+//      * Clique rápido  -> vai suavemente para a Posição 0 salva
+//      * Segurar por 2s -> salva a posição atual como nova Posição 0 na EEPROM
+//  - Botão 2 (PIN_BTN_JOY2 = D4, Joystick Direito — lado da Garra):
+//      * 1º clique -> TRAVA A GARRA COM PRESSÃO (mantém torque contínuo no objeto e bloqueia abertura)
+//      * 2º clique -> LIBERA A GARRA (permite abrir novamente pelo joystick)
 const uint8_t PIN_BTN_JOY1 = 2;  // botão do joystick esquerdo (INPUT_PULLUP)
 const uint8_t PIN_BTN_JOY2 = 4;  // botão do joystick direito  (INPUT_PULLUP)
 
@@ -180,12 +186,13 @@ const uint16_t EEPROM_ZERO_MAGIC = 0x5A30;
 //  (brownout). Guardando os ângulos em .noinit, o Arduino nunca perde a posição
 //  em que o braço estava no alto e não despenca para 90°.
 
-const uint16_t NOINIT_MAGIC = 0xB4AF;
+const uint16_t NOINIT_MAGIC = 0xB4B0;
 uint16_t __attribute__((section(".noinit"))) savedMagic;
 float __attribute__((section(".noinit"))) angBase;
 float __attribute__((section(".noinit"))) angOmbro;
 float __attribute__((section(".noinit"))) angCotovelo;
 float __attribute__((section(".noinit"))) angGarra;
+uint8_t __attribute__((section(".noinit"))) garraTravada;
 
 float alvoBase     = 90.0;
 float alvoOmbro    = 60.0;
@@ -419,6 +426,7 @@ void salvaPosicaoZeroEEPROM() {
     digitalWrite(PIN_LED, HIGH); delay(60);
     digitalWrite(PIN_LED, LOW);  delay(60);
   }
+  digitalWrite(PIN_LED, garraTravada ? HIGH : LOW);
 }
 
 void sequenceInicial() {
@@ -437,6 +445,7 @@ void sequenceInicial() {
     alvoOmbro    = angOmbro;
     alvoCotovelo = angCotovelo;
     alvoGarra    = angGarra;
+    if (garraTravada > 1) garraTravada = 0;
     unsigned long agora = millis();
     if (agora == 0) agora = 1;
     ativoOmbroMs    = agora;
@@ -446,10 +455,11 @@ void sequenceInicial() {
     servoOmbro.writeMicroseconds(anguloParaUs(angOmbro));
     servoCotovelo.attach(PIN_SERVO_COTOVEL);
     servoCotovelo.writeMicroseconds(anguloParaUs(angCotovelo));
-    if (angGarra < 85.0) {
+    if (garraTravada) {
       servoGarra.attach(PIN_SERVO_GARRA);
       servoGarra.writeMicroseconds(anguloParaUs(angGarra));
     }
+    digitalWrite(PIN_LED, garraTravada ? HIGH : LOW);
     return;
   }
 
@@ -462,6 +472,7 @@ void sequenceInicial() {
   alvoBase     = angBase     = posZeroBase;
   alvoOmbro    = angOmbro    = posZeroOmbro;
   alvoCotovelo = angCotovelo = posZeroCotovelo;
+  garraTravada = 0;
   savedMagic   = NOINIT_MAGIC;
 
   // Pulso curto de destravamento na garra ao iniciar
@@ -479,13 +490,17 @@ void sequenceInicial() {
 }
 
 // ===========================================================================
-//  11. RESET E STATUS — comandos simples pelo Monitor Serial e Botão
+//  11. RESET E STATUS — comandos simples pelo Monitor Serial e Botões
 // ===========================================================================
 
 bool voltandoZero = false;
-bool btnPressionado = false;
-bool btnSalvouNoHold = false;
-unsigned long inicioPressaoMs = 0;
+bool btn1Pressionado = false;
+bool btn1SalvouNoHold = false;
+unsigned long inicioPressaoBtn1Ms = 0;
+
+bool btn2Pressionado = false;
+bool btn2AcaoExecutada = false;
+unsigned long inicioPressaoBtn2Ms = 0;
 
 void resetPark() {
   voltandoZero = true;
@@ -496,8 +511,10 @@ void mostraAjuda() {
   Serial.println(F("\n========================================================"));
   Serial.println(F("   BRACO ROBOTICO 4-DOF — CONTROLE POR JOYSTICK (9600)"));
   Serial.println(F("========================================================"));
+  Serial.println(F("  Botao Joy Esq (D2): clique = Ir Pos 0 | segurar 2s = Salvar Pos 0"));
+  Serial.println(F("  Botao Joy Dir (D4): 1o clique = Travar pressao da Garra | 2o = Liberar"));
   Serial.println(F("  s = Mostrar angulos atuais das 4 juntas"));
-  Serial.println(F("  r = Voltar suavemente para posicao de repouso (90 graus)"));
+  Serial.println(F("  r = Voltar suavemente para posicao de repouso (Pos 0)"));
   Serial.println(F("  d = Ligar/desligar leitura continua dos joysticks"));
   Serial.println(F("  h = Mostrar este menu"));
   Serial.println(F("========================================================"));
@@ -509,7 +526,8 @@ void status() {
   Serial.print(F("B=")); Serial.print((int)angBase);
   Serial.print(F(" O=")); Serial.print((int)angOmbro);
   Serial.print(F(" C=")); Serial.print((int)angCotovelo);
-  Serial.print(F(" G=")); Serial.println((int)angGarra);
+  Serial.print(F(" G=")); Serial.print((int)angGarra);
+  Serial.print(F(" TravaGarra=")); Serial.println(garraTravada ? F("SIM") : F("NAO"));
 }
 
 // ===========================================================================
@@ -593,23 +611,53 @@ void loop() {
   int joy2X = leEixoSuave(PIN_JOY2_X);
   int joy2Y = leEixoSuave(PIN_JOY2_Y);
 
-  //  --- ETAPA B2: Botão do joystick (Clique = Ir p/ Posição 0 | Segurar 2s = Salvar Posição 0)
-  bool apertadoAgora = (digitalRead(PIN_BTN_JOY1) == LOW) || (digitalRead(PIN_BTN_JOY2) == LOW);
-  if (apertadoAgora && !btnPressionado) {
-    btnPressionado = true;
-    btnSalvouNoHold = false;
-    inicioPressaoMs = agora;
-  } else if (apertadoAgora && btnPressionado) {
-    if (!btnSalvouNoHold && (agora - inicioPressaoMs >= 1800)) {
-      btnSalvouNoHold = true;
+  //  --- ETAPA B2: Botão 1 (Joystick Esquerdo, D2) -> Localização (Posição 0)
+  //      * Segurar por ~2s (1800 ms) = Salva localização atual na EEPROM
+  //      * Clique rápido             = Vai suavemente para a localização salva
+  bool btn1Agora = (digitalRead(PIN_BTN_JOY1) == LOW);
+  if (btn1Agora && !btn1Pressionado) {
+    btn1Pressionado = true;
+    btn1SalvouNoHold = false;
+    inicioPressaoBtn1Ms = agora;
+  } else if (btn1Agora && btn1Pressionado) {
+    if (!btn1SalvouNoHold && (agora - inicioPressaoBtn1Ms >= 1800)) {
+      btn1SalvouNoHold = true;
       voltandoZero = false;
       salvaPosicaoZeroEEPROM();
     }
-  } else if (!apertadoAgora && btnPressionado) {
-    btnPressionado = false;
-    if (!btnSalvouNoHold && (agora - inicioPressaoMs >= 40)) {
+  } else if (!btn1Agora && btn1Pressionado) {
+    btn1Pressionado = false;
+    if (!btn1SalvouNoHold && (agora - inicioPressaoBtn1Ms >= 40)) {
       resetPark();
     }
+  }
+
+  //  --- ETAPA B3: Botão 2 (Joystick Direito, D4) -> Trava de Pressão da Garra
+  //      * 1º clique = Indica objeto na garra: mantém pressão contínua e bloqueia abertura
+  //      * 2º clique = Libera a trava para permitir abrir a garra novamente
+  bool btn2Agora = (digitalRead(PIN_BTN_JOY2) == LOW);
+  if (btn2Agora && !btn2Pressionado) {
+    btn2Pressionado = true;
+    btn2AcaoExecutada = false;
+    inicioPressaoBtn2Ms = agora;
+  } else if (btn2Agora && btn2Pressionado) {
+    if (!btn2AcaoExecutada && (agora - inicioPressaoBtn2Ms >= 40)) {
+      btn2AcaoExecutada = true;
+      garraTravada = garraTravada ? 0 : 1;
+      ativoGarraMs = agora;
+      if (garraTravada) {
+        // Aplica leve aperto extra (-2.5°) para firmar pressão sobre o objeto
+        alvoGarra = constrainAngle(angGarra - 2.5, limGarraMin, limGarraMax);
+        digitalWrite(PIN_LED, HIGH);
+        Serial.println(F("GARRA TRAVADA: mantendo pressao continua (clique novamente para liberar)"));
+      } else {
+        alvoGarra = angGarra;
+        digitalWrite(PIN_LED, LOW);
+        Serial.println(F("GARRA LIBERADA: abertura habilitada no joystick"));
+      }
+    }
+  } else if (!btn2Agora && btn2Pressionado) {
+    btn2Pressionado = false;
   }
 
   //  Se o usuário mexer em qualquer joystick durante o retorno, assume controle manual
@@ -624,14 +672,15 @@ void loop() {
       alvoCotovelo = angCotovelo;
       alvoGarra    = angGarra;
     } else {
-      // Move UMA junta por vez para a Posição 0 salva (evita pico de corrente na fonte 12V)
+      // Move UMA junta por vez para a Posição 0 salva (evita pico de corrente na fonte 12V).
+      // Se a garra estiver travada segurando objeto, NÃO altera a garra para não soltá-lo!
       if (abs(angCotovelo - posZeroCotovelo) > 0.5) {
         alvoCotovelo = posZeroCotovelo;
       } else if (abs(angOmbro - posZeroOmbro) > 0.5) {
         alvoOmbro = posZeroOmbro;
       } else if (abs(angBase - posZeroBase) > 0.5) {
         alvoBase = posZeroBase;
-      } else if (abs(angGarra - posZeroGarra) > 0.5) {
+      } else if (!garraTravada && abs(angGarra - posZeroGarra) > 0.5) {
         alvoGarra = posZeroGarra;
       } else {
         voltandoZero = false;
@@ -654,7 +703,16 @@ void loop() {
     alvoBase     = aplicaEixo(j1X, centroJoy1X, alvoBase, limBaseMin, limBaseMax, -GANHO_BASE);
     alvoCotovelo = aplicaEixo(j1Y, centroJoy1Y, alvoCotovelo, limCotoveloMin, limCotoveloMax, GANHO_COTOVEL);
     alvoOmbro    = aplicaEixo(j2Y, centroJoy2Y, alvoOmbro, limOmbroMin, limOmbroMax, GANHO_OMBRO);
-    alvoGarra    = aplicaEixo(j2X, centroJoy2X, alvoGarra, limGarraMin, limGarraMax, GANHO_GARRA);
+
+    float novoAlvoGarra = aplicaEixo(j2X, centroJoy2X, alvoGarra, limGarraMin, limGarraMax, GANHO_GARRA);
+    if (garraTravada) {
+      // Enquanto a trava de pressão estiver ativa, bloqueia abertura (só permite apertar mais)
+      if (novoAlvoGarra < alvoGarra) {
+        alvoGarra = novoAlvoGarra;
+      }
+    } else {
+      alvoGarra = novoAlvoGarra;
+    }
   }
 
   //  --- ETAPA D: SUAVIZAÇÃO + SUSTENTAÇÃO DO BRAÇO E PRESSÃO DA GARRA --
@@ -662,8 +720,9 @@ void loop() {
   //      não sofre ação da gravidade parada).
   //    - Ombro e Cotovelo: mantêm o pulso PWM ativo após acionados e sempre que
   //      a Base gira, sustentando o braço firme sem abaixar durante movimentos laterais.
-  //    - Garra: fecha até 0° (500 µs) e mantém pressão contínua sempre que estiver
-  //      segurando ou fechada (< 85°), inclusive enquanto o braço sobe ou gira.
+  //    - Garra: quando `garraTravada` está ativa (Botão 2), mantém o servo ligado
+  //      continuamente aplicando pressão constante no objeto; quando liberada,
+  //      energiza durante o movimento (+500 ms) e depois descansa o motor.
 
   float passoMax = VEL_SUAVE * (float)INTERVALO_CONTROLE_MS;
 
@@ -700,9 +759,8 @@ void loop() {
     angGarra = suaviza(angGarra, alvoGarra, passoMax * 1.5);
     ativoGarraMs = agora;
   }
-  bool garraMovendo   = (ativoGarraMs != 0 && (agora - ativoGarraMs <= 500));
-  bool garraSegurando = (ativoGarraMs != 0 && angGarra < 85.0);
-  if (garraMovendo || garraSegurando) {
+  bool garraMovendo = (ativoGarraMs != 0 && (agora - ativoGarraMs <= 500));
+  if (garraMovendo || garraTravada) {
     if (!servoGarra.attached()) servoGarra.attach(PIN_SERVO_GARRA);
     servoGarra.writeMicroseconds(anguloParaUs(angGarra));
   } else if (servoGarra.attached()) {
@@ -718,6 +776,7 @@ void loop() {
     Serial.print(F(" O="));            Serial.print((int)angOmbro);
     Serial.print(F(" C="));            Serial.print((int)angCotovelo);
     Serial.print(F(" G="));            Serial.print((int)angGarra);
+    Serial.print(F(" T="));            Serial.print((int)garraTravada);
     Serial.print(F(" | joy1="));       Serial.print(mapADC(joy1X, 0, 1023, -100, 100));
     Serial.print(F("/"));              Serial.print(mapADC(joy1Y, 0, 1023, -100, 100));
     Serial.print(F(" joy2="));         Serial.print(mapADC(joy2X, 0, 1023, -100, 100));
