@@ -569,7 +569,7 @@ void mostraAjuda() {
   Serial.println(F("  s = Mostrar angulos e limites atuais"));
   Serial.println(F("  r = Voltar suavemente para posicao de repouso (Pos 0)"));
   Serial.println(F("  d = Ligar/desligar leitura continua dos joysticks (valores crus A0/A1/A3/A2)"));
-  Serial.println(F("  b = Teste: varre os pinos candidatos e diz qual move a BASE"));
+  Serial.println(F("  b = Teste: a base pisca N vezes; conte para saber o pino"));
   Serial.println(F("  h = Mostrar este menu"));
   Serial.println(F("========================================================"));
 }
@@ -727,11 +727,11 @@ float aplicaEixo(int leitura, int centro, float atual, float min, float max, flo
 //  Serve para descobrir em que conector da shield o servo da base está ligado
 //  sem ficar trocando o código no chute. Não grava nada na EEPROM.
 void descobrePinoBase() {
-  const uint8_t candidatos[] = { 11, 9, 10, 6, 5, 7, 8, 12, 3 };
+  const uint8_t candidatos[] = { 11, 10, 6, 9, 5, 7 };
   const uint8_t total = sizeof(candidatos);
 
-  Serial.println(F("\n>>> TESTE DE PINO DA BASE — o braco vai se mexer sozinho por ~15s."));
-  Serial.println(F(">>> ANOTE qual D__ gira o CORPO do robo. Comeca em 3 segundos."));
+  Serial.println(F("\n>>> TESTE DA BASE — o braco se mexe sozinho por ~16s."));
+  Serial.println(F(">>> CONTE quantas vezes o CORPO (a base) gira. Comeca em 3s."));
   delay(3000);
 
   desligaBase();
@@ -739,21 +739,27 @@ void descobrePinoBase() {
   if (servoOmbro.attached()) servoOmbro.detach();
   if (servoGarra.attached()) servoGarra.detach();
 
+  //  Cada pino pisca um número diferente de vezes: o servo ligado àquele pino
+  //  pisca igual. Contando as piscadas do corpo você nos diz qual pino é a base
+  //  sem precisar ler nada no monitor.  D11=1, D10=2, D6=3, D9=4, D5=5, D7=6.
   for (uint8_t i = 0; i < total; i++) {
-    Serial.print(F("  testando D")); Serial.println(candidatos[i]);
+    Serial.print(F("  D")); Serial.print(candidatos[i]);
+    Serial.print(F(" -> ")); Serial.print(i + 1); Serial.println(F(" piscada(s)"));
     Servo teste;
     teste.attach(candidatos[i]);
-    teste.writeMicroseconds(anguloParaUs(40));  delay(600);
-    teste.writeMicroseconds(anguloParaUs(140)); delay(600);
-    teste.writeMicroseconds(anguloParaUs(90));  delay(300);
+    for (uint8_t n = 0; n <= i; n++) {
+      teste.writeMicroseconds(anguloParaUs(70));  delay(300);
+      teste.writeMicroseconds(anguloParaUs(110)); delay(300);
+    }
+    teste.writeMicroseconds(anguloParaUs(90));  delay(200);
     teste.detach();
-    delay(300);
+    delay(250);
   }
 
   //  Devolve o torque a todas as juntas no ângulo em que elas já estavam.
   ativoBaseMs = ativoOmbroMs = ativoCotoveloMs = ativoGarraMs = millis();
 
-  Serial.println(F(">>> FIM. Qual D__ girou a BASE? (a base e o corpo inteiro do braco)"));
+  Serial.println(F(">>> FIM. Quantas vezes o CORPO girou?"));
 }
 
 // ===========================================================================
