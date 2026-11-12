@@ -57,7 +57,7 @@
  *    Servo Base (Yaw)    D11    0..180    neutro 90
  *    Servo Ombro         D10   30..150    neutro 90
  *    Servo Cotovelo      D9    20..160    neutro 90
- *    Servo Garra         D6      0..90    neutro  0 (fechada)
+ *    Servo Garra         D5      0..90    neutro  0 (fechada)
  *
  *    Joystick esquerdo X A0   → Base (esquerda/direita)
  *    Joystick esquerdo Y A1   → Cotovelo (cima/baixo)
@@ -95,20 +95,19 @@
 const uint8_t PIN_SERVO_BASE    = 11;
 const uint8_t PIN_SERVO_OMBRO   = 10;
 const uint8_t PIN_SERVO_COTOVEL = 9;
-//  Pinos extras da fileira da Shield espelhados para o Cotovelo (conector que estava em D9/D3/D5/D7/D8/D12):
+//  Pinos extras da fileira da Shield espelhados para o Cotovelo (D9/D3/D7/D8/D12).
+//  O D5 saiu do espelho: agora e o canal da Garra.
 const uint8_t PIN_COTOV_ALT_D3  = 3;
-const uint8_t PIN_COTOV_ALT_D5  = 5;
 const uint8_t PIN_COTOV_ALT_D7  = 7;
 const uint8_t PIN_COTOV_ALT_D8  = 8;
 const uint8_t PIN_COTOV_ALT_D12 = 12;
-const uint8_t PIN_SERVO_GARRA   = 6;    //  confirmado: joystick esquerdo para o lado mexe a garra
+const uint8_t PIN_SERVO_GARRA   = 5;
 const uint8_t PIN_LED           = 13;
 
 Servo servoBase;
 Servo servoOmbro;
 Servo servoCotovelo;
 Servo servoCotovD3;
-Servo servoCotovD5;
 Servo servoCotovD7;
 Servo servoCotovD8;
 Servo servoCotovD12;
@@ -131,14 +130,12 @@ void escreveCotovelo(int pulsoUs) {
   if (!servoCotovelo.attached()) {
     servoCotovelo.attach(PIN_SERVO_COTOVEL);
     servoCotovD3.attach(PIN_COTOV_ALT_D3);
-    servoCotovD5.attach(PIN_COTOV_ALT_D5);
     servoCotovD7.attach(PIN_COTOV_ALT_D7);
     servoCotovD8.attach(PIN_COTOV_ALT_D8);
     servoCotovD12.attach(PIN_COTOV_ALT_D12);
   }
   servoCotovelo.writeMicroseconds(pulsoUs);
   servoCotovD3.writeMicroseconds(pulsoUs);
-  servoCotovD5.writeMicroseconds(pulsoUs);
   servoCotovD7.writeMicroseconds(pulsoUs);
   servoCotovD8.writeMicroseconds(pulsoUs);
   servoCotovD12.writeMicroseconds(pulsoUs);
@@ -148,7 +145,6 @@ void desligaCotovelo() {
   if (servoCotovelo.attached()) {
     servoCotovelo.detach();
     servoCotovD3.detach();
-    servoCotovD5.detach();
     servoCotovD7.detach();
     servoCotovD8.detach();
     servoCotovD12.detach();
