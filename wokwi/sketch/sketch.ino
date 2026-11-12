@@ -54,15 +54,15 @@
  *  Dos quatro atuadores, apenas três canais PWM são necessários porque a
  *  garra não faz PWM — os pinos chosen aqui evitam conflito com os leds.
  *
- *    Servo Base (Yaw)    D9     0..180    neutro 90
+ *    Servo Base (Yaw)    D11    0..180    neutro 90
  *    Servo Ombro         D10   30..150    neutro 90
- *    Servo Cotovelo      D11   20..160    neutro 90
+ *    Servo Cotovelo      D9    20..160    neutro 90
  *    Servo Garra         D6      0..90    neutro  0 (fechada)
  *
  *    Joystick esquerdo X A0   → Base (esquerda/direita)
- *    Joystick esquerdo Y A1   → Cotovelo (frente/trás)
+ *    Joystick esquerdo Y A1   → Cotovelo (cima/baixo)
  *    Joystick direito  X A3   → Garra (esquerda fecha / direita abre)
- *    Joystick direito  Y A2   → Ombro (frente/trás)
+ *    Joystick direito  Y A2   → Ombro (cima/baixo)
  *
  *    LED de status       D13
  *
@@ -91,50 +91,66 @@
 //  uint8_t = inteiro de 8 bits (0..255). É o tipo certo para número de
 //  pino: ocupa 1 byte em vez de 2, economizando memória no Arduino.
 
-const uint8_t PIN_SERVO_BASE    = 9;
-//  Pinos digitais livres candidatos ao 4º conector de servo na Shield Joystick
-//  (sem D2, D3 e D4, que na Shield PD07 da Casa da Robótica são botões e LED):
-const uint8_t PIN_BASE_ALT_D5   = 5;
-const uint8_t PIN_BASE_ALT_D7   = 7;
-const uint8_t PIN_BASE_ALT_D8   = 8;
-const uint8_t PIN_BASE_ALT_D12  = 12;
-
+const uint8_t PIN_SERVO_BASE    = 11;
 const uint8_t PIN_SERVO_OMBRO   = 10;
-const uint8_t PIN_SERVO_COTOVEL = 11;
+const uint8_t PIN_SERVO_COTOVEL = 9;
+//  Pinos extras da fileira da Shield espelhados para o Cotovelo (conector que estava em D9/D3/D5/D7/D8/D12):
+const uint8_t PIN_COTOV_ALT_D3  = 3;
+const uint8_t PIN_COTOV_ALT_D5  = 5;
+const uint8_t PIN_COTOV_ALT_D7  = 7;
+const uint8_t PIN_COTOV_ALT_D8  = 8;
+const uint8_t PIN_COTOV_ALT_D12 = 12;
 const uint8_t PIN_SERVO_GARRA   = 6;
 const uint8_t PIN_LED           = 13;
 
 Servo servoBase;
-Servo servoBaseD5;
-Servo servoBaseD7;
-Servo servoBaseD8;
-Servo servoBaseD12;
 Servo servoOmbro;
 Servo servoCotovelo;
+Servo servoCotovD3;
+Servo servoCotovD5;
+Servo servoCotovD7;
+Servo servoCotovD8;
+Servo servoCotovD12;
 Servo servoGarra;
 
 void escreveBase(int pulsoUs) {
   if (!servoBase.attached()) {
     servoBase.attach(PIN_SERVO_BASE);
-    servoBaseD5.attach(PIN_BASE_ALT_D5);
-    servoBaseD7.attach(PIN_BASE_ALT_D7);
-    servoBaseD8.attach(PIN_BASE_ALT_D8);
-    servoBaseD12.attach(PIN_BASE_ALT_D12);
   }
   servoBase.writeMicroseconds(pulsoUs);
-  servoBaseD5.writeMicroseconds(pulsoUs);
-  servoBaseD7.writeMicroseconds(pulsoUs);
-  servoBaseD8.writeMicroseconds(pulsoUs);
-  servoBaseD12.writeMicroseconds(pulsoUs);
 }
 
 void desligaBase() {
   if (servoBase.attached()) {
     servoBase.detach();
-    servoBaseD5.detach();
-    servoBaseD7.detach();
-    servoBaseD8.detach();
-    servoBaseD12.detach();
+  }
+}
+
+void escreveCotovelo(int pulsoUs) {
+  if (!servoCotovelo.attached()) {
+    servoCotovelo.attach(PIN_SERVO_COTOVEL);
+    servoCotovD3.attach(PIN_COTOV_ALT_D3);
+    servoCotovD5.attach(PIN_COTOV_ALT_D5);
+    servoCotovD7.attach(PIN_COTOV_ALT_D7);
+    servoCotovD8.attach(PIN_COTOV_ALT_D8);
+    servoCotovD12.attach(PIN_COTOV_ALT_D12);
+  }
+  servoCotovelo.writeMicroseconds(pulsoUs);
+  servoCotovD3.writeMicroseconds(pulsoUs);
+  servoCotovD5.writeMicroseconds(pulsoUs);
+  servoCotovD7.writeMicroseconds(pulsoUs);
+  servoCotovD8.writeMicroseconds(pulsoUs);
+  servoCotovD12.writeMicroseconds(pulsoUs);
+}
+
+void desligaCotovelo() {
+  if (servoCotovelo.attached()) {
+    servoCotovelo.detach();
+    servoCotovD3.detach();
+    servoCotovD5.detach();
+    servoCotovD7.detach();
+    servoCotovD8.detach();
+    servoCotovD12.detach();
   }
 }
 
@@ -143,9 +159,9 @@ void desligaBase() {
 // ===========================================================================
 
 const uint8_t PIN_JOY1_X = A0;   // joystick esquerdo: esquerda/direita → Base
-const uint8_t PIN_JOY1_Y = A1;   // joystick esquerdo: frente/trás      → Cotovelo
+const uint8_t PIN_JOY1_Y = A1;   // joystick esquerdo: cima/baixo       → Cotovelo
 const uint8_t PIN_JOY2_X = A3;   // joystick direito:  esquerda/direita → Garra (esq=fecha, dir=abre)
-const uint8_t PIN_JOY2_Y = A2;   // joystick direito:  frente/trás      → Ombro
+const uint8_t PIN_JOY2_Y = A2;   // joystick direito:  cima/baixo       → Ombro
 
 //  Botões dos joysticks na Shield Casa da Robótica (Ref: PD07)
 //  - Botão 1 (PIN_BTN_JOY1 = D2, Joystick Esquerdo):
@@ -187,7 +203,7 @@ const uint16_t EEPROM_LIM_MAGIC  = 0x4C4D;
 //  (brownout). Guardando os ângulos em .noinit, o Arduino nunca perde a posição
 //  em que o braço estava no alto e não despenca para 90°.
 
-const uint16_t NOINIT_MAGIC = 0xB4B1;
+const uint16_t NOINIT_MAGIC = 0xB4B5;
 uint16_t __attribute__((section(".noinit"))) savedMagic;
 float __attribute__((section(".noinit"))) angBase;
 float __attribute__((section(".noinit"))) angOmbro;
@@ -325,16 +341,6 @@ float suaviza(float atual, float alvo, float passoMax) {
   if (d > passoMax) d = passoMax;
   if (d < -passoMax) d = -passoMax;
   return atual + d;
-}
-
-//  --- Converte uma faixa de valores em outra (versão do "map" nativo)
-//
-//  Usada só para o texto do monitor serial: transforma a leitura crua
-//  0..1023 em -100..+100, muito mais fácil de ler que "512".
-//  Não afeta o controle dos servos.
-
-int mapADC(int x, int in_min, int in_max, int out_min, int out_max) {
-  return (int)((long)(x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min);
 }
 
 // ===========================================================================
@@ -492,8 +498,7 @@ void sequenceInicial() {
     ativoGarraMs    = agora;
     servoOmbro.attach(PIN_SERVO_OMBRO);
     servoOmbro.writeMicroseconds(anguloParaUs(angOmbro));
-    servoCotovelo.attach(PIN_SERVO_COTOVEL);
-    servoCotovelo.writeMicroseconds(anguloParaUs(angCotovelo));
+    escreveCotovelo(anguloParaUs(angCotovelo));
     if (garraTravada) {
       servoGarra.attach(PIN_SERVO_GARRA);
       servoGarra.writeMicroseconds(anguloParaUsGarra(angGarra));
@@ -502,9 +507,9 @@ void sequenceInicial() {
     return;
   }
 
-  if (servoOmbro.attached())    servoOmbro.detach();
-  if (servoCotovelo.attached()) servoCotovelo.detach();
-  if (servoGarra.attached())    servoGarra.detach();
+  if (servoOmbro.attached()) servoOmbro.detach();
+  desligaCotovelo();
+  if (servoGarra.attached()) servoGarra.detach();
 
   // Primeira ligação a frio: inicia na Posição 0
   alvoGarra    = angGarra    = posZeroGarra;
@@ -514,11 +519,16 @@ void sequenceInicial() {
   garraTravada = 0;
   savedMagic   = NOINIT_MAGIC;
 
-  // Pulso curto de destravamento na garra ao iniciar
+  // Pulso curto de destravamento na garra ao iniciar (um servo por vez)
   servoGarra.attach(PIN_SERVO_GARRA);
   servoGarra.writeMicroseconds(anguloParaUsGarra(angGarra));
   delay(220);
   servoGarra.detach();
+
+  // Posiciona a Base no centro inicial (um servo por vez para não exigir corrente alta)
+  escreveBase(anguloParaUs(angBase));
+  delay(300);
+  desligaBase();
 
   for (int i = 0; i < 3; i++) {
     digitalWrite(PIN_LED, HIGH);
@@ -557,7 +567,7 @@ void mostraAjuda() {
   Serial.println(F("  l = Restaurar limites amplos da Base (5 a 175 graus)"));
   Serial.println(F("  s = Mostrar angulos e limites atuais"));
   Serial.println(F("  r = Voltar suavemente para posicao de repouso (Pos 0)"));
-  Serial.println(F("  d = Ligar/desligar leitura continua dos joysticks"));
+  Serial.println(F("  d = Ligar/desligar leitura continua dos joysticks (valores crus A0/A1/A3/A2)"));
   Serial.println(F("  h = Mostrar este menu"));
   Serial.println(F("========================================================"));
 }
@@ -598,6 +608,44 @@ int leEixoSuave(uint8_t pino) {
 //  quando você soltar o movimento lateral e empurrar claramente para cima ou para baixo).
 uint8_t eixoTravaJoy1 = 0;
 uint8_t eixoTravaJoy2 = 0;
+unsigned long ultimoBaseJoy1Ms = 0;
+
+//  No Joystick Esquerdo (Base + Cotovelo):
+//  - Prioridade total para Esquerda/Direita (Base): qualquer movimento lateral (dx >= 65)
+//    bloqueia 100% o Cotovelo e NUNCA fica preso no modo vertical.
+//  - O Cotovelo (Cima/Baixo) só se move quando a alavanca está alinhada no centro
+//    horizontal (dx < 65) e é empurrada claramente para cima ou para baixo (dy > 130).
+const int JOY1_DZ_Y_COTOVEL = 80;
+
+void isolaEixoJoy1Esquerdo(int &leituraX, int centroX, int &leituraY, int centroY, unsigned long agora) {
+  int dx = abs(leituraX - centroX);
+  int dy = abs(leituraY - centroY);
+
+  // Qualquer desvio lateral acima da zona morta engata a Base e zera o Cotovelo.
+  // (antes exigia dx >= 70, e o comando entre 29 e 69 era descartado sem mover nada)
+  if (dx > JOY_DEADZONE) {
+    eixoTravaJoy1 = 1;
+    ultimoBaseJoy1Ms = agora;
+    leituraY = centroY;
+    return;
+  }
+
+  // Só libera o Cotovelo (Cima/Baixo) se o joystick NÃO estiver inclinado para os lados,
+  // for empurrado claramente para cima/baixo e não estiver apenas cruzando o centro
+  // durante uma varredura esquerda<->direita.
+  bool cruzandoCentroLateral = (ultimoBaseJoy1Ms != 0 && (agora - ultimoBaseJoy1Ms < 250));
+  int limiarY = cruzandoCentroLateral ? 230 : JOY1_DZ_Y_COTOVEL;
+
+  if (dy > limiarY) {
+    eixoTravaJoy1 = 2;
+    leituraX = centroX;
+    return;
+  }
+
+  eixoTravaJoy1 = 0;
+  leituraX = centroX;
+  leituraY = centroY;
+}
 
 void isolaEixoExclusivo(int &leituraX, int centroX, int &leituraY, int centroY, uint8_t &eixoTrava) {
   int dx = abs(leituraX - centroX);
@@ -648,9 +696,8 @@ void isolaEixoExclusivo(int &leituraX, int centroX, int &leituraY, int centroY, 
   }
 }
 
-float aplicaEixo(int leitura, int centro, float atual, float min, float max, float ganho) {
+float aplicaEixoZona(int leitura, int centro, float atual, float min, float max, float ganho, int dz) {
   int e = leitura - centro;
-  const int dz = JOY_DEADZONE;
 
   if (abs(e) > dz) {
     int excesso = e - (e > 0 ? dz : -dz);
@@ -665,6 +712,10 @@ float aplicaEixo(int leitura, int centro, float atual, float min, float max, flo
   }
 
   return atual;   // joystick no centro: segura a posição onde parou
+}
+
+float aplicaEixo(int leitura, int centro, float atual, float min, float max, float ganho) {
+  return aplicaEixoZona(leitura, centro, atual, min, max, ganho, JOY_DEADZONE);
 }
 
 // ===========================================================================
@@ -819,7 +870,7 @@ void loop() {
   if (!voltandoZero) {
     int j1X = joy1X, j1Y = joy1Y;
     int j2X = joy2X, j2Y = joy2Y;
-    isolaEixoExclusivo(j1X, centroJoy1X, j1Y, centroJoy1Y, eixoTravaJoy1);
+    isolaEixoJoy1Esquerdo(j1X, centroJoy1X, j1Y, centroJoy1Y, agora);
     isolaEixoExclusivo(j2X, centroJoy2X, j2Y, centroJoy2Y, eixoTravaJoy2);
 
     if (eixoTravaJoy1 == 1) {
@@ -827,8 +878,8 @@ void loop() {
       alvoBase     = aplicaEixo(j1X, centroJoy1X, alvoBase, limBaseMin, limBaseMax, -GANHO_BASE);
       alvoCotovelo = angCotovelo;
     } else if (eixoTravaJoy1 == 2) {
-      // Movendo Joystick Esquerdo para Cima/Baixo: SÓ move o Cotovelo!
-      alvoCotovelo = aplicaEixo(j1Y, centroJoy1Y, alvoCotovelo, limCotoveloMin, limCotoveloMax, GANHO_COTOVEL);
+      // Movendo Joystick Esquerdo claramente para Cima/Baixo: SÓ move o Cotovelo!
+      alvoCotovelo = aplicaEixoZona(j1Y, centroJoy1Y, alvoCotovelo, limCotoveloMin, limCotoveloMax, GANHO_COTOVEL, JOY1_DZ_Y_COTOVEL);
       alvoBase     = angBase;
     }
 
@@ -853,9 +904,9 @@ void loop() {
   //  --- ETAPA D: SUAVIZAÇÃO + ISOLAMENTO DE JUNTAS + PRESSÃO DA GARRA --
   //    - Base: energiza durante o giro e corta em 120 ms ao atingir o limite
   //      (limBaseMin/limBaseMax) para nunca ficar forçando contra parafuso ou batente.
-  //    - Ombro e Cotovelo: só energizam quando eles mesmos se movem (e ficam
-  //      100% desligados durante o giro lateral da Base para o braço nunca
-  //      subir nem descer quando você mexe para os lados).
+  //    - Ombro e Cotovelo: energizam quando se movem e continuam recebendo o pulso
+  //      do angulo atual enquanto a Base gira (desligados nesse instante, o braco
+  //      despencaria por gravidade).
   //    - Garra: quando `garraTravada` está ativa (Botão 2), mantém o servo ligado
   //      continuamente aplicando pressão constante no objeto; quando liberada,
   //      energiza durante o movimento (+500 ms) e depois descansa o motor.
@@ -879,7 +930,7 @@ void loop() {
     angOmbro = suaviza(angOmbro, alvoOmbro, passoMax);
     ativoOmbroMs = agora;
   }
-  if (ativoOmbroMs != 0 && (agora - ativoOmbroMs <= TEMPO_HOLD_MS) && eixoTravaJoy1 != 1) {
+  if (ativoOmbroMs != 0 && (agora - ativoOmbroMs <= TEMPO_HOLD_MS)) {
     if (!servoOmbro.attached()) servoOmbro.attach(PIN_SERVO_OMBRO);
     servoOmbro.writeMicroseconds(anguloParaUs(angOmbro));
   } else if (servoOmbro.attached()) {
@@ -890,11 +941,10 @@ void loop() {
     angCotovelo = suaviza(angCotovelo, alvoCotovelo, passoMax);
     ativoCotoveloMs = agora;
   }
-  if (ativoCotoveloMs != 0 && (agora - ativoCotoveloMs <= TEMPO_HOLD_MS) && eixoTravaJoy1 != 1) {
-    if (!servoCotovelo.attached()) servoCotovelo.attach(PIN_SERVO_COTOVEL);
-    servoCotovelo.writeMicroseconds(anguloParaUs(angCotovelo));
-  } else if (servoCotovelo.attached()) {
-    servoCotovelo.detach();
+  if (ativoCotoveloMs != 0 && (agora - ativoCotoveloMs <= TEMPO_HOLD_MS)) {
+    escreveCotovelo(anguloParaUs(angCotovelo));
+  } else {
+    desligaCotovelo();
   }
 
   if (abs(alvoGarra - angGarra) > 0.005) {
@@ -919,10 +969,12 @@ void loop() {
     Serial.print(F(" C="));            Serial.print((int)angCotovelo);
     Serial.print(F(" G="));            Serial.print((int)angGarra);
     Serial.print(F(" T="));            Serial.print((int)garraTravada);
-    Serial.print(F(" | joy1="));       Serial.print(mapADC(joy1X, 0, 1023, -100, 100));
-    Serial.print(F("/"));              Serial.print(mapADC(joy1Y, 0, 1023, -100, 100));
-    Serial.print(F(" joy2="));         Serial.print(mapADC(joy2X, 0, 1023, -100, 100));
-    Serial.print(F("/"));              Serial.println(mapADC(joy2Y, 0, 1023, -100, 100));
+    //  Valores CRUS do ADC (0..1023, centro ~512): é isto que mostra se o eixo
+    //  do joystick está realmente chegando na placa.
+    Serial.print(F(" | A0=")); Serial.print(joy1X);
+    Serial.print(F(" A1="));   Serial.print(joy1Y);
+    Serial.print(F(" A3="));   Serial.print(joy2X);
+    Serial.print(F(" A2="));   Serial.println(joy2Y);
   }
 }
 
