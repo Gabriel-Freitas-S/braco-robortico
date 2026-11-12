@@ -153,8 +153,8 @@ const uint8_t PIN_BTN_JOY2 = 4;  // botão do joystick direito  (INPUT_PULLUP)
 
 const int JOY_CENTER = 512;
 
-//  Zona morta curta (18 ≈ 3.5%) para resposta imediata sem delay ao tocar no joystick.
-const int JOY_DEADZONE = 18;
+//  Zona morta calibrada (28 ≈ 5.5%) para resposta rápida sem captar inclinação involuntária.
+const int JOY_DEADZONE = 28;
 
 //  Intervalo fixo de atualização do controle (20 ms = 50 Hz)
 const unsigned long INTERVALO_CONTROLE_MS = 20;
@@ -180,7 +180,7 @@ const uint16_t EEPROM_ZERO_MAGIC = 0x5A30;
 //  (brownout). Guardando os ângulos em .noinit, o Arduino nunca perde a posição
 //  em que o braço estava no alto e não despenca para 90°.
 
-const uint16_t NOINIT_MAGIC = 0xB4AE;
+const uint16_t NOINIT_MAGIC = 0xB4AF;
 uint16_t __attribute__((section(".noinit"))) savedMagic;
 float __attribute__((section(".noinit"))) angBase;
 float __attribute__((section(".noinit"))) angOmbro;
@@ -193,13 +193,13 @@ float alvoCotovelo = 45.0;
 float alvoGarra    = 35.0;
 
 // ===========================================================================
-//  5. LIMITES MECÂNICOS (0° a 180° nas juntas e 10° a 90° na garra)
+//  5. LIMITES MECÂNICOS (0° a 180° nas juntas e 0° a 90° na garra)
 // ===========================================================================
 
 float limBaseMin     = 0.0,   limBaseMax     = 180.0;
 float limOmbroMin    = 0.0,   limOmbroMax    = 180.0;
 float limCotoveloMin = 0.0,   limCotoveloMax = 180.0;
-float limGarraMin    = 10.0,  limGarraMax    = 90.0;
+float limGarraMin    = 0.0,   limGarraMax    = 90.0;   // 0° permite fechamento 100% completo da garra
 
 // ===========================================================================
 //  6. GANHOS — resposta sem delay, porém lenta e precisa (especialmente Cotovelo)
@@ -241,7 +241,7 @@ const float FATOR_SUAVIZACAO = 0.50;   // acompanha o alvo na hora (sem delay ao
 //  Os valores 544 e 2400 respeitam a faixa padrão do SG90 no Arduino, evitando
 //  pulsos inválidos que travam o servo da garra.
 
-const float US_MIN = 544.0;   // pulso mínimo padrão SG90 (0°)
+const float US_MIN = 500.0;   // pulso mínimo completo SG90 (0° — garante fechamento total da garra)
 const float US_MAX = 2400.0;  // pulso máximo padrão SG90 (180°)
 
 //  Velocidade do monitor serial. 9600 é o padrão do Serial Monitor do
@@ -348,13 +348,28 @@ int __attribute__((section(".noinit"))) centroJoy1Y;
 int __attribute__((section(".noinit"))) centroJoy2X;
 int __attribute__((section(".noinit"))) centroJoy2Y;
 
+unsigned long ativoBaseMs     = 0;
+unsigned long ativoOmbroMs    = 0;
+unsigned long ativoCotoveloMs = 0;
+unsigned long ativoGarraMs    = 0;
+const unsigned long TEMPO_HOLD_MS = 240;
+
 void calibraJoysticks() {
+  // Se foi um micro-reset (brownout) com os centros já válidos em .noinit,
+  // preserva a calibração para não gravar a posição inclinada da mão do usuário
+  if (savedMagic == NOINIT_MAGIC &&
+      centroJoy1X > 400 && centroJoy1X < 620 &&
+      centroJoy1Y > 400 && centroJoy1Y < 620 &&
+      centroJoy2X > 400 && centroJoy2X < 620 &&
+      centroJoy2Y > 400 && centroJoy2Y < 620) {
+    return;
+  }
   long s1x = 0, s1y = 0, s2x = 0, s2y = 0;
   for (uint8_t i = 0; i < 8; i++) {
-    s1x += analogRead(PIN_JOY1_X);
-    s1y += analogRead(PIN_JOY1_Y);
-    s2x += analogRead(PIN_JOY2_X);
-    s2y += analogRead(PIN_JOY2_Y);
+    analogRead(PIN_JOY1_X); s1x += analogRead(PIN_JOY1_X);
+    analogRead(PIN_JOY1_Y); s1y += analogRead(PIN_JOY1_Y);
+    analogRead(PIN_JOY2_X); s2x += analogRead(PIN_JOY2_X);
+    analogRead(PIN_JOY2_Y); s2y += analogRead(PIN_JOY2_Y);
     delay(2);
   }
   int c1x = (int)(s1x / 8);
@@ -408,14 +423,11 @@ void salvaPosicaoZeroEEPROM() {
 
 void sequenceInicial() {
   desligaBase();
-  if (servoOmbro.attached())    servoOmbro.detach();
-  if (servoCotovelo.attached()) servoCotovelo.detach();
-  if (servoGarra.attached())    servoGarra.detach();
 
   carregaPosicaoZeroEEPROM();
 
   // Se foi um micro-reset por queda de tensão (brownout da fonte 12V),
-  // restaura imediatamente os ângulos onde o braço estava para não cair!
+  // restaura imediatamente os ângulos e mantém o torque ativo para o braço não cair!
   if (savedMagic == NOINIT_MAGIC &&
       angBase >= limBaseMin && angBase <= limBaseMax &&
       angOmbro >= limOmbroMin && angOmbro <= limOmbroMax &&
@@ -425,8 +437,25 @@ void sequenceInicial() {
     alvoOmbro    = angOmbro;
     alvoCotovelo = angCotovelo;
     alvoGarra    = angGarra;
+    unsigned long agora = millis();
+    if (agora == 0) agora = 1;
+    ativoOmbroMs    = agora;
+    ativoCotoveloMs = agora;
+    ativoGarraMs    = agora;
+    servoOmbro.attach(PIN_SERVO_OMBRO);
+    servoOmbro.writeMicroseconds(anguloParaUs(angOmbro));
+    servoCotovelo.attach(PIN_SERVO_COTOVEL);
+    servoCotovelo.writeMicroseconds(anguloParaUs(angCotovelo));
+    if (angGarra < 85.0) {
+      servoGarra.attach(PIN_SERVO_GARRA);
+      servoGarra.writeMicroseconds(anguloParaUs(angGarra));
+    }
     return;
   }
+
+  if (servoOmbro.attached())    servoOmbro.detach();
+  if (servoCotovelo.attached()) servoCotovelo.detach();
+  if (servoGarra.attached())    servoGarra.detach();
 
   // Primeira ligação a frio: inicia na Posição 0
   alvoGarra    = angGarra    = posZeroGarra;
@@ -435,7 +464,7 @@ void sequenceInicial() {
   alvoCotovelo = angCotovelo = posZeroCotovelo;
   savedMagic   = NOINIT_MAGIC;
 
-  // Pulso curto de destravamento na garra (35°) ao iniciar
+  // Pulso curto de destravamento na garra ao iniciar
   servoGarra.attach(PIN_SERVO_GARRA);
   servoGarra.writeMicroseconds(anguloParaUs(angGarra));
   delay(220);
@@ -487,13 +516,28 @@ void status() {
 //  12. LEITURA DO JOYSTICK → ÂNGULO ALVO
 // ===========================================================================
 
-//  Média de 4 amostras consecutivas para eliminar ruído analógico sem atraso
+//  Descarta a 1ª leitura após troca de canal do mux ADC do ATmega328P
+//  (evita acoplamento capacitivo entre A0↔A1 e A3↔A2) e tira média de 4 amostras
 int leEixoSuave(uint8_t pino) {
+  analogRead(pino);
   long soma = 0;
   for (uint8_t i = 0; i < 4; i++) {
     soma += analogRead(pino);
   }
   return (int)(soma >> 2);
+}
+
+//  Isola o eixo dominante do mesmo joystick: quando o usuário move a alavanca
+//  claramente para o lado (ex.: girando a Base), bloqueia a pequena inclinação
+//  vertical involuntária do polegar para que o braço NÃO abaixe sozinho.
+void isolaEixoDominante(int &leituraX, int centroX, int &leituraY, int centroY) {
+  int dx = abs(leituraX - centroX);
+  int dy = abs(leituraY - centroY);
+  if (dx > JOY_DEADZONE && dx > dy * 2 && dy < 150) {
+    leituraY = centroY;
+  } else if (dy > JOY_DEADZONE && dy > dx * 2 && dx < 150) {
+    leituraX = centroX;
+  }
 }
 
 float aplicaEixo(int leitura, int centro, float atual, float min, float max, float ganho) {
@@ -514,12 +558,6 @@ float aplicaEixo(int leitura, int centro, float atual, float min, float max, flo
 
   return atual;   // joystick no centro: segura a posição onde parou
 }
-
-unsigned long ativoBaseMs     = 0;
-unsigned long ativoOmbroMs    = 0;
-unsigned long ativoCotoveloMs = 0;
-unsigned long ativoGarraMs    = 0;
-const unsigned long TEMPO_HOLD_MS = 240;
 
 // ===========================================================================
 //  13. LOOP — roda para sempre, milhares de vezes por segundo
@@ -608,21 +646,24 @@ void loop() {
   //    joy2X (A3) → Garra      (direito,  esquerda/direita) esquerda=fecha, direita=abre
 
   if (!voltandoZero) {
-    alvoBase     = aplicaEixo(joy1X, centroJoy1X, alvoBase, limBaseMin, limBaseMax, -GANHO_BASE);
-    alvoCotovelo = aplicaEixo(joy1Y, centroJoy1Y, alvoCotovelo, limCotoveloMin, limCotoveloMax, GANHO_COTOVEL);
-    alvoOmbro    = aplicaEixo(joy2Y, centroJoy2Y, alvoOmbro, limOmbroMin, limOmbroMax, GANHO_OMBRO);
-    alvoGarra    = aplicaEixo(joy2X, centroJoy2X, alvoGarra, limGarraMin, limGarraMax, GANHO_GARRA);
+    int j1X = joy1X, j1Y = joy1Y;
+    int j2X = joy2X, j2Y = joy2Y;
+    isolaEixoDominante(j1X, centroJoy1X, j1Y, centroJoy1Y);
+    isolaEixoDominante(j2X, centroJoy2X, j2Y, centroJoy2Y);
+
+    alvoBase     = aplicaEixo(j1X, centroJoy1X, alvoBase, limBaseMin, limBaseMax, -GANHO_BASE);
+    alvoCotovelo = aplicaEixo(j1Y, centroJoy1Y, alvoCotovelo, limCotoveloMin, limCotoveloMax, GANHO_COTOVEL);
+    alvoOmbro    = aplicaEixo(j2Y, centroJoy2Y, alvoOmbro, limOmbroMin, limOmbroMax, GANHO_OMBRO);
+    alvoGarra    = aplicaEixo(j2X, centroJoy2X, alvoGarra, limGarraMin, limGarraMax, GANHO_GARRA);
   }
 
-  //  --- ETAPA D: SUAVIZAÇÃO + PROTEÇÃO TÉRMICA DO REGULADOR 5V --------
-  //  Com fonte 12V no Arduino, manter todos os servos ligados juntos faz o
-  //  regulador de 5V entrar em corte térmico e o braço perder força e cair.
-  //  Por isso:
-  //    - Base, Ombro e Cotovelo só energizam durante o movimento (+240 ms)
-  //      e depois desligam (a redução mecânica segura a posição sem gastar 5V).
-  //    - A Garra mantém o pulso ativo quando está fechada (< 32°) segurando
-  //      um objeto, mas pausa brevemente durante movimentos das outras juntas
-  //      para nunca somar corrente e derrubar o regulador.
+  //  --- ETAPA D: SUAVIZAÇÃO + SUSTENTAÇÃO DO BRAÇO E PRESSÃO DA GARRA --
+  //    - Base: energiza durante o giro (+240 ms) e depois desliga (mesa horizontal
+  //      não sofre ação da gravidade parada).
+  //    - Ombro e Cotovelo: mantêm o pulso PWM ativo após acionados e sempre que
+  //      a Base gira, sustentando o braço firme sem abaixar durante movimentos laterais.
+  //    - Garra: fecha até 0° (500 µs) e mantém pressão contínua sempre que estiver
+  //      segurando ou fechada (< 85°), inclusive enquanto o braço sobe ou gira.
 
   float passoMax = VEL_SUAVE * (float)INTERVALO_CONTROLE_MS;
 
@@ -630,7 +671,8 @@ void loop() {
     angBase = suaviza(angBase, alvoBase, passoMax);
     ativoBaseMs = agora;
   }
-  if (ativoBaseMs != 0 && (agora - ativoBaseMs <= TEMPO_HOLD_MS)) {
+  bool baseAtiva = (ativoBaseMs != 0 && (agora - ativoBaseMs <= TEMPO_HOLD_MS));
+  if (baseAtiva) {
     escreveBase(anguloParaUs(angBase));
   } else {
     desligaBase();
@@ -640,33 +682,26 @@ void loop() {
     angOmbro = suaviza(angOmbro, alvoOmbro, passoMax);
     ativoOmbroMs = agora;
   }
-  bool ombroAtivo = (ativoOmbroMs != 0 && (agora - ativoOmbroMs <= TEMPO_HOLD_MS));
-  if (ombroAtivo) {
+  if (ativoOmbroMs != 0 || baseAtiva) {
     if (!servoOmbro.attached()) servoOmbro.attach(PIN_SERVO_OMBRO);
     servoOmbro.writeMicroseconds(anguloParaUs(angOmbro));
-  } else if (servoOmbro.attached()) {
-    servoOmbro.detach();
   }
 
   if (abs(alvoCotovelo - angCotovelo) > 0.005) {
     angCotovelo = suaviza(angCotovelo, alvoCotovelo, passoMax);
     ativoCotoveloMs = agora;
   }
-  bool cotoveloAtivo = (ativoCotoveloMs != 0 && (agora - ativoCotoveloMs <= TEMPO_HOLD_MS));
-  if (cotoveloAtivo) {
+  if (ativoCotoveloMs != 0 || baseAtiva) {
     if (!servoCotovelo.attached()) servoCotovelo.attach(PIN_SERVO_COTOVEL);
     servoCotovelo.writeMicroseconds(anguloParaUs(angCotovelo));
-  } else if (servoCotovelo.attached()) {
-    servoCotovelo.detach();
   }
 
   if (abs(alvoGarra - angGarra) > 0.005) {
     angGarra = suaviza(angGarra, alvoGarra, passoMax * 1.5);
     ativoGarraMs = agora;
   }
-  bool garraMovendo = (ativoGarraMs != 0 && (agora - ativoGarraMs <= 400));
-  bool garraSegurando = (ativoGarraMs != 0 && (agora - ativoGarraMs <= 15000) &&
-                         angGarra > 12.0 && angGarra < 38.0 && !ombroAtivo && !cotoveloAtivo);
+  bool garraMovendo   = (ativoGarraMs != 0 && (agora - ativoGarraMs <= 500));
+  bool garraSegurando = (ativoGarraMs != 0 && angGarra < 85.0);
   if (garraMovendo || garraSegurando) {
     if (!servoGarra.attached()) servoGarra.attach(PIN_SERVO_GARRA);
     servoGarra.writeMicroseconds(anguloParaUs(angGarra));
