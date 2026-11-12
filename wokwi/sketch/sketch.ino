@@ -54,10 +54,10 @@
  *  Dos quatro atuadores, apenas três canais PWM são necessários porque a
  *  garra não faz PWM — os pinos chosen aqui evitam conflito com os leds.
  *
- *    Servo Base (Yaw)    D11    0..180    neutro 90
+ *    Servo Base (Yaw)    D6     0..180    neutro 90
  *    Servo Ombro         D10   30..150    neutro 90
  *    Servo Cotovelo      D9    20..160    neutro 90
- *    Servo Garra         D6      0..90    neutro  0 (fechada)
+ *    Servo Garra         D11     0..90    neutro  0 (fechada)
  *
  *    Joystick esquerdo X A0   → Base (esquerda/direita)
  *    Joystick esquerdo Y A1   → Cotovelo (cima/baixo)
@@ -92,7 +92,7 @@
 //  uint8_t = inteiro de 8 bits (0..255). É o tipo certo para número de
 //  pino: ocupa 1 byte em vez de 2, economizando memória no Arduino.
 
-const uint8_t PIN_SERVO_BASE    = 11;
+const uint8_t PIN_SERVO_BASE    = 6;    //  conector onde o servo da base esta plugado (teste 'b': 3 piscadas)
 const uint8_t PIN_SERVO_OMBRO   = 10;
 const uint8_t PIN_SERVO_COTOVEL = 9;
 //  Pinos extras da fileira da Shield espelhados para o Cotovelo (conector que estava em D9/D3/D5/D7/D8/D12):
@@ -101,7 +101,7 @@ const uint8_t PIN_COTOV_ALT_D5  = 5;
 const uint8_t PIN_COTOV_ALT_D7  = 7;
 const uint8_t PIN_COTOV_ALT_D8  = 8;
 const uint8_t PIN_COTOV_ALT_D12 = 12;
-const uint8_t PIN_SERVO_GARRA   = 6;
+const uint8_t PIN_SERVO_GARRA   = 11;
 const uint8_t PIN_LED           = 13;
 
 Servo servoBase;
