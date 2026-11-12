@@ -78,6 +78,7 @@
  *    s → status: ângulos atuais das quatro juntas
  *    r → reset: volta todas as juntas para a posição de repouso
  *    d → liga/desliga a leitura contínua dos joysticks
+ *    x → troca os dois joysticks entre si (teste de defeito em um módulo)
  *
  * ============================================================================
  */
@@ -158,10 +159,12 @@ void desligaCotovelo() {
 //  2. JOYSTICKS — leitura analógica (Shield Casa da Robótica Ref: PD07)
 // ===========================================================================
 
-const uint8_t PIN_JOY1_X = A0;   // joystick esquerdo: esquerda/direita → Base
-const uint8_t PIN_JOY1_Y = A1;   // joystick esquerdo: cima/baixo       → Cotovelo
-const uint8_t PIN_JOY2_X = A3;   // joystick direito:  esquerda/direita → Garra (esq=fecha, dir=abre)
-const uint8_t PIN_JOY2_Y = A2;   // joystick direito:  cima/baixo       → Ombro
+//  Pinos dos eixos em variáveis (não const) para o comando 'x' poder trocar os
+//  dois joysticks entre si e descobrir qual módulo/ligação está com defeito.
+uint8_t pinJ1X = A0;   // joystick esquerdo: esquerda/direita → Base
+uint8_t pinJ1Y = A1;   // joystick esquerdo: cima/baixo       → Cotovelo
+uint8_t pinJ2X = A3;   // joystick direito:  esquerda/direita → Garra (esq=fecha, dir=abre)
+uint8_t pinJ2Y = A2;   // joystick direito:  cima/baixo       → Ombro
 
 //  Botões dos joysticks na Shield Casa da Robótica (Ref: PD07)
 //  - Botão 1 (PIN_BTN_JOY1 = D2, Joystick Esquerdo):
@@ -392,10 +395,10 @@ void calibraJoysticks() {
   }
   long s1x = 0, s1y = 0, s2x = 0, s2y = 0;
   for (uint8_t i = 0; i < 8; i++) {
-    analogRead(PIN_JOY1_X); s1x += analogRead(PIN_JOY1_X);
-    analogRead(PIN_JOY1_Y); s1y += analogRead(PIN_JOY1_Y);
-    analogRead(PIN_JOY2_X); s2x += analogRead(PIN_JOY2_X);
-    analogRead(PIN_JOY2_Y); s2y += analogRead(PIN_JOY2_Y);
+    analogRead(pinJ1X); s1x += analogRead(pinJ1X);
+    analogRead(pinJ1Y); s1y += analogRead(pinJ1Y);
+    analogRead(pinJ2X); s2x += analogRead(pinJ2X);
+    analogRead(pinJ2Y); s2y += analogRead(pinJ2Y);
     delay(2);
   }
   int c1x = (int)(s1x / 8);
@@ -568,6 +571,7 @@ void mostraAjuda() {
   Serial.println(F("  s = Mostrar angulos e limites atuais"));
   Serial.println(F("  r = Voltar suavemente para posicao de repouso (Pos 0)"));
   Serial.println(F("  d = Ligar/desligar leitura continua dos joysticks (valores crus A0/A1/A3/A2)"));
+  Serial.println(F("  x = Trocar os dois joysticks (teste: passa a Base para o joystick direito)"));
   Serial.println(F("  h = Mostrar este menu"));
   Serial.println(F("========================================================"));
 }
@@ -751,6 +755,22 @@ void loop() {
         Serial.print(F("debug "));
         Serial.println(debugOn ? F("ON") : F("OFF"));
         break;
+      case 'x': case 'X': {
+        //  Troca os dois joysticks entre si (pinos + centros) para testar se o
+        //  problema está no módulo/ligação de um deles. Não é gravado na EEPROM:
+        //  ao reiniciar, volta ao normal.
+        uint8_t p;
+        p = pinJ1X; pinJ1X = pinJ2X; pinJ2X = p;
+        p = pinJ1Y; pinJ1Y = pinJ2Y; pinJ2Y = p;
+        int c;
+        c = centroJoy1X; centroJoy1X = centroJoy2X; centroJoy2X = c;
+        c = centroJoy1Y; centroJoy1Y = centroJoy2Y; centroJoy2Y = c;
+        Serial.print(F("JOYSTICKS TROCADOS — esquerdo=A")); Serial.print(pinJ1X - A0);
+        Serial.print(F("/A")); Serial.print(pinJ1Y - A0);
+        Serial.print(F("  direito=A")); Serial.print(pinJ2X - A0);
+        Serial.print(F("/A")); Serial.println(pinJ2Y - A0);
+        break;
+      }
     }
   }
 
@@ -762,10 +782,10 @@ void loop() {
   }
   ultimoCicloMs = agora;
 
-  int joy1X = leEixoSuave(PIN_JOY1_X);
-  int joy1Y = leEixoSuave(PIN_JOY1_Y);
-  int joy2X = leEixoSuave(PIN_JOY2_X);
-  int joy2Y = leEixoSuave(PIN_JOY2_Y);
+  int joy1X = leEixoSuave(pinJ1X);
+  int joy1Y = leEixoSuave(pinJ1Y);
+  int joy2X = leEixoSuave(pinJ2X);
+  int joy2Y = leEixoSuave(pinJ2Y);
 
   //  --- ETAPA B2: Botão 1 (Joystick Esquerdo, D2) -> Localização (Posição 0)
   //      * Segurar por ~2s (1800 ms) = Salva localização atual na EEPROM
@@ -970,11 +990,12 @@ void loop() {
     Serial.print(F(" G="));            Serial.print((int)angGarra);
     Serial.print(F(" T="));            Serial.print((int)garraTravada);
     //  Valores CRUS do ADC (0..1023, centro ~512): é isto que mostra se o eixo
-    //  do joystick está realmente chegando na placa.
-    Serial.print(F(" | A0=")); Serial.print(joy1X);
-    Serial.print(F(" A1="));   Serial.print(joy1Y);
-    Serial.print(F(" A3="));   Serial.print(joy2X);
-    Serial.print(F(" A2="));   Serial.println(joy2Y);
+    //  do joystick está realmente chegando na placa. Veja em 'x' quais pinos
+    //  estão em cada joystick.
+    Serial.print(F(" | esq=")); Serial.print(joy1X);
+    Serial.print(F("/"));       Serial.print(joy1Y);
+    Serial.print(F(" dir="));   Serial.print(joy2X);
+    Serial.print(F("/"));       Serial.println(joy2Y);
   }
 }
 
