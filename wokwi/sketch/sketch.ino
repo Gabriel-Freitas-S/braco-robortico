@@ -589,16 +589,62 @@ int leEixoSuave(uint8_t pino) {
   return (int)(soma >> 2);
 }
 
-//  Isola o eixo dominante do mesmo joystick: quando o usuário move a alavanca
-//  claramente para o lado (ex.: girando a Base), bloqueia a pequena inclinação
-//  vertical involuntária do polegar para que o braço NÃO abaixe sozinho.
-void isolaEixoDominante(int &leituraX, int centroX, int &leituraY, int centroY) {
+//  Trava exclusiva de eixo (modo cruz '+' estrito):
+//    0 = parado no centro
+//    1 = travado no eixo HORIZONTAL (Esquerda/Direita) -> bloqueia 100% o eixo Vertical (Cima/Baixo)
+//    2 = travado no eixo VERTICAL   (Cima/Baixo)       -> bloqueia 100% o eixo Horizontal (Esquerda/Direita)
+//  Enquanto você estiver movendo para a esquerda ou direita, mesmo que o polegar
+//  incline na diagonal, o movimento vertical fica 100% travado (só libera Cima/Baixo
+//  quando você soltar o movimento lateral e empurrar claramente para cima ou para baixo).
+uint8_t eixoTravaJoy1 = 0;
+uint8_t eixoTravaJoy2 = 0;
+
+void isolaEixoExclusivo(int &leituraX, int centroX, int &leituraY, int centroY, uint8_t &eixoTrava) {
   int dx = abs(leituraX - centroX);
   int dy = abs(leituraY - centroY);
-  if (dx > JOY_DEADZONE && dx > dy * 2 && dy < 150) {
-    leituraY = centroY;
-  } else if (dy > JOY_DEADZONE && dy > dx * 2 && dx < 150) {
-    leituraX = centroX;
+  const int dzX = JOY_DEADZONE;
+  const int dzY = 48; // zona morta vertical mais firme contra inclinação involuntária
+
+  if (eixoTrava == 0) {
+    if (dx > dzX && (long)dx * 10 >= (long)dy * 8) {
+      eixoTrava = 1; // engatou Esquerda/Direita
+    } else if (dy > dzY && (long)dy * 10 > (long)dx * 14) {
+      eixoTrava = 2; // engatou Cima/Baixo (exige movimento claramente vertical)
+    } else {
+      leituraX = centroX;
+      leituraY = centroY;
+      return;
+    }
+  }
+
+  if (eixoTrava == 1) {
+    if (dx <= dzX) {
+      if (dy > 90) {
+        eixoTrava = 2;
+        leituraX = centroX;
+      } else {
+        eixoTrava = 0;
+        leituraX = centroX;
+        leituraY = centroY;
+      }
+    } else {
+      // Enquanto estiver movendo para Esquerda/Direita, trava Cima/Baixo em 0!
+      leituraY = centroY;
+    }
+  } else if (eixoTrava == 2) {
+    if (dy <= dzX) {
+      if (dx > 90) {
+        eixoTrava = 1;
+        leituraY = centroY;
+      } else {
+        eixoTrava = 0;
+        leituraX = centroX;
+        leituraY = centroY;
+      }
+    } else {
+      // Enquanto estiver movendo para Cima/Baixo, trava Esquerda/Direita em 0!
+      leituraX = centroX;
+    }
   }
 }
 
@@ -773,29 +819,43 @@ void loop() {
   if (!voltandoZero) {
     int j1X = joy1X, j1Y = joy1Y;
     int j2X = joy2X, j2Y = joy2Y;
-    isolaEixoDominante(j1X, centroJoy1X, j1Y, centroJoy1Y);
-    isolaEixoDominante(j2X, centroJoy2X, j2Y, centroJoy2Y);
+    isolaEixoExclusivo(j1X, centroJoy1X, j1Y, centroJoy1Y, eixoTravaJoy1);
+    isolaEixoExclusivo(j2X, centroJoy2X, j2Y, centroJoy2Y, eixoTravaJoy2);
 
-    alvoBase     = aplicaEixo(j1X, centroJoy1X, alvoBase, limBaseMin, limBaseMax, -GANHO_BASE);
-    alvoCotovelo = aplicaEixo(j1Y, centroJoy1Y, alvoCotovelo, limCotoveloMin, limCotoveloMax, GANHO_COTOVEL);
-    alvoOmbro    = aplicaEixo(j2Y, centroJoy2Y, alvoOmbro, limOmbroMin, limOmbroMax, GANHO_OMBRO);
+    if (eixoTravaJoy1 == 1) {
+      // Movendo Joystick Esquerdo para Esquerda/Direita: SÓ gira a Base!
+      alvoBase     = aplicaEixo(j1X, centroJoy1X, alvoBase, limBaseMin, limBaseMax, -GANHO_BASE);
+      alvoCotovelo = angCotovelo;
+    } else if (eixoTravaJoy1 == 2) {
+      // Movendo Joystick Esquerdo para Cima/Baixo: SÓ move o Cotovelo!
+      alvoCotovelo = aplicaEixo(j1Y, centroJoy1Y, alvoCotovelo, limCotoveloMin, limCotoveloMax, GANHO_COTOVEL);
+      alvoBase     = angBase;
+    }
 
-    float novoAlvoGarra = aplicaEixo(j2X, centroJoy2X, alvoGarra, limGarraMin, limGarraMax, GANHO_GARRA);
-    if (garraTravada) {
-      // Enquanto a trava de pressão estiver ativa, bloqueia abertura (só permite apertar mais)
-      if (novoAlvoGarra < alvoGarra) {
+    if (eixoTravaJoy2 == 1) {
+      // Movendo Joystick Direito para Esquerda/Direita: SÓ move a Garra!
+      float novoAlvoGarra = aplicaEixo(j2X, centroJoy2X, alvoGarra, limGarraMin, limGarraMax, GANHO_GARRA);
+      if (garraTravada) {
+        if (novoAlvoGarra < alvoGarra) {
+          alvoGarra = novoAlvoGarra;
+        }
+      } else {
         alvoGarra = novoAlvoGarra;
       }
-    } else {
-      alvoGarra = novoAlvoGarra;
+      alvoOmbro = angOmbro;
+    } else if (eixoTravaJoy2 == 2) {
+      // Movendo Joystick Direito para Cima/Baixo: SÓ move o Ombro!
+      alvoOmbro = aplicaEixo(j2Y, centroJoy2Y, alvoOmbro, limOmbroMin, limOmbroMax, GANHO_OMBRO);
+      alvoGarra = angGarra;
     }
   }
 
-  //  --- ETAPA D: SUAVIZAÇÃO + SUSTENTAÇÃO DO BRAÇO E PRESSÃO DA GARRA --
+  //  --- ETAPA D: SUAVIZAÇÃO + ISOLAMENTO DE JUNTAS + PRESSÃO DA GARRA --
   //    - Base: energiza durante o giro e corta em 120 ms ao atingir o limite
   //      (limBaseMin/limBaseMax) para nunca ficar forçando contra parafuso ou batente.
-  //    - Ombro e Cotovelo: mantêm o pulso PWM ativo após acionados e sempre que
-  //      a Base gira, sustentando o braço firme sem abaixar durante movimentos laterais.
+  //    - Ombro e Cotovelo: só energizam quando eles mesmos se movem (e ficam
+  //      100% desligados durante o giro lateral da Base para o braço nunca
+  //      subir nem descer quando você mexe para os lados).
   //    - Garra: quando `garraTravada` está ativa (Botão 2), mantém o servo ligado
   //      continuamente aplicando pressão constante no objeto; quando liberada,
   //      energiza durante o movimento (+500 ms) e depois descansa o motor.
@@ -819,18 +879,22 @@ void loop() {
     angOmbro = suaviza(angOmbro, alvoOmbro, passoMax);
     ativoOmbroMs = agora;
   }
-  if (ativoOmbroMs != 0 || baseAtiva) {
+  if (ativoOmbroMs != 0 && (agora - ativoOmbroMs <= TEMPO_HOLD_MS) && eixoTravaJoy1 != 1) {
     if (!servoOmbro.attached()) servoOmbro.attach(PIN_SERVO_OMBRO);
     servoOmbro.writeMicroseconds(anguloParaUs(angOmbro));
+  } else if (servoOmbro.attached()) {
+    servoOmbro.detach();
   }
 
   if (abs(alvoCotovelo - angCotovelo) > 0.005) {
     angCotovelo = suaviza(angCotovelo, alvoCotovelo, passoMax);
     ativoCotoveloMs = agora;
   }
-  if (ativoCotoveloMs != 0 || baseAtiva) {
+  if (ativoCotoveloMs != 0 && (agora - ativoCotoveloMs <= TEMPO_HOLD_MS) && eixoTravaJoy1 != 1) {
     if (!servoCotovelo.attached()) servoCotovelo.attach(PIN_SERVO_COTOVEL);
     servoCotovelo.writeMicroseconds(anguloParaUs(angCotovelo));
+  } else if (servoCotovelo.attached()) {
+    servoCotovelo.detach();
   }
 
   if (abs(alvoGarra - angGarra) > 0.005) {
