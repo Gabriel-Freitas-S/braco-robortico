@@ -417,6 +417,14 @@ impl App {
     }
 
     fn recordings_panel(&mut self, ui: &mut egui::Ui) {
+        //  Um scroll só para o painel inteiro: qualquer estimativa de altura
+        //  fixa cortava o bloco de replay quando havia movimento carregado.
+        egui::ScrollArea::vertical()
+            .auto_shrink([false, false])
+            .show(ui, |ui| self.recordings_body(ui));
+    }
+
+    fn recordings_body(&mut self, ui: &mut egui::Ui) {
         ui.add_space(6.0);
         titulo_secao(ui, "Gravação");
         ui.add_space(6.0);
@@ -480,26 +488,11 @@ impl App {
         });
         ui.add_space(6.0);
 
-        //  Espaço que o bloco de replay + rodapé vai ocupar. Reservado ANTES da
-        //  lista: sem isso o replay era desenhado por cima das linhas.
-        let mut reservado = 30.0;
-        if self.loaded.is_some() {
-            reservado += 26.0 + 24.0 + ALVO + 18.0;
+        if self.files.is_empty() {
+            ui.label(egui::RichText::new("nenhum movimento salvo").small().color(COR_MUTED));
         }
-        if self.play.is_some() {
-            reservado += ALVO + 8.0;
-        }
-
-        let altura_lista = (ui.available_height() - reservado).max(64.0);
-        egui::ScrollArea::vertical()
-            .auto_shrink([false, false])
-            .max_height(altura_lista)
-            .show(ui, |ui| {
-                if self.files.is_empty() {
-                    ui.label(egui::RichText::new("nenhum movimento salvo").small().color(COR_MUTED));
-                }
-                let files = self.files.clone();
-                for f in files {
+        let files = self.files.clone();
+        for f in files {
                     let nome = f
                         .file_name()
                         .map(|n| n.to_string_lossy().trim_end_matches(".json").to_string())
@@ -567,8 +560,7 @@ impl App {
                             self.excluir = Some(f.clone());
                         }
                     });
-                }
-            });
+        }
 
         if let Some(r) = self.loaded.clone() {
             ui.add_space(8.0);
@@ -609,17 +601,15 @@ impl App {
             }
         }
 
-        ui.with_layout(egui::Layout::bottom_up(egui::Align::Min), |ui| {
-            ui.add_space(2.0);
-            ui.add(
-                egui::Label::new(
-                    egui::RichText::new(dir_movimentos().display().to_string())
-                        .small()
-                        .color(cor(0x5d, 0x6a, 0x78)),
-                )
-                .truncate(),
-            );
-        });
+        ui.add_space(10.0);
+        ui.add(
+            egui::Label::new(
+                egui::RichText::new(dir_movimentos().display().to_string())
+                    .small()
+                    .color(cor(0x5d, 0x6a, 0x78)),
+            )
+            .truncate(),
+        );
     }
 
     /// Log recolhível: fechado, os pads ficam com a altura toda da tela.
