@@ -90,6 +90,22 @@ O aviso aparece em vermelho na barra superior.
 - `src/motion.rs` — gravação, interpolação do replay, JSON (testado)
 - `src/main.rs` — UI egui (pads de toque, gravação, replay)
 
+## Documentação
+
+O código usa rustdoc (`//!` nos módulos, `///` nos itens). A versão navegável
+fica em [`docs/rust/`](../docs/rust/robocontrol/index.html) e é publicada junto
+com a página do projeto no GitHub Pages. Para regenerar depois de mudar o
+código:
+
+```bash
+cargo doc --no-deps --document-private-items
+rsync -a --delete --exclude='.lock' --exclude='/index.html' target/doc/ ../docs/rust/
+```
+
+`--document-private-items` é obrigatório: o crate é binário, então sem ele o
+HTML sai quase vazio. O `--exclude='/index.html'` preserva o redirecionamento
+de `docs/rust/` para `robocontrol/`.
+
 ## Sentido dos eixos
 
 `#V` positivo em X do pad esquerdo **diminui** o ângulo da base; Y para cima do

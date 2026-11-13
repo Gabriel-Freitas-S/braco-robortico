@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Icone"],"fn":["botao","botao_cor","botao_quadrado","botao_texto","cores_botao","desenha","foco_anel","toggle"]};
