@@ -83,7 +83,7 @@
  * ============================================================================
  */
 
-#define FW_VER "1.2.12"
+#define FW_VER "1.2.13"
 
 #include <Servo.h>
 #include <EEPROM.h>
@@ -589,6 +589,12 @@ void status() {
   Serial.print(F(" C=")); Serial.print((int)angCotovelo);
   Serial.print(F(" G=")); Serial.print((int)angGarra);
   Serial.print(F(" TravaGarra=")); Serial.println(garraTravada ? F("SIM") : F("NAO"));
+  //  Centros calibrados: se um deles estiver longe de ~512, a zona morta fica
+  //  assimétrica (responde mais fácil para um lado que para o outro).
+  Serial.print(F("centros: A0=")); Serial.print(centroJoy1X);
+  Serial.print(F(" A1=")); Serial.print(centroJoy1Y);
+  Serial.print(F(" A3=")); Serial.print(centroJoy2X);
+  Serial.print(F(" A2=")); Serial.println(centroJoy2Y);
 }
 
 // ===========================================================================
@@ -718,9 +724,9 @@ float aplicaEixoZona(int leitura, int centro, float atual, float min, float max,
     float alcance = (float)(512 - dz);
     float norm = constrainAngle((float)excesso / alcance, -1.0, 1.0);
     float absNorm = norm < 0.0 ? -norm : norm;
-    // Curva progressiva (25% linear + 75% quadrática): controle fino na metade
-    // inicial do joystick, sem perder a resposta imediata ao sair do centro
-    float curva = 0.25 * norm + 0.75 * norm * absNorm;
+    // Curva progressiva (70% linear + 30% quadrática): responde já na metade
+    // inicial do curso, sem o "nada... nada... dispara" da versão anterior.
+    float curva = 0.7 * norm + 0.3 * norm * absNorm;
     float delta = curva * ganho;
     return constrainAngle(atual + delta, min, max);
   }
