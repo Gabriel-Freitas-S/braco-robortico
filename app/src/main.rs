@@ -13,7 +13,17 @@ use protocol::Msg;
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
-const DIR_MOVIMENTOS: &str = "movimentos";
+/// Movimentos ficam no diretório de dados do usuário (não no diretório atual):
+/// pelo menu do sistema o app abre com cwd = $HOME.
+fn dir_movimentos() -> std::path::PathBuf {
+    let base = std::env::var("XDG_DATA_HOME")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|_| {
+            std::path::PathBuf::from(std::env::var("HOME").unwrap_or_default())
+                .join(".local/share")
+        });
+    base.join("robocontrol/movimentos")
+}
 const TICK: Duration = Duration::from_millis(50);
 /// Altura mínima de qualquer botão (tela de toque).
 const ALVO: f32 = 36.0;
@@ -22,6 +32,8 @@ fn main() -> eframe::Result {
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_inner_size([980.0, 680.0])
+            .with_min_inner_size([720.0, 480.0])
+            .with_app_id("robocontrol")
             .with_title("RoboControl — braço 4-DOF"),
         ..Default::default()
     };
@@ -107,7 +119,7 @@ impl App {
     }
 
     fn refresh_files(&mut self) {
-        self.files = Recording::list(std::path::Path::new(DIR_MOVIMENTOS));
+        self.files = Recording::list(&dir_movimentos());
     }
 
     fn loga(&mut self, s: impl Into<String>) {
@@ -405,7 +417,7 @@ impl App {
             {
                 if let Some((mut rec, _)) = self.recording.take() {
                     rec.name = self.rec_name.clone();
-                    match rec.save(std::path::Path::new(DIR_MOVIMENTOS)) {
+                    match rec.save(&dir_movimentos()) {
                         Ok(p) => {
                             self.loga(format!("salvo em {}", p.display()));
                             self.refresh_files();

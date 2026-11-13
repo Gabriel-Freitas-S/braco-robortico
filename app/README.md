@@ -5,11 +5,20 @@ O firmware continua dono do movimento: aqui só **propomos alvos**. A rampa, os
 limites mecânicos e o hold ficam na placa, então um comando perdido no USB não
 vira tranco.
 
-## Rodar
+## Instalar (menu do sistema)
 
 ```bash
-cd app
-cargo run --release
+cd app && ./install.sh
+```
+
+Instala sem root: binário em `~/.local/bin/robocontrol`, ícone e entrada
+**RoboControl** no menu de aplicativos. Movimentos gravados vão para
+`~/.local/share/robocontrol/movimentos/`.
+
+## Rodar sem instalar
+
+```bash
+cd app && cargo run --release
 ```
 
 Depois: escolher `/dev/ttyACM0` → **Conectar** → **Assumir controle (PC)**.
@@ -43,7 +52,7 @@ garra **só aperta**: nem o pad, nem o replay (`#P`) conseguem abrir.
 
 - **Gravar** captura a pose a 20 Hz — inclusive quando você está movendo no
   joystick (é "ensinar fazendo").
-- **Parar gravação** salva em `app/movimentos/<nome>.json`.
+- **Parar e salvar** grava em `~/.local/share/robocontrol/movimentos/<nome>.json`.
 - **▶** carrega um movimento; **Reproduzir** manda os alvos interpolados.
   Tocar o joystick cancela o replay (o firmware sai do modo PC).
 
