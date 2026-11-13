@@ -140,6 +140,7 @@ No Windows troque `/dev/ttyACM0` por `COM3`; no macOS, por `/dev/cu.usbmodem...`
 ![RoboControl aberto: dois pads, gravação e replay](docs/assets/site/app.png)
 
 - [`app/`](app/) — RoboControl (Rust/egui): dois pads de toque, gravação, replay e log.
+- [Documentação do código (rustdoc)](https://gabriel-freitas-s.github.io/braco-robortico/rust/robocontrol/index.html) — API interna do app.
 - [`firmware/braco_4dof/`](firmware/braco_4dof/) — firmware Arduino (v1.3.3).
 - [`wokwi/`](wokwi/) — simulação do firmware no Wokwi.
 

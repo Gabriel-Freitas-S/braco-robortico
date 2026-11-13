@@ -121,9 +121,9 @@ O aviso aparece em vermelho na barra superior.
 ## Documentação
 
 O código usa rustdoc (`//!` nos módulos, `///` nos itens). A versão navegável
-fica em [`docs/rust/`](../docs/rust/robocontrol/index.html) e é publicada junto
-com a página do projeto no GitHub Pages. Para regenerar depois de mudar o
-código:
+fica em [`docs/rust/`](../docs/rust/robocontrol/index.html) e é publicada em
+<https://gabriel-freitas-s.github.io/braco-robortico/rust/robocontrol/index.html>.
+Para regenerar depois de mudar o código:
 
 ```bash
 cargo doc --no-deps --document-private-items
