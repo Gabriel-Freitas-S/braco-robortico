@@ -175,6 +175,10 @@ const int JOY_CENTER = 512;
 //  Zona morta calibrada (28 ≈ 5.5%) para resposta rápida sem captar inclinação involuntária.
 const int JOY_DEADZONE = 28;
 
+//  Histerese: um eixo já engatado só solta abaixo deste valor. Evita o
+//  liga/desliga no limite da zona morta, que faz o giro sair aos trancos.
+const int JOY_DZ_SOLTA = 14;
+
 //  Intervalo fixo de atualização do controle (20 ms = 50 Hz)
 const unsigned long INTERVALO_CONTROLE_MS = 20;
 
@@ -376,6 +380,9 @@ unsigned long ativoOmbroMs    = 0;
 unsigned long ativoCotoveloMs = 0;
 unsigned long ativoGarraMs    = 0;
 const unsigned long TEMPO_HOLD_MS = 240;
+//  A base sustenta o braco inteiro: solta o motor mais devagar para nao despencar
+//  quando voce para de empurrar por um instante no meio do giro.
+const unsigned long TEMPO_HOLD_BASE_MS = 600;
 
 void calibraJoysticks() {
   // Se foi um micro-reset (brownout) com os centros já válidos em .noinit,
@@ -614,14 +621,21 @@ unsigned long ultimoBaseJoy1Ms = 0;
 //  - O Cotovelo (Cima/Baixo) só se move quando a alavanca está alinhada no centro
 //    horizontal (dx < 65) e é empurrada claramente para cima ou para baixo (dy > 130).
 const int JOY1_DZ_Y_COTOVEL = 80;
+const int JOY_DZ_Y_SOLTA = 45;
 
 void isolaEixoJoy1Esquerdo(int &leituraX, int centroX, int &leituraY, int centroY, unsigned long agora) {
   int dx = abs(leituraX - centroX);
   int dy = abs(leituraY - centroY);
 
+  // Histerese: engata em 28 mas só solta abaixo de 14. Sem isso, com a alavanca
+  // perto do limite da zona morta o eixo liga/desliga a cada ciclo e o giro sai
+  // aos trancos.
+  int dzX = (eixoTravaJoy1 == 1) ? JOY_DZ_SOLTA : JOY_DEADZONE;
+  int dzY = (eixoTravaJoy1 == 2) ? JOY_DZ_Y_SOLTA : JOY1_DZ_Y_COTOVEL;
+
   // Qualquer desvio lateral acima da zona morta engata a Base e zera o Cotovelo.
   // (antes exigia dx >= 70, e o comando entre 29 e 69 era descartado sem mover nada)
-  if (dx > JOY_DEADZONE) {
+  if (dx > dzX) {
     eixoTravaJoy1 = 1;
     ultimoBaseJoy1Ms = agora;
     leituraY = centroY;
@@ -632,7 +646,7 @@ void isolaEixoJoy1Esquerdo(int &leituraX, int centroX, int &leituraY, int centro
   // for empurrado claramente para cima/baixo e não estiver apenas cruzando o centro
   // durante uma varredura esquerda<->direita.
   bool cruzandoCentroLateral = (ultimoBaseJoy1Ms != 0 && (agora - ultimoBaseJoy1Ms < 250));
-  int limiarY = cruzandoCentroLateral ? 230 : JOY1_DZ_Y_COTOVEL;
+  int limiarY = (cruzandoCentroLateral && eixoTravaJoy1 != 2) ? 230 : dzY;
 
   if (dy > limiarY) {
     eixoTravaJoy1 = 2;
@@ -961,7 +975,7 @@ void loop() {
     ativoBaseMs = agora;
   }
   bool noLimiteBase = (angBase <= limBaseMin + 0.2 || angBase >= limBaseMax - 0.2);
-  unsigned long holdBase = noLimiteBase ? 120 : TEMPO_HOLD_MS;
+  unsigned long holdBase = noLimiteBase ? 120 : TEMPO_HOLD_BASE_MS;
   bool baseAtiva = (ativoBaseMs != 0 && (agora - ativoBaseMs <= holdBase));
   if (baseAtiva) {
     escreveBase(anguloParaUs(angBase));
