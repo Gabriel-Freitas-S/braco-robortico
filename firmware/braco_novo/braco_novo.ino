@@ -80,10 +80,14 @@
  *    d → liga/desliga a leitura contínua dos joysticks
  *    b → varre os pinos candidatos e mostra qual deles move a base
  *
+ *  PROTOCOLO DO APP (prefixo #, linha inteira terminada em newline)
+ *    #P<b>;<o>;<c>;<g>  alvos em graus (20 Hz; reenviar é o heartbeat)
+ *    #M assume | #J devolve ao joystick | #H segura | #S status | #B diagnóstico
+ *
  * ============================================================================
  */
 
-#define FW_VER "1.2.13"
+#define FW_VER "1.3.0"
 
 #include <Servo.h>
 #include <EEPROM.h>
@@ -207,6 +211,9 @@ const uint16_t EEPROM_LIM_MAGIC  = 0x4C4D;
 //  em que o braço estava no alto e não despenca para 90°.
 
 const uint16_t NOINIT_MAGIC = 0xB4B5;
+const uint16_t BOOT_MAGIC   = 0xB007;
+uint16_t __attribute__((section(".noinit"))) bootMagic;
+uint16_t __attribute__((section(".noinit"))) bootCount;
 uint16_t __attribute__((section(".noinit"))) savedMagic;
 float __attribute__((section(".noinit"))) angBase;
 float __attribute__((section(".noinit"))) angOmbro;
@@ -276,9 +283,9 @@ const float US_MIN       = 544.0;   // pulso mínimo padrão SG90 para Base/Ombr
 const float US_MIN_GARRA = 500.0;   // pulso mínimo estendido exclusivo da Garra (fechamento 100%)
 const float US_MAX       = 2400.0;  // pulso máximo padrão SG90 (180°)
 
-//  Velocidade do monitor serial. 9600 é o padrão do Serial Monitor do
-//  Arduino IDE (evita caracteres quebrados ao abrir o monitor).
-const unsigned long BAUD = 9600;
+//  Velocidade do monitor serial. 115200 é o padrão do app de controle por USB;
+//  a 9600 uma linha de status levaria ~40 ms e travaria a malha de 50 Hz.
+const unsigned long BAUD = 115200;
 
 //  Liga/desliga a leitura contínua dos joysticks pelo comando 'd'.
 //  Inicia desligado (false) para a tela ficar parada esperando sua resposta!
@@ -576,6 +583,7 @@ void mostraAjuda() {
   Serial.println(F("  d = Ligar/desligar leitura continua dos joysticks (valores crus A0/A1/A3/A2)"));
   Serial.println(F("  b = Teste: a base pisca N vezes; conte para saber o pino"));
   Serial.println(F("  h = Mostrar este menu"));
+  Serial.println(F("  app USB: #M assume | #P<b>;<o>;<c>;<g> alvos | #J solta | #H segura | #S status"));
   Serial.println(F("========================================================"));
 }
 
@@ -781,14 +789,125 @@ void descobrePinoBase() {
 }
 
 // ===========================================================================
+//  12b. PROTOCOLO SERIAL PARA O APP (prefixo '#')
+// ===========================================================================
+//  O PC não gera PWM: ele só propõe ALVOS. A rampa, os limites e o hold
+//  continuam aqui, então um comando perdido não vira tranco.
+//
+//    #P<b>;<o>;<c>;<g>   alvos das 4 juntas, em graus (o app manda a 20 Hz).
+//                        O próprio reenvio é o heartbeat.
+//    #M                  assume o controle (parte do ângulo atual, sem salto)
+//    #J                  devolve o controle ao joystick
+//    #H                  segura agora (STOP)
+//    #S                  manda o status uma vez
+//    #B                  diagnóstico: versão, boots e limites
+//
+//  Regras de segurança:
+//    - 500 ms sem nenhum #P -> segura as juntas e volta ao joystick
+//    - qualquer deflexão do joystick -> devolve o controle na hora
+//      (é o modo híbrido: pegar no braço sempre vence o app)
+
+bool modoPC = false;
+unsigned long ultimoComandoPcMs = 0;
+const unsigned long PC_TIMEOUT_MS = 500;
+
+void seguraJuntas() {
+  alvoBase     = angBase;
+  alvoOmbro    = angOmbro;
+  alvoCotovelo = angCotovelo;
+  alvoGarra    = angGarra;
+}
+
+//  Status de 1 linha: ângulos atuais + quem está no controle.
+//  Buffer montado de uma vez para não segurar o loop com 10 Serial.print.
+void enviaStatus() {
+  char buf[48];
+  int n = snprintf_P(buf, sizeof(buf), PSTR("S%d;%d;%d;%d;%d\n"),
+                     (int)angBase, (int)angOmbro, (int)angCotovelo, (int)angGarra,
+                     modoPC ? 1 : 0);
+  Serial.write((const uint8_t *)buf, n);
+}
+
+void enviaDiag() {
+  char buf[110];
+  int n = snprintf_P(buf, sizeof(buf),
+                     PSTR("B%s;boots=%u;limb=%d;%d;limo=%d;%d;limc=%d;%d;limg=%d;%d\n"),
+                     FW_VER, (unsigned)bootCount,
+                     (int)limBaseMin, (int)limBaseMax,
+                     (int)limOmbroMin, (int)limOmbroMax,
+                     (int)limCotoveloMin, (int)limCotoveloMax,
+                     (int)limGarraMin, (int)limGarraMax);
+  Serial.write((const uint8_t *)buf, n);
+}
+
+//  Lê "#P90;60;45;20". Qualquer campo inválido descarta a linha inteira, para
+//  um comando corrompido nunca virar alvo no meio do caminho.
+void processaComandoPc(const char *l, uint8_t n) {
+  switch (l[1]) {
+    case 'P': {
+      int v[4];
+      uint8_t k = 0, i = 2;
+      while (i < n && k < 4) {
+        bool negativo = false;
+        if (l[i] == '-') { negativo = true; i++; }
+        bool temDigito = false;
+        int val = 0;
+        while (i < n && l[i] >= '0' && l[i] <= '9') {
+          val = val * 10 + (l[i] - '0');
+          i++;
+          temDigito = true;
+        }
+        if (!temDigito) return;              // campo vazio ou lixo: descarta
+        v[k++] = negativo ? -val : val;
+        while (i < n && l[i] == ';') i++;
+      }
+      if (k != 4) return;
+      modoPC = true;
+      alvoBase     = constrainAngle(v[0], limBaseMin, limBaseMax);
+      alvoOmbro    = constrainAngle(v[1], limOmbroMin, limOmbroMax);
+      alvoCotovelo = constrainAngle(v[2], limCotoveloMin, limCotoveloMax);
+      alvoGarra    = constrainAngle(v[3], limGarraMin, limGarraMax);
+      ultimoComandoPcMs = millis();
+      break;
+    }
+    case 'M': modoPC = true; ultimoComandoPcMs = millis(); break;
+    case 'J': modoPC = false; break;
+    case 'H': modoPC = false; seguraJuntas(); break;
+    case 'S': enviaStatus(); break;
+    case 'B': enviaDiag();   break;
+  }
+}
+
+// ===========================================================================
 //  13. LOOP — roda para sempre, milhares de vezes por segundo
 // ===========================================================================
 
 void loop() {
 
   //  --- ETAPA A: Ler comandos do serial -------------------------------
+  //  Comandos de 1 letra (h, s, r, d, b, l, [ , ]) continuam funcionando como
+  //  sempre. Linhas começando com '#' são o protocolo do app e só executam no
+  //  fim da linha, para um comando pela metade nunca ser interpretado.
+  static char linha[40];
+  static uint8_t lenLinha = 0;
+
   while (Serial.available() > 0) {
     char c = Serial.read();
+
+    if (c == '\n' || c == '\r') {
+      if (lenLinha > 0) {
+        linha[lenLinha] = '\0';
+        if (linha[0] == '#') processaComandoPc(linha, lenLinha);
+        lenLinha = 0;
+      }
+      continue;
+    }
+
+    if (lenLinha > 0 || c == '#') {
+      if (lenLinha < sizeof(linha) - 1) linha[lenLinha++] = c;
+      continue;
+    }
+
     switch (c) {
       case 'h': case 'H': mostraAjuda(); break;
       case 's': case 'S': status();      break;
@@ -826,6 +945,12 @@ void loop() {
     return;
   }
   ultimoCicloMs = agora;
+
+  //  --- ETAPA B0: heartbeat do app (500 ms sem #P = solta e segura) -----
+  if (modoPC && (agora - ultimoComandoPcMs > PC_TIMEOUT_MS)) {
+    modoPC = false;
+    seguraJuntas();
+  }
 
   int joy1X = leEixoSuave(PIN_JOY1_X);
   int joy1Y = leEixoSuave(PIN_JOY1_Y);
@@ -938,31 +1063,40 @@ void loop() {
     isolaEixoJoy1Esquerdo(j1X, centroJoy1X, j1Y, centroJoy1Y, agora);
     isolaEixoExclusivo(j2X, centroJoy2X, j2Y, centroJoy2Y, eixoTravaJoy2);
 
-    if (eixoTravaJoy1 == 1) {
-      // Movendo Joystick Esquerdo para Esquerda/Direita: SÓ gira a Base!
-      alvoBase     = aplicaEixo(j1X, centroJoy1X, alvoBase, limBaseMin, limBaseMax, -GANHO_BASE);
-      alvoCotovelo = angCotovelo;
-    } else if (eixoTravaJoy1 == 2) {
-      // Movendo Joystick Esquerdo claramente para Cima/Baixo: SÓ move o Cotovelo!
-      alvoCotovelo = aplicaEixoZona(j1Y, centroJoy1Y, alvoCotovelo, limCotoveloMin, limCotoveloMax, GANHO_COTOVEL, JOY1_DZ_Y_COTOVEL);
-      alvoBase     = angBase;
+    //  Modo híbrido: mexer o joystick devolve o controle na hora. O alvo é
+    //  travado no ângulo atual, senão o braço continuaria indo ao alvo do PC.
+    if (modoPC && (eixoTravaJoy1 != 0 || eixoTravaJoy2 != 0)) {
+      modoPC = false;
+      seguraJuntas();
     }
 
-    if (eixoTravaJoy2 == 1) {
-      // Movendo Joystick Direito para Esquerda/Direita: SÓ move a Garra!
-      float novoAlvoGarra = aplicaEixo(j2X, centroJoy2X, alvoGarra, limGarraMin, limGarraMax, GANHO_GARRA);
-      if (garraTravada) {
-        if (novoAlvoGarra < alvoGarra) {
+    if (!modoPC) {
+      if (eixoTravaJoy1 == 1) {
+        // Movendo Joystick Esquerdo para Esquerda/Direita: SÓ gira a Base!
+        alvoBase     = aplicaEixo(j1X, centroJoy1X, alvoBase, limBaseMin, limBaseMax, -GANHO_BASE);
+        alvoCotovelo = angCotovelo;
+      } else if (eixoTravaJoy1 == 2) {
+        // Movendo Joystick Esquerdo claramente para Cima/Baixo: SÓ move o Cotovelo!
+        alvoCotovelo = aplicaEixoZona(j1Y, centroJoy1Y, alvoCotovelo, limCotoveloMin, limCotoveloMax, GANHO_COTOVEL, JOY1_DZ_Y_COTOVEL);
+        alvoBase     = angBase;
+      }
+
+      if (eixoTravaJoy2 == 1) {
+        // Movendo Joystick Direito para Esquerda/Direita: SÓ move a Garra!
+        float novoAlvoGarra = aplicaEixo(j2X, centroJoy2X, alvoGarra, limGarraMin, limGarraMax, GANHO_GARRA);
+        if (garraTravada) {
+          if (novoAlvoGarra < alvoGarra) {
+            alvoGarra = novoAlvoGarra;
+          }
+        } else {
           alvoGarra = novoAlvoGarra;
         }
-      } else {
-        alvoGarra = novoAlvoGarra;
+        alvoOmbro = angOmbro;
+      } else if (eixoTravaJoy2 == 2) {
+        // Movendo Joystick Direito para Cima/Baixo: SÓ move o Ombro!
+        alvoOmbro = aplicaEixo(j2Y, centroJoy2Y, alvoOmbro, limOmbroMin, limOmbroMax, GANHO_OMBRO);
+        alvoGarra = angGarra;
       }
-      alvoOmbro = angOmbro;
-    } else if (eixoTravaJoy2 == 2) {
-      // Movendo Joystick Direito para Cima/Baixo: SÓ move o Ombro!
-      alvoOmbro = aplicaEixo(j2Y, centroJoy2Y, alvoOmbro, limOmbroMin, limOmbroMax, GANHO_OMBRO);
-      alvoGarra = angGarra;
     }
   }
 
@@ -1024,6 +1158,13 @@ void loop() {
     servoGarra.detach();
   }
 
+  //  --- ETAPA E: status para o app (20 Hz quando o PC está no controle) --
+  static unsigned long ultimoStatusMs = 0;
+  if (modoPC && agora - ultimoStatusMs >= 50) {
+    ultimoStatusMs = agora;
+    enviaStatus();
+  }
+
   //  --- ETAPA F: leitura dos joysticks no monitor serial --------------
 
   static unsigned long ultimoPrint = 0;
@@ -1035,8 +1176,7 @@ void loop() {
     Serial.print(F(" G="));            Serial.print((int)angGarra);
     Serial.print(F(" T="));            Serial.print((int)garraTravada);
     //  Valores CRUS do ADC (0..1023, centro ~512): é isto que mostra se o eixo
-    //  do joystick está realmente chegando na placa. Veja em 'x' quais pinos
-    //  estão em cada joystick.
+    //  do joystick está realmente chegando na placa.
     Serial.print(F(" | esq=")); Serial.print(joy1X);
     Serial.print(F("/"));       Serial.print(joy1Y);
     Serial.print(F(" dir="));   Serial.print(joy2X);
@@ -1049,8 +1189,19 @@ void loop() {
 // ===========================================================================
 
 void setup() {
-  Serial.begin(BAUD);   // inicia o monitor serial a 9600 baud
-  Serial.print(F("firmware v")); Serial.println(F(FW_VER));
+  Serial.begin(BAUD);
+
+  //  Contador de resets em .noinit: se ele subir enquanto o braço se move, a
+  //  placa reiniciou (brownout da alimentação) e não é o servo que está fraco.
+  if (bootMagic == BOOT_MAGIC) {
+    bootCount++;
+  } else {
+    bootMagic = BOOT_MAGIC;
+    bootCount = 1;
+  }
+
+  Serial.print(F("firmware v")); Serial.print(F(FW_VER));
+  Serial.print(F(" boots=")); Serial.println(bootCount);
   pinMode(PIN_LED, OUTPUT);
   pinMode(PIN_BTN_JOY1, INPUT_PULLUP);
   pinMode(PIN_BTN_JOY2, INPUT_PULLUP);
