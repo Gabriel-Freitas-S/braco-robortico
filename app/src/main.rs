@@ -3,10 +3,12 @@
 //! O firmware continua dono do movimento (rampa, limites, hold). Aqui só
 //! propomos alvos a 20 Hz e mostramos o que a placa responde.
 
+mod icons;
 mod link;
 mod motion;
 mod protocol;
 
+use icons::{botao, botao_quadrado, Icone};
 use link::{Event, Link};
 use motion::Recording;
 use protocol::Msg;
@@ -287,11 +289,11 @@ impl App {
 
     fn top_bar(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
-            if ui.add_sized([110.0, ALVO], egui::Button::new("Atualizar")).clicked() {
+            if botao(ui, Icone::Atualizar, "Atualizar", 118.0).clicked() {
                 self.refresh_ports();
             }
             egui::ComboBox::from_id_salt("porta")
-                .width(150.0)
+                .width(140.0)
                 .selected_text(
                     self.ports
                         .get(self.port_idx)
@@ -305,43 +307,38 @@ impl App {
                 });
 
             if self.link.is_none() {
-                if ui.add_sized([110.0, ALVO], egui::Button::new("Conectar")).clicked() {
+                if botao(ui, Icone::Conectar, "Conectar", 120.0).clicked() {
                     self.connect();
                 }
-            } else if ui.add_sized([130.0, ALVO], egui::Button::new("Desconectar")).clicked() {
+            } else if botao(ui, Icone::Desconectar, "Desconectar", 138.0).clicked() {
                 self.disconnect();
             }
 
             ui.separator();
 
             if self.pc {
-                if ui.add_sized([190.0, ALVO], egui::Button::new("Devolver ao joystick")).clicked() {
+                if botao(ui, Icone::Joystick, "Devolver ao joystick", 200.0).clicked() {
                     self.send(protocol::CMD_RELEASE);
                     self.pc = false;
                     self.reset_targets();
                 }
             } else {
-                if ui
-                    .add_enabled(
-                        self.link.is_some(),
-                        egui::Button::new("Assumir controle (PC)").min_size(egui::vec2(200.0, ALVO)),
-                    )
-                    .clicked()
-                {
+                let solto = ui
+                    .add_enabled_ui(self.link.is_some(), |ui| {
+                        botao(ui, Icone::Monitor, "Assumir controle", 184.0)
+                    })
+                    .inner;
+                if solto.clicked() {
                     self.assume();
                 }
             }
 
-            let (rotulo, cor_fundo, cor_txt) = if self.garra_travada {
-                ("Liberar garra", egui::Color32::from_rgb(34, 62, 46), egui::Color32::from_rgb(130, 210, 150))
+            let (icone, rotulo, fundo, frente) = if self.garra_travada {
+                (Icone::Liberar, "Liberar garra", COR_OK_FUNDO, COR_OK)
             } else {
-                ("Travar garra", egui::Color32::from_rgb(30, 42, 62), egui::Color32::from_rgb(120, 165, 225))
+                (Icone::Travar, "Travar garra", cor(0x1e, 0x2a, 0x3d), cor(0x9e, 0xcb, 0xf5))
             };
-            if ui
-                .add_sized(
-                    [150.0, ALVO],
-                    egui::Button::new(egui::RichText::new(rotulo).color(cor_txt)).fill(cor_fundo),
-                )
+            if icons::botao_cor(ui, icone, rotulo, 152.0, fundo, frente)
                 .on_hover_text("mantém pressão contínua no objeto e bloqueia a abertura")
                 .clicked()
             {
@@ -350,12 +347,7 @@ impl App {
                 self.garra_travada = travar;
             }
 
-            if ui
-                .add_sized(
-                    [130.0, ALVO + 6.0],
-                    egui::Button::new(egui::RichText::new("STOP").strong().size(16.0))
-                        .fill(egui::Color32::from_rgb(70, 26, 26)),
-                )
+            if icons::botao_cor(ui, Icone::Stop, "STOP", 118.0, cor(0x4a, 0x1c, 0x1c), cor(0xf0, 0xb4, 0xb4))
                 .clicked()
             {
                 self.stop();
@@ -411,10 +403,6 @@ impl App {
             .min((avail.x - GAP - 2.0 * COL_LADO) * 0.5))
             .clamp(120.0, 420.0);
 
-        if Frames::a_cada(90) {
-            eprintln!("LAYOUT avail={avail:?} lado={lado}");
-        }
-
         //  Centralização: o espaço tem que ser somado DENTRO do layout horizontal.
         let sobra = (avail.x - (lado * 2.0 + GAP + 2.0 * COL_LADO)).max(0.0);
         let live = self.live;
@@ -429,60 +417,6 @@ impl App {
     }
 
     fn recordings_panel(&mut self, ui: &mut egui::Ui) {
-        //  O bloco de replay + rodapé é reservado PRIMEIRO, como painel inferior:
-        //  assim a lista nunca empurra o "Reproduzir" para fora da tela.
-        egui::TopBottomPanel::bottom("replay_painel").show_inside(ui, |ui| {
-            if let Some(r) = self.loaded.clone() {
-                ui.add_space(6.0);
-                ui.horizontal(|ui| {
-                    ui.add(egui::Label::new(egui::RichText::new(&r.name).strong()).truncate());
-                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        ui.label(
-                            egui::RichText::new(format!(
-                                "{:.1}s · {} amostras",
-                                r.duration_ms() as f32 / 1000.0,
-                                r.samples.len()
-                            ))
-                            .small()
-                            .color(COR_MUTED),
-                        );
-                    });
-                });
-                ui.add_space(2.0);
-                ui.checkbox(&mut self.looping, "repetir");
-                let pode = self.link.is_some() && self.play.is_none();
-                if ui
-                    .add_enabled(
-                        pode,
-                        egui::Button::new("Reproduzir").min_size(egui::vec2(ui.available_width(), ALVO)),
-                    )
-                    .clicked()
-                {
-                    self.assume();
-                    self.play = Some((r.clone(), Instant::now()));
-                    self.loga("reproduzindo…");
-                }
-                if self.play.is_some()
-                    && ui
-                        .add_sized([ui.available_width(), ALVO], egui::Button::new("Parar replay"))
-                        .clicked()
-                {
-                    self.stop();
-                }
-                ui.add_space(4.0);
-                ui.separator();
-            }
-            ui.add_space(2.0);
-            ui.add(
-                egui::Label::new(
-                    egui::RichText::new(dir_movimentos().display().to_string())
-                        .small()
-                        .color(cor(0x5d, 0x6a, 0x78)),
-                )
-                .truncate(),
-            );
-        });
-
         ui.add_space(6.0);
         titulo_secao(ui, "Gravação");
         ui.add_space(6.0);
@@ -500,10 +434,7 @@ impl App {
                 );
             });
             ui.add_space(4.0);
-            if ui
-                .add_sized([ui.available_width(), ALVO], egui::Button::new("Parar e salvar"))
-                .clicked()
-            {
+            if botao(ui, Icone::Stop, "Parar e salvar", ui.available_width()).clicked() {
                 if let Some((mut rec, _)) = self.recording.take() {
                     rec.name = self.rec_name.clone();
                     match rec.save(&dir_movimentos()) {
@@ -521,13 +452,12 @@ impl App {
                 egui::TextEdit::singleline(&mut self.rec_name).hint_text("nome do movimento"),
             );
             ui.add_space(4.0);
-            if ui
-                .add_enabled(
-                    self.link.is_some(),
-                    egui::Button::new("●  Gravar").min_size(egui::vec2(ui.available_width(), ALVO)),
-                )
-                .clicked()
-            {
+            let r = ui
+                .add_enabled_ui(self.link.is_some(), |ui| {
+                    botao(ui, Icone::Gravar, "Gravar", ui.available_width())
+                })
+                .inner;
+            if r.clicked() {
                 self.recording = Some((
                     Recording { name: self.rec_name.clone(), samples: Vec::new() },
                     Instant::now(),
@@ -540,16 +470,30 @@ impl App {
         ui.horizontal(|ui| {
             titulo_secao(ui, "Movimentos");
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                if ui.small_button("atualizar").clicked() {
+                if botao_quadrado(ui, Icone::Atualizar, 30.0)
+                    .on_hover_text("atualizar lista")
+                    .clicked()
+                {
                     self.refresh_files();
                 }
             });
         });
         ui.add_space(6.0);
 
+        //  Espaço que o bloco de replay + rodapé vai ocupar. Reservado ANTES da
+        //  lista: sem isso o replay era desenhado por cima das linhas.
+        let mut reservado = 30.0;
+        if self.loaded.is_some() {
+            reservado += 26.0 + 24.0 + ALVO + 18.0;
+        }
+        if self.play.is_some() {
+            reservado += ALVO + 8.0;
+        }
+
+        let altura_lista = (ui.available_height() - reservado).max(64.0);
         egui::ScrollArea::vertical()
             .auto_shrink([false, false])
-            .max_height(ui.available_height())
+            .max_height(altura_lista)
             .show(ui, |ui| {
                 if self.files.is_empty() {
                     ui.label(egui::RichText::new("nenhum movimento salvo").small().color(COR_MUTED));
@@ -562,8 +506,6 @@ impl App {
                         .unwrap_or_default();
 
                     if self.excluir.as_ref() == Some(&f) {
-                        //  Confirmação no lugar do nome: excluir um movimento
-                        //  ensinado não tem desfazer.
                         ui.horizontal(|ui| {
                             if ui
                                 .add_sized(
@@ -585,7 +527,7 @@ impl App {
                                 }
                                 self.excluir = None;
                             }
-                            if ui.add_sized([ALVO, ALVO], egui::Button::new("✕")).clicked() {
+                            if botao_quadrado(ui, Icone::Excluir, ALVO).clicked() {
                                 self.excluir = None;
                             }
                         });
@@ -593,8 +535,7 @@ impl App {
                     }
 
                     ui.horizontal(|ui| {
-                        if ui
-                            .add_sized([ALVO, ALVO], egui::Button::new("▶"))
+                        if botao_quadrado(ui, Icone::Play, ALVO)
                             .on_hover_text("carregar")
                             .clicked()
                         {
@@ -619,8 +560,7 @@ impl App {
                                 self.loaded = Some(r);
                             }
                         }
-                        if ui
-                            .add_sized([ALVO, ALVO], egui::Button::new("✕"))
+                        if botao_quadrado(ui, Icone::Excluir, ALVO)
                             .on_hover_text("excluir")
                             .clicked()
                         {
@@ -629,6 +569,57 @@ impl App {
                     });
                 }
             });
+
+        if let Some(r) = self.loaded.clone() {
+            ui.add_space(8.0);
+            ui.separator();
+            ui.horizontal(|ui| {
+                ui.add(
+                    egui::Label::new(egui::RichText::new(&r.name).strong())
+                        .truncate(),
+                );
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    ui.label(
+                        egui::RichText::new(format!(
+                            "{:.1}s · {} amostras",
+                            r.duration_ms() as f32 / 1000.0,
+                            r.samples.len()
+                        ))
+                        .small()
+                        .color(COR_MUTED),
+                    );
+                });
+            });
+            ui.checkbox(&mut self.looping, "repetir");
+            let pode = self.link.is_some() && self.play.is_none();
+            let r_pode = ui
+                .add_enabled_ui(pode, |ui| {
+                    botao(ui, Icone::Play, "Reproduzir", ui.available_width())
+                })
+                .inner;
+            if r_pode.clicked() {
+                self.assume();
+                self.play = Some((r.clone(), Instant::now()));
+                self.loga("reproduzindo…");
+            }
+            if self.play.is_some() {
+                if botao(ui, Icone::Stop, "Parar replay", ui.available_width()).clicked() {
+                    self.stop();
+                }
+            }
+        }
+
+        ui.with_layout(egui::Layout::bottom_up(egui::Align::Min), |ui| {
+            ui.add_space(2.0);
+            ui.add(
+                egui::Label::new(
+                    egui::RichText::new(dir_movimentos().display().to_string())
+                        .small()
+                        .color(cor(0x5d, 0x6a, 0x78)),
+                )
+                .truncate(),
+            );
+        });
     }
 
     /// Log recolhível: fechado, os pads ficam com a altura toda da tela.
@@ -658,6 +649,7 @@ impl eframe::App for App {
             ui.add_space(4.0);
         });
         egui::TopBottomPanel::bottom("log").show(ctx, |ui| self.log_panel(ui));
+
         //  Largura LIMITADA: um nome de movimento longo fazia o painel crescer
         //  até engolir a área dos pads (a tela inteira virava painel lateral).
         egui::SidePanel::right("gravacao")
@@ -757,16 +749,6 @@ fn pill(ui: &mut egui::Ui, texto: &str, cor_texto: egui::Color32, fundo: egui::C
         .show(ui, |ui| {
             ui.label(egui::RichText::new(texto).strong().color(cor_texto));
         });
-}
-
-/// Contador de frames só para não inundar o stderr com diagnóstico de layout.
-struct Frames;
-impl Frames {
-    fn a_cada(n: u32) -> bool {
-        use std::sync::atomic::{AtomicU32, Ordering};
-        static CONT: AtomicU32 = AtomicU32::new(0);
-        CONT.fetch_add(1, Ordering::Relaxed) % n == 0
-    }
 }
 
 /// Leitura de uma junta, com largura fixa para alinhar com o pad.
