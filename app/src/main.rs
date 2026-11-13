@@ -31,10 +31,15 @@ const ALVO: f32 = 36.0;
 fn main() -> eframe::Result {
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
-            .with_inner_size([980.0, 680.0])
-            .with_min_inner_size([720.0, 480.0])
+            .with_inner_size([1180.0, 560.0])
+            .with_min_inner_size([760.0, 420.0])
+            .with_maximized(false)
             .with_app_id("robocontrol")
             .with_title("RoboControl — braço 4-DOF"),
+        centered: true,
+        //  Não herda tamanho/posição da sessão anterior: o app sempre abre no
+        //  tamanho definido acima (senão ele volta maximizado sozinho).
+        persist_window: false,
         ..Default::default()
     };
     eframe::run_native(
@@ -430,7 +435,7 @@ impl App {
             if let Some(r) = self.loaded.clone() {
                 ui.add_space(6.0);
                 ui.horizontal(|ui| {
-                    ui.label(egui::RichText::new(&r.name).strong());
+                    ui.add(egui::Label::new(egui::RichText::new(&r.name).strong()).truncate());
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         ui.label(
                             egui::RichText::new(format!(
@@ -468,10 +473,13 @@ impl App {
                 ui.separator();
             }
             ui.add_space(2.0);
-            ui.label(
-                egui::RichText::new(dir_movimentos().display().to_string())
-                    .small()
-                    .color(cor(0x5d, 0x6a, 0x78)),
+            ui.add(
+                egui::Label::new(
+                    egui::RichText::new(dir_movimentos().display().to_string())
+                        .small()
+                        .color(cor(0x5d, 0x6a, 0x78)),
+                )
+                .truncate(),
             );
         });
 
@@ -650,10 +658,12 @@ impl eframe::App for App {
             ui.add_space(4.0);
         });
         egui::TopBottomPanel::bottom("log").show(ctx, |ui| self.log_panel(ui));
+        //  Largura LIMITADA: um nome de movimento longo fazia o painel crescer
+        //  até engolir a área dos pads (a tela inteira virava painel lateral).
         egui::SidePanel::right("gravacao")
             .resizable(true)
-            .default_width(330.0)
-            .min_width(280.0)
+            .default_width(340.0)
+            .width_range(300.0..=480.0)
             .show(ctx, |ui| self.recordings_panel(ui));
         egui::CentralPanel::default().show(ctx, |ui| self.sticks(ui));
 
@@ -805,16 +815,28 @@ fn pad(
                 let centro = rect.center();
                 let raio = lado * 0.5 - 4.0;
 
-                if resp.is_pointer_button_down_on() {
-                    if let Some(pos) = resp.interact_pointer_pos() {
+                //  interact_pointer_pos cobre dedo e mouse: é Some enquanto o
+                //  pad está sendo pressionado. (is_pointer_button_down_on pode
+                //  ficar falso no meio de um arrasto por toque, e aí o knob
+                //  voltava sozinho para o centro.)
+                let pos = resp.interact_pointer_pos().or_else(|| {
+                    //  fallback: durante um arrasto o egui pode não preencher
+                    //  interact_pointer_pos em todos os frames de toque.
+                    if resp.dragged() {
+                        ui.ctx().input(|i| i.pointer.latest_pos())
+                    } else {
+                        None
+                    }
+                });
+                match pos {
+                    Some(pos) => {
                         let mut d = (pos - centro) / raio;
                         if d.length() > 1.0 {
                             d = d.normalized();
                         }
                         *v = d;
                     }
-                } else {
-                    *v = egui::Vec2::ZERO;
+                    None => *v = egui::Vec2::ZERO,
                 }
 
                 let ativo = *v != egui::Vec2::ZERO;
