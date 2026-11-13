@@ -42,6 +42,7 @@ struct App {
     stick_r: egui::Vec2,
     limits: [[f32; 2]; 4],
     pc: bool,
+    garra_travada: bool,
 
     version: String,
     boots: Option<u32>,
@@ -71,6 +72,7 @@ impl App {
             stick_r: egui::Vec2::ZERO,
             limits: [[0.0, 180.0], [0.0, 180.0], [0.0, 180.0], [0.0, 90.0]],
             pc: false,
+            garra_travada: false,
             version: "?".into(),
             boots: None,
             reboot: None,
@@ -197,6 +199,7 @@ impl App {
                 }
                 Event::Msg(Msg::Status(s)) => {
                     self.live = s.pose;
+                    self.garra_travada = s.trava;
                     // O firmware é dono da verdade sobre quem controla.
                     if self.pc && !s.pc_mode {
                         self.pc = false;
@@ -294,6 +297,33 @@ impl App {
                 .clicked()
             {
                 self.assume();
+            }
+
+            let (rotulo, dica) = if self.garra_travada {
+                ("Liberar garra", "solta a pressão e permite abrir")
+            } else {
+                ("Travar garra", "segura o objeto com pressão contínua")
+            };
+            let cor = if self.garra_travada {
+                egui::Color32::from_rgb(120, 200, 140)
+            } else {
+                egui::Color32::from_rgb(110, 150, 210)
+            };
+            if ui
+                .add_sized(
+                    [130.0, 32.0],
+                    egui::Button::new(egui::RichText::new(rotulo).color(cor)).fill(if self.garra_travada {
+                        egui::Color32::from_rgb(35, 60, 45)
+                    } else {
+                        egui::Color32::from_rgb(30, 40, 58)
+                    }),
+                )
+                .on_hover_text(dica)
+                .clicked()
+            {
+                let travar = !self.garra_travada;
+                self.send(protocol::cmd_lock(travar));
+                self.garra_travada = travar;   // o firmware confirma no próximo status
             }
 
             if ui

@@ -82,12 +82,14 @@
  *
  *  PROTOCOLO DO APP (prefixo #, linha inteira terminada em newline)
  *    #P<b>;<o>;<c>;<g>  alvos em graus (20 Hz; reenviar é o heartbeat)
+ *    #V<lx>;<ly>;<rx>;<ry> sticks virtuais do app (-100..100)
+ *    #L0 / #L1          libera / trava a pressão da garra
  *    #M assume | #J devolve ao joystick | #H segura | #S status | #B diagnóstico
  *
  * ============================================================================
  */
 
-#define FW_VER "1.3.1"
+#define FW_VER "1.3.2"
 
 #include <Servo.h>
 #include <EEPROM.h>
@@ -817,6 +819,23 @@ const unsigned long PC_TIMEOUT_MS = 500;
 bool modoVirtual = false;
 float vJoy1X = 0, vJoy1Y = 0, vJoy2X = 0, vJoy2Y = 0;
 
+//  Único lugar que liga/desliga a trava de pressão da garra: o botão físico
+//  (D4) e o comando #L do app passam por aqui, então o estado nunca diverge.
+void aplicaTravaGarra(bool travar) {
+  garraTravada = travar ? 1 : 0;
+  ativoGarraMs = millis();
+  if (garraTravada) {
+    // Aperto extra de 2.5° para firmar a pressão sobre o objeto
+    alvoGarra = constrainAngle(angGarra - 2.5, limGarraMin, limGarraMax);
+    digitalWrite(PIN_LED, HIGH);
+    Serial.println(F("GARRA TRAVADA: mantendo pressao continua"));
+  } else {
+    alvoGarra = angGarra;
+    digitalWrite(PIN_LED, LOW);
+    Serial.println(F("GARRA LIBERADA: abertura habilitada"));
+  }
+}
+
 void seguraJuntas() {
   alvoBase     = angBase;
   alvoOmbro    = angOmbro;
@@ -828,9 +847,9 @@ void seguraJuntas() {
 //  Buffer montado de uma vez para não segurar o loop com 10 Serial.print.
 void enviaStatus() {
   char buf[48];
-  int n = snprintf_P(buf, sizeof(buf), PSTR("S%d;%d;%d;%d;%d\n"),
+  int n = snprintf_P(buf, sizeof(buf), PSTR("S%d;%d;%d;%d;%d;%d\n"),
                      (int)angBase, (int)angOmbro, (int)angCotovelo, (int)angGarra,
-                     modoPC ? 1 : 0);
+                     modoPC ? 1 : 0, garraTravada ? 1 : 0);
   Serial.write((const uint8_t *)buf, n);
 }
 
@@ -879,6 +898,8 @@ void processaComandoPc(const char *l, uint8_t n) {
       alvoOmbro    = constrainAngle(v[1], limOmbroMin, limOmbroMax);
       alvoCotovelo = constrainAngle(v[2], limCotoveloMin, limCotoveloMax);
       alvoGarra    = constrainAngle(v[3], limGarraMin, limGarraMax);
+      //  Com a trava ativa a garra só aperta: nunca solta o objeto sozinha.
+      if (garraTravada && alvoGarra > angGarra) alvoGarra = angGarra;
       ultimoComandoPcMs = millis();
       break;
 
@@ -891,6 +912,11 @@ void processaComandoPc(const char *l, uint8_t n) {
       vJoy2X = constrain(v[2], -100, 100) / 100.0;
       vJoy2Y = constrain(v[3], -100, 100) / 100.0;
       ultimoComandoPcMs = millis();
+      break;
+
+    case 'L':                                // #L1 trava a garra, #L0 libera
+      if (l[2] == '1') aplicaTravaGarra(true);
+      else if (l[2] == '0') aplicaTravaGarra(false);
       break;
 
     case 'M': modoPC = true; modoVirtual = false; ultimoComandoPcMs = millis(); break;
@@ -1035,18 +1061,7 @@ void loop() {
   } else if (!btn2Agora && btn2Pressionado) {
     btn2Pressionado = false;
     if (!btn2SalvouNoHold && (agora - inicioPressaoBtn2Ms >= 40)) {
-      garraTravada = garraTravada ? 0 : 1;
-      ativoGarraMs = agora;
-      if (garraTravada) {
-        // Aplica leve aperto extra (-2.5°) para firmar pressão sobre o objeto
-        alvoGarra = constrainAngle(angGarra - 2.5, limGarraMin, limGarraMax);
-        digitalWrite(PIN_LED, HIGH);
-        Serial.println(F("GARRA TRAVADA: mantendo pressao continua (clique novamente para liberar)"));
-      } else {
-        alvoGarra = angGarra;
-        digitalWrite(PIN_LED, LOW);
-        Serial.println(F("GARRA LIBERADA: abertura habilitada no joystick"));
-      }
+      aplicaTravaGarra(!garraTravada);
     }
   }
 

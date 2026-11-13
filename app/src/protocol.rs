@@ -6,6 +6,11 @@
 pub const CMD_ASSUME: &str = "#M\n";
 pub const CMD_RELEASE: &str = "#J\n";
 pub const CMD_STOP: &str = "#H\n";
+
+/// Trava de pressão da garra: com ela ativa a garra só aperta, nunca solta.
+pub fn cmd_lock(travar: bool) -> &'static str {
+    if travar { "#L1\n" } else { "#L0\n" }
+}
 pub const CMD_DIAG: &str = "#B\n";
 
 /// `#P90;60;45;20` — graus inteiros, na ordem Base, Ombro, Cotovelo, Garra.
@@ -31,6 +36,8 @@ pub struct Status {
     pub pose: [f32; 4],
     /// `true` quando o firmware está aceitando alvos do PC.
     pub pc_mode: bool,
+    /// `true` quando a garra está travada com pressão (botão D4 ou app).
+    pub trava: bool,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -69,7 +76,9 @@ fn parse_status(line: &str) -> Option<Status> {
         *p = it.next()?.parse().ok()?;
     }
     let pc_mode = it.next()?.trim() == "1";
-    Some(Status { pose, pc_mode })
+    // Campo da trava é opcional: firmware anterior não mandava.
+    let trava = it.next().map(|f| f.trim() == "1").unwrap_or(false);
+    Some(Status { pose, pc_mode, trava })
 }
 
 fn parse_diag(line: &str) -> Option<Diag> {
@@ -102,11 +111,14 @@ mod tests {
 
     #[test]
     fn status_do_firmware() {
-        let msg = parse_line("S95;63;154;10;1\n").unwrap();
+        let msg = parse_line("S95;63;154;10;1;0\n").unwrap();
         assert_eq!(
             msg,
-            Msg::Status(Status { pose: [95.0, 63.0, 154.0, 10.0], pc_mode: true })
+            Msg::Status(Status { pose: [95.0, 63.0, 154.0, 10.0], pc_mode: true, trava: false })
         );
+        // firmware antigo, sem o campo da trava
+        let velho = parse_line("S95;63;154;10;0").unwrap();
+        assert_eq!(velho, Msg::Status(Status { pose: [95.0, 63.0, 154.0, 10.0], pc_mode: false, trava: false }));
     }
 
     #[test]

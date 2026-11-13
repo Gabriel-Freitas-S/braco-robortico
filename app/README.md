@@ -32,6 +32,12 @@ Arrastar move como alavanca; **soltar o dedo centraliza = segurar a posição**.
 | Qualquer deflexão do joystick | devolve o controle na hora — pegar no braço sempre vence |
 | 500 ms sem alvos (app travou, cabo caiu) | segura a posição atual |
 | **STOP** | `#H`: segura as juntas agora |
+| **Travar garra** | `#L1`: mantém pressão contínua no objeto e bloqueia abertura |
+| **Liberar garra** | `#L0`: a garra volta a abrir pelo pad |
+
+A trava é a mesma do botão físico D4 — um só estado (`garraTravada`) no firmware,
+então o botão da bancada e o botão do app nunca discordam. Com a trava ativa a
+garra **só aperta**: nem o pad, nem o replay (`#P`) conseguem abrir.
 
 ## Gravação
 
@@ -49,7 +55,8 @@ Arrastar move como alavanca; **soltar o dedo centraliza = segurar a posição**.
 #M                  assume o controle
 #J                  devolve ao joystick
 #H                  segura agora
-#S                  status  →  S<b>;<o>;<c>;<g>;<modo>
+#L0 / #L1           libera / trava a pressão da garra
+#S                  status  →  S<b>;<o>;<c>;<g>;<modo>;<trava>
 #B                  diagnóstico → B<versão>;boots=N;limb=min;max;limo=...;limc=...;limg=...
 ```
 
