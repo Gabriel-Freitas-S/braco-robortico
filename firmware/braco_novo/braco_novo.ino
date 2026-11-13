@@ -83,6 +83,8 @@
  * ============================================================================
  */
 
+#define FW_VER "1.2.12"
+
 #include <Servo.h>
 #include <EEPROM.h>
 
@@ -1042,6 +1044,7 @@ void loop() {
 
 void setup() {
   Serial.begin(BAUD);   // inicia o monitor serial a 9600 baud
+  Serial.print(F("firmware v")); Serial.println(F(FW_VER));
   pinMode(PIN_LED, OUTPUT);
   pinMode(PIN_BTN_JOY1, INPUT_PULLUP);
   pinMode(PIN_BTN_JOY2, INPUT_PULLUP);
