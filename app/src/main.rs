@@ -17,13 +17,20 @@ use std::time::{Duration, Instant};
 
 /// Movimentos ficam no diretório de dados do usuário (não no diretório atual):
 /// pelo menu do sistema o app abre com cwd = $HOME.
+///
+/// Linux/macOS: respeita `XDG_DATA_HOME`; sem ele, usa `$HOME/.local/share`.
+/// Windows: `%APPDATA%\robocontrol\movimentos`.
 fn dir_movimentos() -> std::path::PathBuf {
-    let base = std::env::var("XDG_DATA_HOME")
+    if let Ok(xdg) = std::env::var("XDG_DATA_HOME") {
+        return std::path::PathBuf::from(xdg).join("robocontrol/movimentos");
+    }
+    #[cfg(target_os = "windows")]
+    let base = std::env::var("APPDATA")
         .map(std::path::PathBuf::from)
-        .unwrap_or_else(|_| {
-            std::path::PathBuf::from(std::env::var("HOME").unwrap_or_default())
-                .join(".local/share")
-        });
+        .unwrap_or_else(|_| std::path::PathBuf::from("."));
+    #[cfg(not(target_os = "windows"))]
+    let base = std::path::PathBuf::from(std::env::var("HOME").unwrap_or_default())
+        .join(".local/share");
     base.join("robocontrol/movimentos")
 }
 const TICK: Duration = Duration::from_millis(50);
@@ -118,12 +125,28 @@ impl App {
         app
     }
 
+    /// Porta que parece placa: ACM/USB no Linux, usbmodem/wchusbserial no
+    /// macOS e COM no Windows (Bluetooth também aparece como COM; o usuário
+    /// escolhe a placa).
+    fn porta_de_placa(nome: &str) -> bool {
+        if cfg!(target_os = "windows") {
+            nome.starts_with("COM")
+        } else if cfg!(target_os = "macos") {
+            nome.contains("usbmodem")
+                || nome.contains("usbserial")
+                || nome.contains("wchusbserial")
+                || nome.contains("USB")
+        } else {
+            nome.contains("ACM") || nome.contains("USB")
+        }
+    }
+
     fn refresh_ports(&mut self) {
         self.ports = serialport::available_ports()
             .unwrap_or_default()
             .into_iter()
             .map(|p| p.port_name)
-            .filter(|n| n.contains("ACM") || n.contains("USB"))
+            .filter(|n| Self::porta_de_placa(n))
             .collect();
         self.ports.sort();
         if self.port_idx >= self.ports.len() {
