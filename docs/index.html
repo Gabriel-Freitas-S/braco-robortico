@@ -675,13 +675,35 @@
         </div>
         <div>
           <h3>Rodar</h3>
-          <pre class="code" aria-label="Comandos para rodar o app"><code><span class="c"># rodar sem instalar</span>
+          <pre class="code" aria-label="Comandos para rodar o app"><code><span class="c"># rodar (Linux, macOS e Windows)</span>
 <span class="k">cd</span> app &amp;&amp; cargo run --release
 
-<span class="c"># instalar no menu do sistema</span>
+<span class="c"># Linux: instalar no menu</span>
 <span class="k">cd</span> app &amp;&amp; ./install.sh</code></pre>
           <p><a href="https://github.com/Gabriel-Freitas-S/braco-robortico/blob/main/app/README.md">Instalação, protocolo e atalhos do app</a> · <a href="https://github.com/Gabriel-Freitas-S/braco-robortico/tree/main/firmware/braco_4dof">firmware/braco_4dof</a></p>
         </div>
+      </div>
+
+      <div class="req">
+        <h3>Requisitos</h3>
+        <div class="req-grid">
+          <div><span>rust</span>Rust stable + cargo</div>
+          <div><span>placa</span>Arduino Uno + cabo USB</div>
+          <div><span>linux</span>Grupo <code>dialout</code> + libs de build</div>
+          <div><span>windows</span>Build Tools C++ + driver CH340 em clones</div>
+          <div><span>macos</span>Xcode Command Line Tools</div>
+        </div>
+        <table class="table">
+          <thead>
+            <tr><th>Sistema</th><th>Porta</th><th>Onde ficam os movimentos</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Linux</td><td><code>/dev/ttyACM0</code></td><td><code>~/.local/share/robocontrol/movimentos</code></td></tr>
+            <tr><td>macOS</td><td><code>/dev/cu.usbmodem*</code></td><td><code>~/.local/share/robocontrol/movimentos</code></td></tr>
+            <tr><td>Windows</td><td><code>COM3</code></td><td><code>%APPDATA%\robocontrol\movimentos</code></td></tr>
+          </tbody>
+        </table>
+        <p class="req-note">O <code>install.sh</code> é só Linux. Nos outros sistemas use <code>cargo run --release</code>; no Windows o binário fica em <code>target\release\robocontrol.exe</code>. Firmware: Arduino IDE (placa Arduino Uno) ou <code>arduino-cli</code>, sketch em <code>firmware/braco_4dof/</code>. No Linux, adicione o usuário ao grupo <code>dialout</code>.</p>
       </div>
     </div>
   </section>
@@ -702,6 +724,7 @@
         <li><a href="https://github.com/Gabriel-Freitas-S/braco-robortico/tree/main/impressao/pecas"><span class="what">Peças prontas para fatiar</span><span class="where">STL numerados</span></a></li>
         <li><a href="https://github.com/Gabriel-Freitas-S/braco-robortico/tree/main/impressao/pratos/fatiados"><span class="what">Pratos fatiados</span><span class="where">3MF · Bambu A1</span></a></li>
         <li><a href="https://github.com/Gabriel-Freitas-S/braco-robortico/tree/main/montagens"><span class="what">Modelo montado e numerado</span><span class="where">GLB + STL</span></a></li>
+        <li><a href="rust/robocontrol/index.html"><span class="what">Documentação do app (rustdoc)</span><span class="where">HTML</span></a></li>
         <li><a href="https://github.com/Gabriel-Freitas-S/braco-robortico"><span class="what">Código-fonte</span><span class="where">GitHub</span></a></li>
       </ul>
     </div>

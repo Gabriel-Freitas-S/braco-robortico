@@ -68,17 +68,76 @@ O passo a passo com fotos está no [manual](docs/manual_braco_robotico.html). O
 [guia de montagem](docs/guia_montagem.md) resume hardware, calibração e a
 checagem de interferência do modelo.
 
+## Requisitos
+
+- **Rust** stable + `cargo` (edition 2021).
+- **Arduino Uno** + cabo USB.
+- **Linux:** usuário no grupo `dialout` (Arch: `uucp`) e bibliotecas de build
+  (`pkg-config`, `libudev-dev`, `libxkbcommon-dev`, `libwayland-dev`,
+  `libx11-dev`, `libxcursor-dev`, `libxrandr-dev`, `libxi-dev`, `libgl1-mesa-dev`
+  no Debian/Ubuntu; equivalentes na sua distro).
+- **Windows:** Rust MSVC + *Desktop development with C++* (Visual Studio Build
+  Tools) e driver CH340 se a placa for clone.
+- **macOS:** Rust + Xcode Command Line Tools (`xcode-select --install`).
+
+O app é nativo (Rust + egui) e roda nos três sistemas. O `install.sh` cria o
+atalho no menu **só no Linux**; nos outros, use `cargo run --release`.
+
+## Rodar o app
+
+### Linux
+
+```bash
+sudo usermod -aG dialout "$USER"   # relogue depois; no Arch use uucp
+cd app && cargo run --release
+```
+
+Instalação no menu (opcional): `cd app && ./install.sh`.
+Porta típica: `/dev/ttyACM0` ou `/dev/ttyUSB0`.
+Movimentos: `~/.local/share/robocontrol/movimentos` (ou `$XDG_DATA_HOME/...`).
+
+### macOS
+
+```bash
+xcode-select --install   # uma vez, se ainda não tiver as CLT
+cd app && cargo run --release
+```
+
+Porta típica: `/dev/cu.usbmodem*` ou `/dev/cu.wchusbserial*` (clone CH340).
+Sem permissão extra. Movimentos: `~/.local/share/robocontrol/movimentos`.
+
+### Windows (PowerShell)
+
+```powershell
+cd app
+cargo run --release
+# ou: cargo build --release; .\target\release\robocontrol.exe
+```
+
+Porta típica: `COM3`, `COM4`… (Gerenciador de Dispositivos). Clone CH340 precisa
+do driver do fabricante. Movimentos: `%APPDATA%\robocontrol\movimentos`.
+
+Em qualquer sistema: escolha a porta → **Conectar** → **Assumir controle (PC)**.
+
+## Firmware
+
+Arduino Uno, sketch `firmware/braco_4dof/braco_4dof.ino` (usa só `Servo.h` e
+`EEPROM.h`, ambas do core AVR).
+
+- **Arduino IDE:** abra o sketch, selecione *Arduino Uno* e a porta, clique em Upload.
+- **arduino-cli:**
+
+```bash
+arduino-cli core install arduino:avr
+arduino-cli compile --fqbn arduino:avr:uno firmware/braco_4dof
+arduino-cli upload -p /dev/ttyACM0 --fqbn arduino:avr:uno firmware/braco_4dof
+```
+
+No Windows troque `/dev/ttyACM0` por `COM3`; no macOS, por `/dev/cu.usbmodem...`.
+
 ## Software
 
 ![RoboControl aberto: dois pads, gravação e replay](docs/assets/site/app.png)
-
-```bash
-# rodar sem instalar
-cd app && cargo run --release
-
-# instalar no menu do sistema
-cd app && ./install.sh
-```
 
 - [`app/`](app/) — RoboControl (Rust/egui): dois pads de toque, gravação, replay e log.
 - [`firmware/braco_4dof/`](firmware/braco_4dof/) — firmware Arduino (v1.3.3).
