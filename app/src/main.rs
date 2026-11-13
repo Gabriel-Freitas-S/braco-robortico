@@ -37,6 +37,9 @@ struct App {
 
     pose: [f32; 4],
     live: [f32; 4],
+    /// Deflexão dos pads de toque, -1..1 (x = direita, y = baixo na tela).
+    stick_l: egui::Vec2,
+    stick_r: egui::Vec2,
     limits: [[f32; 2]; 4],
     pc: bool,
 
@@ -64,6 +67,8 @@ impl App {
             link: None,
             pose: [90.0; 4],
             live: [90.0; 4],
+            stick_l: egui::Vec2::ZERO,
+            stick_r: egui::Vec2::ZERO,
             limits: [[0.0, 180.0], [0.0, 180.0], [0.0, 180.0], [0.0, 90.0]],
             pc: false,
             version: "?".into(),
@@ -148,6 +153,8 @@ impl App {
         self.pc = false;
         self.play = None;
         self.pose = self.live;
+        self.stick_l = egui::Vec2::ZERO;
+        self.stick_r = egui::Vec2::ZERO;
         self.loga("STOP — juntas seguradas");
     }
 
@@ -226,9 +233,25 @@ impl App {
             }
         }
 
+        // Toque num pad cancela o replay: quem está com a mão manda.
+        if self.play.is_some() && (self.stick_l != egui::Vec2::ZERO || self.stick_r != egui::Vec2::ZERO) {
+            self.play = None;
+            self.loga("replay cancelado (toque no pad)");
+        }
+
         if self.link.is_some() && self.pc && now - self.last_send >= TICK {
             self.last_send = now;
-            self.send(&protocol::cmd_targets(self.pose));
+            let cmd = if self.play.is_some() {
+                protocol::cmd_targets(self.pose)
+            } else {
+                protocol::cmd_sticks([
+                    (self.stick_l.x * 100.0) as i32,
+                    (-self.stick_l.y * 100.0) as i32,   // tela: y para baixo; stick: y para cima
+                    (self.stick_r.x * 100.0) as i32,
+                    (-self.stick_r.y * 100.0) as i32,
+                ])
+            };
+            self.send(&cmd);
         }
     }
 
@@ -303,20 +326,20 @@ impl App {
         self.pose = self.live;
     }
 
-    fn joints(&mut self, ui: &mut egui::Ui) {
-        for i in 0..4 {
-            let (lo, hi) = (self.limits[i][0], self.limits[i][1]);
-            ui.horizontal(|ui| {
-                ui.add_sized([80.0, 20.0], egui::Label::new(protocol::JOINTS[i]));
-                ui.add(
-                    egui::Slider::new(&mut self.pose[i], lo..=hi)
-                        .fixed_decimals(0)
-                        .suffix("°"),
-                );
-                ui.label(format!("atual {:.0}°", self.live[i]));
-            });
-            ui.add_space(4.0);
-        }
+    /// Dois pads de toque, no mesmo layout da bancada: esquerdo = Base/Cotovelo,
+    /// direito = Garra/Ombro. Soltar o dedo centraliza = segurar a posição.
+    fn sticks(&mut self, ui: &mut egui::Ui) {
+        let lado = ((ui.available_width() * 0.42).min(ui.available_height() * 0.62)).clamp(140.0, 320.0);
+        ui.horizontal_top(|ui| {
+            pad(ui, "pad_esq", "Base · Cotovelo", &mut self.stick_l, lado);
+            ui.add_space(24.0);
+            pad(ui, "pad_dir", "Garra · Ombro", &mut self.stick_r, lado);
+        });
+        ui.add_space(8.0);
+        ui.label(format!(
+            "atual  base {:.0}° · ombro {:.0}° · cotovelo {:.0}° · garra {:.0}°",
+            self.live[0], self.live[1], self.live[2], self.live[3]
+        ));
     }
 
     fn recordings_panel(&mut self, ui: &mut egui::Ui) {
@@ -422,16 +445,55 @@ impl eframe::App for App {
             .default_width(300.0)
             .show(ctx, |ui| self.recordings_panel(ui));
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.heading("Juntas");
+            ui.heading("Controle por toque");
             ui.add_space(6.0);
-            self.joints(ui);
-            ui.add_space(10.0);
-            ui.label(format!(
-                "alvo: {:.0} ; {:.0} ; {:.0} ; {:.0}",
-                self.pose[0], self.pose[1], self.pose[2], self.pose[3]
-            ));
+            self.sticks(ui);
         });
 
         ctx.request_repaint_after(Duration::from_millis(20));
     }
+}
+
+/// Pad de toque estilo alavanca: arrastar move o knob, soltar volta ao centro
+/// (centro = segurar a posição, igual ao joystick físico solto).
+fn pad(ui: &mut egui::Ui, id: &str, titulo: &str, v: &mut egui::Vec2, lado: f32) {
+    ui.push_id(id, |ui| {
+        ui.vertical(|ui| {
+            ui.label(egui::RichText::new(titulo).strong());
+            let (rect, resp) =
+                ui.allocate_exact_size(egui::vec2(lado, lado), egui::Sense::click_and_drag());
+            let centro = rect.center();
+            let raio = lado * 0.5 - 6.0;
+
+            if resp.is_pointer_button_down_on() {
+                if let Some(pos) = resp.interact_pointer_pos() {
+                    let mut d = (pos - centro) / raio;
+                    if d.length() > 1.0 {
+                        d = d.normalized();
+                    }
+                    *v = d;
+                }
+            } else {
+                *v = egui::Vec2::ZERO;
+            }
+
+            let p = ui.painter();
+            let fundo = egui::Color32::from_gray(28);
+            let linha = egui::Stroke::new(1.0_f32, egui::Color32::from_gray(60));
+            p.circle_filled(centro, raio, fundo);
+            p.circle_stroke(centro, raio, egui::Stroke::new(2.0_f32, egui::Color32::from_gray(75)));
+            p.line_segment([centro - egui::vec2(raio, 0.0), centro + egui::vec2(raio, 0.0)], linha);
+            p.line_segment([centro - egui::vec2(0.0, raio), centro + egui::vec2(0.0, raio)], linha);
+
+            let knob = centro + *v * raio;
+            p.circle_filled(knob, raio * 0.26, egui::Color32::from_rgb(95, 170, 235));
+            p.text(
+                rect.left_top() + egui::vec2(8.0, 6.0),
+                egui::Align2::LEFT_TOP,
+                format!("{:+.0} / {:+.0}", v.x * 100.0, -v.y * 100.0),
+                egui::FontId::monospace(11.0),
+                egui::Color32::from_gray(160),
+            );
+        });
+    });
 }

@@ -87,7 +87,7 @@
  * ============================================================================
  */
 
-#define FW_VER "1.3.0"
+#define FW_VER "1.3.1"
 
 #include <Servo.h>
 #include <EEPROM.h>
@@ -811,6 +811,12 @@ bool modoPC = false;
 unsigned long ultimoComandoPcMs = 0;
 const unsigned long PC_TIMEOUT_MS = 500;
 
+//  Sticks virtuais do app (toque): -1..+1 por eixo, no lugar da leitura do ADC.
+//  Entram no MESMO caminho dos joysticks físicos (curva, zona morta, histerese),
+//  para o toque ter exatamente a mesma sensação da alavanca de verdade.
+bool modoVirtual = false;
+float vJoy1X = 0, vJoy1Y = 0, vJoy2X = 0, vJoy2Y = 0;
+
 void seguraJuntas() {
   alvoBase     = angBase;
   alvoOmbro    = angOmbro;
@@ -842,37 +848,54 @@ void enviaDiag() {
 
 //  Lê "#P90;60;45;20". Qualquer campo inválido descarta a linha inteira, para
 //  um comando corrompido nunca virar alvo no meio do caminho.
+//  Lê exatamente 4 inteiros separados por ';' a partir de `inicio`.
+bool leQuatroInteiros(const char *l, uint8_t n, uint8_t inicio, int *v) {
+  uint8_t k = 0, i = inicio;
+  while (i < n && k < 4) {
+    bool negativo = false;
+    if (l[i] == '-') { negativo = true; i++; }
+    bool temDigito = false;
+    int val = 0;
+    while (i < n && l[i] >= '0' && l[i] <= '9') {
+      val = val * 10 + (l[i] - '0');
+      i++;
+      temDigito = true;
+    }
+    if (!temDigito) return false;            // campo vazio ou lixo: descarta
+    v[k++] = negativo ? -val : val;
+    while (i < n && l[i] == ';') i++;
+  }
+  return k == 4;
+}
+
 void processaComandoPc(const char *l, uint8_t n) {
+  int v[4];
   switch (l[1]) {
-    case 'P': {
-      int v[4];
-      uint8_t k = 0, i = 2;
-      while (i < n && k < 4) {
-        bool negativo = false;
-        if (l[i] == '-') { negativo = true; i++; }
-        bool temDigito = false;
-        int val = 0;
-        while (i < n && l[i] >= '0' && l[i] <= '9') {
-          val = val * 10 + (l[i] - '0');
-          i++;
-          temDigito = true;
-        }
-        if (!temDigito) return;              // campo vazio ou lixo: descarta
-        v[k++] = negativo ? -val : val;
-        while (i < n && l[i] == ';') i++;
-      }
-      if (k != 4) return;
+    case 'P':                                // alvos absolutos (replay/ajuste fino)
+      if (!leQuatroInteiros(l, n, 2, v)) return;
       modoPC = true;
+      modoVirtual = false;
       alvoBase     = constrainAngle(v[0], limBaseMin, limBaseMax);
       alvoOmbro    = constrainAngle(v[1], limOmbroMin, limOmbroMax);
       alvoCotovelo = constrainAngle(v[2], limCotoveloMin, limCotoveloMax);
       alvoGarra    = constrainAngle(v[3], limGarraMin, limGarraMax);
       ultimoComandoPcMs = millis();
       break;
-    }
-    case 'M': modoPC = true; ultimoComandoPcMs = millis(); break;
-    case 'J': modoPC = false; break;
-    case 'H': modoPC = false; seguraJuntas(); break;
+
+    case 'V':                                // sticks virtuais, -100..100
+      if (!leQuatroInteiros(l, n, 2, v)) return;
+      modoPC = true;
+      modoVirtual = true;
+      vJoy1X = constrain(v[0], -100, 100) / 100.0;
+      vJoy1Y = constrain(v[1], -100, 100) / 100.0;
+      vJoy2X = constrain(v[2], -100, 100) / 100.0;
+      vJoy2Y = constrain(v[3], -100, 100) / 100.0;
+      ultimoComandoPcMs = millis();
+      break;
+
+    case 'M': modoPC = true; modoVirtual = false; ultimoComandoPcMs = millis(); break;
+    case 'J': modoPC = false; modoVirtual = false; vJoy1X = vJoy1Y = vJoy2X = vJoy2Y = 0; break;
+    case 'H': modoPC = false; modoVirtual = false; seguraJuntas(); break;
     case 'S': enviaStatus(); break;
     case 'B': enviaDiag();   break;
   }
@@ -956,6 +979,10 @@ void loop() {
   int joy1Y = leEixoSuave(PIN_JOY1_Y);
   int joy2X = leEixoSuave(PIN_JOY2_X);
   int joy2Y = leEixoSuave(PIN_JOY2_Y);
+
+  //  Cópia da leitura física: é ela que decide se a mão no joystick retoma o
+  //  controle, mesmo quando os sticks virtuais do app estão ativos.
+  const int fis1X = joy1X, fis1Y = joy1Y, fis2X = joy2X, fis2Y = joy2Y;
 
   //  --- ETAPA B2: Botão 1 (Joystick Esquerdo, D2) -> Localização (Posição 0)
   //      * Segurar por ~2s (1800 ms) = Salva localização atual na EEPROM
@@ -1058,19 +1085,34 @@ void loop() {
   //    joy2X (A3) → Garra      (direito,  esquerda/direita) esquerda=fecha, direita=abre
 
   if (!voltandoZero) {
+    //  Modo híbrido: mexer o joystick FÍSICO devolve o controle na hora. O alvo
+    //  é travado no ângulo atual, senão o braço continuaria indo ao alvo do PC.
+    bool fisicoMexeu = (abs(fis1X - centroJoy1X) > JOY_DEADZONE ||
+                        abs(fis1Y - centroJoy1Y) > JOY1_DZ_Y_COTOVEL ||
+                        abs(fis2X - centroJoy2X) > JOY_DEADZONE ||
+                        abs(fis2Y - centroJoy2Y) > JOY_DEADZONE);
+    if (modoPC && fisicoMexeu) {
+      modoPC = false;
+      modoVirtual = false;
+      seguraJuntas();
+    }
+
+    //  Sticks virtuais: substitui só o valor lido, o resto do caminho é o mesmo
+    //  (isolação de eixo, zona morta, curva, ganho, suavização). Tem que ser
+    //  antes de copiar para j1X/j2X, senão a cópia leva a leitura física.
+    if (modoPC && modoVirtual) {
+      joy1X = constrain(centroJoy1X + (int)(vJoy1X * 512.0), 0, 1023);
+      joy1Y = constrain(centroJoy1Y + (int)(vJoy1Y * 512.0), 0, 1023);
+      joy2X = constrain(centroJoy2X + (int)(vJoy2X * 512.0), 0, 1023);
+      joy2Y = constrain(centroJoy2Y + (int)(vJoy2Y * 512.0), 0, 1023);
+    }
+
     int j1X = joy1X, j1Y = joy1Y;
     int j2X = joy2X, j2Y = joy2Y;
     isolaEixoJoy1Esquerdo(j1X, centroJoy1X, j1Y, centroJoy1Y, agora);
     isolaEixoExclusivo(j2X, centroJoy2X, j2Y, centroJoy2Y, eixoTravaJoy2);
 
-    //  Modo híbrido: mexer o joystick devolve o controle na hora. O alvo é
-    //  travado no ângulo atual, senão o braço continuaria indo ao alvo do PC.
-    if (modoPC && (eixoTravaJoy1 != 0 || eixoTravaJoy2 != 0)) {
-      modoPC = false;
-      seguraJuntas();
-    }
-
-    if (!modoPC) {
+    if (!modoPC || modoVirtual) {
       if (eixoTravaJoy1 == 1) {
         // Movendo Joystick Esquerdo para Esquerda/Direita: SÓ gira a Base!
         alvoBase     = aplicaEixo(j1X, centroJoy1X, alvoBase, limBaseMin, limBaseMax, -GANHO_BASE);

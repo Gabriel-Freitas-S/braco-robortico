@@ -13,7 +13,15 @@ cargo run --release
 ```
 
 Depois: escolher `/dev/ttyACM0` → **Conectar** → **Assumir controle (PC)**.
-Os 4 sliders passam a mandar alvos a 20 Hz.
+
+A tela mostra **dois pads de toque**, no mesmo layout da bancada:
+
+| Pad | Eixo X | Eixo Y |
+|---|---|---|
+| Esquerdo | Base | Cotovelo |
+| Direito | Garra | Ombro |
+
+Arrastar move como alavanca; **soltar o dedo centraliza = segurar a posição**.
 
 ## Modo híbrido (a regra de segurança)
 
@@ -36,7 +44,8 @@ Os 4 sliders passam a mandar alvos a 20 Hz.
 ## Protocolo (firmware v1.3+)
 
 ```
-#P<b>;<o>;<c>;<g>   alvos em graus (20 Hz; reenviar é o heartbeat)
+#P<b>;<o>;<c>;<g>   alvos em graus (replay / ajuste fino)
+#V<lx>;<ly>;<rx>;<ry>  sticks virtuais -100..100 (20 Hz; reenviar é o heartbeat)
 #M                  assume o controle
 #J                  devolve ao joystick
 #H                  segura agora
@@ -62,4 +71,11 @@ O aviso aparece em vermelho na barra superior.
 - `src/protocol.rs` — codificação/decodificação das linhas (testado)
 - `src/link.rs` — porta serial: leitura em thread, escrita síncrona
 - `src/motion.rs` — gravação, interpolação do replay, JSON (testado)
-- `src/main.rs` — UI egui
+- `src/main.rs` — UI egui (pads de toque, gravação, replay)
+
+## Sentido dos eixos
+
+`#V` positivo em X do pad esquerdo **diminui** o ângulo da base; Y para cima do
+pad esquerdo **aumenta** o cotovelo; X do pad direito **abre** a garra; Y para
+cima **aumenta** o ombro. Se algum ficar invertido na mão, é só trocar o sinal
+na montagem de `cmd_sticks` em `tick()`.

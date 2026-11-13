@@ -3,8 +3,6 @@
 //! O PC nunca gera PWM: ele só propõe ALVOS. A rampa, os limites mecânicos e o
 //! hold continuam no firmware, então um comando perdido não vira tranco.
 
-pub const JOINTS: [&str; 4] = ["Base", "Ombro", "Cotovelo", "Garra"];
-
 pub const CMD_ASSUME: &str = "#M\n";
 pub const CMD_RELEASE: &str = "#J\n";
 pub const CMD_STOP: &str = "#H\n";
@@ -19,6 +17,13 @@ pub fn cmd_targets(pose: [f32; 4]) -> String {
         pose[2].round() as i32,
         pose[3].round() as i32
     )
+}
+
+/// `#V<lx>;<ly>;<rx>;<ry>` — sticks virtuais, -100..100 por eixo.
+/// Entram no firmware pelo mesmo caminho dos joysticks físicos.
+pub fn cmd_sticks(v: [i32; 4]) -> String {
+    format!("#V{};{};{};{}
+", v[0].clamp(-100, 100), v[1].clamp(-100, 100), v[2].clamp(-100, 100), v[3].clamp(-100, 100))
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -126,6 +131,11 @@ mod tests {
         );
         assert_eq!(parse_line(""), None);
         assert_eq!(parse_line("S95;63"), None);
+    }
+
+    #[test]
+    fn sticks_limitam() {
+        assert_eq!(cmd_sticks([120, -150, 0, 37]), "#V100;-100;0;37\n");
     }
 
     #[test]
