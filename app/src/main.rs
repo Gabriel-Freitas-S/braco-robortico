@@ -371,11 +371,12 @@ impl App {
             .min((ui.available_width() - GAP) * 0.5)
             .clamp(150.0, 460.0);
 
+        //  O espaço de centralização tem que ser somado DENTRO do layout
+        //  horizontal: no vertical ele empurraria os pads para fora da tela.
         let sobra = (ui.available_width() - (lado * 2.0 + GAP)).max(0.0);
-        ui.add_space(sobra / 2.0);
-
         let live = self.live;
-        ui.horizontal(|ui| {
+        ui.with_layout(egui::Layout::left_to_right(egui::Align::Min), |ui| {
+            ui.add_space(sobra / 2.0);
             pad(ui, "pad_esq", "BASE · COTOVELO", &mut self.stick_l, lado,
                 ("base", live[0]), ("cotovelo", live[2]));
             ui.add_space(GAP);
@@ -585,7 +586,7 @@ fn pad(
             }
 
             let p = ui.painter();
-            p.circle_filled(centro, raio, egui::Color32::from_gray(28));
+            p.circle_filled(centro, raio, egui::Color32::from_gray(34));
             p.circle_stroke(centro, raio, egui::Stroke::new(2.0_f32, egui::Color32::from_gray(80)));
             let linha = egui::Stroke::new(1.0_f32, egui::Color32::from_gray(58));
             p.line_segment([centro - egui::vec2(raio, 0.0), centro + egui::vec2(raio, 0.0)], linha);
