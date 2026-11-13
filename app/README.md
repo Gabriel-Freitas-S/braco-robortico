@@ -54,7 +54,7 @@ garra **só aperta**: nem o pad, nem o replay (`#P`) conseguem abrir.
 - **Gravar** captura a pose a 20 Hz — inclusive quando você está movendo no
   joystick (é "ensinar fazendo").
 - **Parar e salvar** grava em `~/.local/share/robocontrol/movimentos/<nome>.json`.
-- **▶** carrega um movimento; **Reproduzir** manda os alvos interpolados.
+- **▶** carrega um movimento; **✕** exclui (com confirmação na própria linha); **Reproduzir** manda os alvos interpolados.
   Tocar o joystick cancela o replay (o firmware sai do modo PC).
 
 ## Protocolo (firmware v1.3+)

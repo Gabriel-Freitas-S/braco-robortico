@@ -49,6 +49,10 @@ impl Recording {
         Ok(path)
     }
 
+    pub fn delete(path: &Path) -> Result<(), String> {
+        std::fs::remove_file(path).map_err(|e| e.to_string())
+    }
+
     pub fn load(path: &Path) -> Result<Self, String> {
         let txt = std::fs::read_to_string(path).map_err(|e| e.to_string())?;
         serde_json::from_str(&txt).map_err(|e| e.to_string())

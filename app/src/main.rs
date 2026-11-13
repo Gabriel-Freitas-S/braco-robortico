@@ -70,6 +70,8 @@ struct App {
     last_diag: Instant,
 
     recording: Option<(Recording, Instant)>,
+    /** movimento aguardando confirmação de exclusão */
+    excluir: Option<PathBuf>,
     rec_name: String,
     files: Vec<PathBuf>,
     loaded: Option<Recording>,
@@ -97,6 +99,7 @@ impl App {
             last_send: Instant::now(),
             last_diag: Instant::now(),
             recording: None,
+            excluir: None,
             rec_name: "movimento".into(),
             files: Vec::new(),
             loaded: None,
@@ -421,6 +424,57 @@ impl App {
     }
 
     fn recordings_panel(&mut self, ui: &mut egui::Ui) {
+        //  O bloco de replay + rodapé é reservado PRIMEIRO, como painel inferior:
+        //  assim a lista nunca empurra o "Reproduzir" para fora da tela.
+        egui::TopBottomPanel::bottom("replay_painel").show_inside(ui, |ui| {
+            if let Some(r) = self.loaded.clone() {
+                ui.add_space(6.0);
+                ui.horizontal(|ui| {
+                    ui.label(egui::RichText::new(&r.name).strong());
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        ui.label(
+                            egui::RichText::new(format!(
+                                "{:.1}s · {} amostras",
+                                r.duration_ms() as f32 / 1000.0,
+                                r.samples.len()
+                            ))
+                            .small()
+                            .color(COR_MUTED),
+                        );
+                    });
+                });
+                ui.add_space(2.0);
+                ui.checkbox(&mut self.looping, "repetir");
+                let pode = self.link.is_some() && self.play.is_none();
+                if ui
+                    .add_enabled(
+                        pode,
+                        egui::Button::new("Reproduzir").min_size(egui::vec2(ui.available_width(), ALVO)),
+                    )
+                    .clicked()
+                {
+                    self.assume();
+                    self.play = Some((r.clone(), Instant::now()));
+                    self.loga("reproduzindo…");
+                }
+                if self.play.is_some()
+                    && ui
+                        .add_sized([ui.available_width(), ALVO], egui::Button::new("Parar replay"))
+                        .clicked()
+                {
+                    self.stop();
+                }
+                ui.add_space(4.0);
+                ui.separator();
+            }
+            ui.add_space(2.0);
+            ui.label(
+                egui::RichText::new(dir_movimentos().display().to_string())
+                    .small()
+                    .color(cor(0x5d, 0x6a, 0x78)),
+            );
+        });
+
         ui.add_space(6.0);
         titulo_secao(ui, "Gravação");
         ui.add_space(6.0);
@@ -485,10 +539,9 @@ impl App {
         });
         ui.add_space(6.0);
 
-        let altura_lista = (ui.available_height() - 120.0).max(90.0);
         egui::ScrollArea::vertical()
-            .max_height(altura_lista)
             .auto_shrink([false, false])
+            .max_height(ui.available_height())
             .show(ui, |ui| {
                 if self.files.is_empty() {
                     ui.label(egui::RichText::new("nenhum movimento salvo").small().color(COR_MUTED));
@@ -499,6 +552,38 @@ impl App {
                         .file_name()
                         .map(|n| n.to_string_lossy().trim_end_matches(".json").to_string())
                         .unwrap_or_default();
+
+                    if self.excluir.as_ref() == Some(&f) {
+                        //  Confirmação no lugar do nome: excluir um movimento
+                        //  ensinado não tem desfazer.
+                        ui.horizontal(|ui| {
+                            if ui
+                                .add_sized(
+                                    [ui.available_width() - ALVO - 10.0, ALVO],
+                                    egui::Button::new("excluir este?").fill(cor(0x4a, 0x22, 0x22)),
+                                )
+                                .clicked()
+                            {
+                                match Recording::delete(&f) {
+                                    Ok(()) => {
+                                        self.loga(format!("excluído {nome}"));
+                                        if self.loaded.as_ref().is_some_and(|l| l.name == nome) {
+                                            self.loaded = None;
+                                            self.play = None;
+                                        }
+                                        self.refresh_files();
+                                    }
+                                    Err(e) => self.loga(format!("erro ao excluir: {e}")),
+                                }
+                                self.excluir = None;
+                            }
+                            if ui.add_sized([ALVO, ALVO], egui::Button::new("✕")).clicked() {
+                                self.excluir = None;
+                            }
+                        });
+                        continue;
+                    }
+
                     ui.horizontal(|ui| {
                         if ui
                             .add_sized([ALVO, ALVO], egui::Button::new("▶"))
@@ -514,9 +599,10 @@ impl App {
                             }
                         }
                         let selecionado = self.loaded.as_ref().is_some_and(|l| l.name == nome);
+                        let largura_nome = ui.available_width() - ALVO - 10.0;
                         if ui
                             .add_sized(
-                                [ui.available_width(), ALVO],
+                                [largura_nome.max(60.0), ALVO],
                                 egui::Button::selectable(selecionado, nome),
                             )
                             .clicked()
@@ -525,55 +611,16 @@ impl App {
                                 self.loaded = Some(r);
                             }
                         }
+                        if ui
+                            .add_sized([ALVO, ALVO], egui::Button::new("✕"))
+                            .on_hover_text("excluir")
+                            .clicked()
+                        {
+                            self.excluir = Some(f.clone());
+                        }
                     });
                 }
             });
-
-        if let Some(r) = self.loaded.clone() {
-            ui.add_space(8.0);
-            ui.separator();
-            ui.label(egui::RichText::new(&r.name).strong());
-            ui.label(
-                egui::RichText::new(format!(
-                    "{:.1}s · {} amostras",
-                    r.duration_ms() as f32 / 1000.0,
-                    r.samples.len()
-                ))
-                .small()
-                .color(COR_MUTED),
-            );
-            ui.add_space(4.0);
-            ui.checkbox(&mut self.looping, "repetir");
-            let pode = self.link.is_some() && self.play.is_none();
-            if ui
-                .add_enabled(
-                    pode,
-                    egui::Button::new("Reproduzir").min_size(egui::vec2(ui.available_width(), ALVO)),
-                )
-                .clicked()
-            {
-                self.assume();
-                self.play = Some((r.clone(), Instant::now()));
-                self.loga("reproduzindo…");
-            }
-            if self.play.is_some()
-                && ui
-                    .add_sized([ui.available_width(), ALVO], egui::Button::new("Parar replay"))
-                    .clicked()
-            {
-                self.stop();
-            }
-        }
-
-        //  Rodapé: onde os arquivos vivem, para achar sem adivinhar.
-        ui.with_layout(egui::Layout::bottom_up(egui::Align::Min), |ui| {
-            ui.add_space(2.0);
-            ui.label(
-                egui::RichText::new(dir_movimentos().display().to_string())
-                    .small()
-                    .color(egui::Color32::from_rgb(0x5d, 0x6a, 0x78)),
-            );
-        });
     }
 
     /// Log recolhível: fechado, os pads ficam com a altura toda da tela.
