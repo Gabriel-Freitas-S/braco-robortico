@@ -1,7 +1,7 @@
 # Projeto de braço robótico — CAD e impressão 3D
 
 - Projeto funcional para Bambu Lab A1, material PLA; todas as dimensões em mm.
-- Fonte CAD em `cad-output/`; `bambu-output/` guarda artefatos de preparação para impressão.
+- Fonte CAD em `cad-output/`; `bambu-output/` guarda artefatos de preparação para impressão; peças e pratos prontos em `impressao/`.
 - O build123d MCP é a única forma de modelar peças funcionais dimensionadas. Nunca use `parametric.py` nem geração por IA para essas peças.
 - Dúvidas sobre o código/geometria existente do braço: encaminhe ao agente global `read` (gratuito). Siga os tiers globais `read` → `cheap` → `work` → `deep` conforme o custo e a complexidade.
 
