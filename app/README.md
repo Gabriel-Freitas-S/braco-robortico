@@ -5,23 +5,50 @@ O firmware continua dono do movimento: aqui só **propomos alvos**. A rampa, os
 limites mecânicos e o hold ficam na placa, então um comando perdido no USB não
 vira tranco.
 
-## Instalar (menu do sistema)
+## Requisitos
+
+| | |
+|---|---|
+| **Todos** | Rust stable + `cargo`; Arduino Uno + cabo USB |
+| **Linux** | usuário no grupo `dialout` (Arch: `uucp`) + libs de build |
+| **Windows** | Rust MSVC + *Desktop development with C++*; driver CH340 em clones |
+| **macOS** | Xcode Command Line Tools |
+
+O `install.sh` é só Linux; nos outros sistemas use `cargo run --release`.
+
+## Rodar
+
+### Linux
 
 ```bash
-cd app && ./install.sh
+cd app && ./install.sh   # opcional: instala no menu
+# ou: cargo run --release
 ```
 
 Instala sem root: binário em `~/.local/bin/robocontrol`, ícone e entrada
-**RoboControl** no menu de aplicativos. Movimentos gravados vão para
-`~/.local/share/robocontrol/movimentos/`.
+**RoboControl** no menu de aplicativos. Movimentos em
+`~/.local/share/robocontrol/movimentos/` (ou `$XDG_DATA_HOME/...`).
 
-## Rodar sem instalar
+### macOS
 
 ```bash
 cd app && cargo run --release
 ```
 
-Depois: escolher `/dev/ttyACM0` → **Conectar** → **Assumir controle (PC)**.
+Movimentos em `~/.local/share/robocontrol/movimentos/`.
+
+### Windows (PowerShell)
+
+```powershell
+cd app
+cargo run --release
+# ou: cargo build --release; .\target\release\robocontrol.exe
+```
+
+Movimentos em `%APPDATA%\robocontrol\movimentos`.
+
+Depois: escolher a porta (Linux `/dev/ttyACM0`; macOS `/dev/cu.usbmodem*`;
+Windows `COM3`) → **Conectar** → **Assumir controle (PC)**.
 
 A tela mostra **dois pads de toque**, no mesmo layout da bancada:
 
@@ -53,7 +80,7 @@ garra **só aperta**: nem o pad, nem o replay (`#P`) conseguem abrir.
 
 - **Gravar** captura a pose a 20 Hz — inclusive quando você está movendo no
   joystick (é "ensinar fazendo").
-- **Parar e salvar** grava em `~/.local/share/robocontrol/movimentos/<nome>.json`.
+- **Parar e salvar** grava em `~/.local/share/robocontrol/movimentos/<nome>.json` (Windows: `%APPDATA%\robocontrol\movimentos`).
 - **▶** carrega um movimento; **✕** exclui (com confirmação na própria linha); **Reproduzir** manda os alvos interpolados.
   Tocar o joystick cancela o replay (o firmware sai do modo PC).
 
@@ -73,6 +100,7 @@ garra **só aperta**: nem o pad, nem o replay (`#P`) conseguem abrir.
 Testar sem o app:
 
 ```bash
+# Linux
 stty -F /dev/ttyACM0 115200 raw -echo
 printf '#B\n' > /dev/ttyACM0 && cat /dev/ttyACM0
 ```
