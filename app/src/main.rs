@@ -40,7 +40,10 @@ fn main() -> eframe::Result {
     eframe::run_native(
         "RoboControl",
         options,
-        Box::new(|_cc| Ok(Box::new(App::new()))),
+        Box::new(|cc| {
+            aplica_tema(&cc.egui_ctx);
+            Ok(Box::new(App::new()))
+        }),
     )
 }
 
@@ -352,21 +355,21 @@ impl App {
 
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if let Some(b) = self.boots {
-                    ui.label(format!("boots={b}"));
+                    ui.label(egui::RichText::new(format!("boots={b}")).small().color(COR_MUTED));
                 }
-                ui.label(format!("fw {}", self.version));
-                let (txt, cor) = if self.link.is_none() {
-                    ("desconectado", egui::Color32::GRAY)
+                ui.label(egui::RichText::new(format!("fw {}", self.version)).small().color(COR_MUTED));
+                let (txt, ct, cf) = if self.link.is_none() {
+                    ("desconectado", COR_MUTED, COR_FUNDO)
                 } else if self.pc {
-                    ("PC no controle", egui::Color32::from_rgb(90, 200, 120))
+                    ("PC no controle", COR_OK, COR_OK_FUNDO)
                 } else {
-                    ("joystick no controle", egui::Color32::from_rgb(220, 190, 90))
+                    ("joystick no controle", COR_WARN, COR_WARN_FUNDO)
                 };
-                ui.colored_label(cor, egui::RichText::new(txt).strong());
+                pill(ui, txt, ct, cf);
             });
         });
         if let Some(w) = &self.reboot {
-            ui.colored_label(egui::Color32::from_rgb(230, 120, 120), w);
+            ui.colored_label(COR_ERRO, w);
         }
     }
 
@@ -374,42 +377,65 @@ impl App {
         self.pose = self.live;
     }
 
-    /// Dois pads de toque ocupando a altura disponível, no layout da bancada:
-    /// esquerdo = Base/Cotovelo, direito = Garra/Ombro.
+    /// Cabeçalho da seção + dois pads + leitura das juntas em chips.
     fn sticks(&mut self, ui: &mut egui::Ui) {
-        const GAP: f32 = 36.0;
-        let altura_util = ui.available_height() - 110.0; // rótulo + leituras
+        const GAP: f32 = 44.0;
+
+        ui.horizontal(|ui| {
+            titulo_secao(ui, "Controle por toque");
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                if self.link.is_none() {
+                    pill(ui, "conecte a placa para começar", COR_MUTED, COR_FUNDO);
+                } else if self.pc {
+                    pill(ui, "PC no controle", COR_OK, COR_OK_FUNDO);
+                } else {
+                    pill(ui, "joystick no controle", COR_WARN, COR_WARN_FUNDO);
+                }
+            });
+        });
+        ui.add_space(8.0);
+
+        //  Espaço para: título dos pads, leituras embaixo e os chips.
+        let altura_util = ui.available_height() - 165.0;
         let lado = altura_util
             .min((ui.available_width() - GAP) * 0.5)
-            .clamp(150.0, 460.0);
+            .clamp(140.0, 420.0);
 
-        //  O espaço de centralização tem que ser somado DENTRO do layout
-        //  horizontal: no vertical ele empurraria os pads para fora da tela.
-        let sobra = (ui.available_width() - (lado * 2.0 + GAP)).max(0.0);
         let live = self.live;
-        ui.with_layout(egui::Layout::left_to_right(egui::Align::Min), |ui| {
-            ui.add_space(sobra / 2.0);
-            pad(ui, "pad_esq", "BASE · COTOVELO", &mut self.stick_l, lado,
-                ("base", live[0]), ("cotovelo", live[2]));
-            ui.add_space(GAP);
-            pad(ui, "pad_dir", "GARRA · OMBRO", &mut self.stick_r, lado,
-                ("garra", live[3]), ("ombro", live[1]));
+        ui.vertical_centered(|ui| {
+            ui.horizontal(|ui| {
+                pad(ui, "pad_esq", "BASE · COTOVELO", &mut self.stick_l, lado);
+                ui.add_space(GAP);
+                pad(ui, "pad_dir", "GARRA · OMBRO", &mut self.stick_r, lado);
+            });
+
+            ui.add_space(14.0);
+            ui.horizontal(|ui| {
+                chip(ui, "base", live[0]);
+                chip(ui, "ombro", live[1]);
+                chip(ui, "cotovelo", live[2]);
+                chip(ui, "garra", live[3]);
+            });
         });
     }
 
     fn recordings_panel(&mut self, ui: &mut egui::Ui) {
-        ui.add_space(4.0);
-        ui.heading("Gravação");
-        ui.add_space(2.0);
+        ui.add_space(6.0);
+        titulo_secao(ui, "Gravação");
+        ui.add_space(6.0);
 
-        if self.recording.is_some() {
-            if let Some((rec, t0)) = &self.recording {
-                ui.label(format!(
-                    "gravando… {:.1}s · {} amostras",
-                    t0.elapsed().as_secs_f32(),
-                    rec.samples.len()
-                ));
-            }
+        if let Some((rec, t0)) = &self.recording {
+            ui.horizontal(|ui| {
+                ui.label(egui::RichText::new("●").color(COR_REC).size(14.0));
+                ui.label(
+                    egui::RichText::new(format!(
+                        "{:.1}s · {} amostras",
+                        t0.elapsed().as_secs_f32(),
+                        rec.samples.len()
+                    ))
+                    .color(COR_REC),
+                );
+            });
             ui.add_space(4.0);
             if ui
                 .add_sized([ui.available_width(), ALVO], egui::Button::new("Parar e salvar"))
@@ -427,13 +453,15 @@ impl App {
                 }
             }
         } else {
-            ui.label("nome");
-            ui.add_sized([ui.available_width(), ALVO], egui::TextEdit::singleline(&mut self.rec_name));
+            ui.add_sized(
+                [ui.available_width(), ALVO],
+                egui::TextEdit::singleline(&mut self.rec_name).hint_text("nome do movimento"),
+            );
             ui.add_space(4.0);
             if ui
                 .add_enabled(
                     self.link.is_some(),
-                    egui::Button::new("Gravar").min_size(egui::vec2(ui.available_width(), ALVO)),
+                    egui::Button::new("●  Gravar").min_size(egui::vec2(ui.available_width(), ALVO)),
                 )
                 .clicked()
             {
@@ -445,17 +473,25 @@ impl App {
             }
         }
 
-        ui.add_space(10.0);
-        ui.separator();
-        ui.heading("Movimentos");
-        if ui.add_sized([ui.available_width(), ALVO], egui::Button::new("Atualizar lista")).clicked() {
-            self.refresh_files();
-        }
-        ui.add_space(4.0);
+        ui.add_space(14.0);
+        ui.horizontal(|ui| {
+            titulo_secao(ui, "Movimentos");
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                if ui.small_button("atualizar").clicked() {
+                    self.refresh_files();
+                }
+            });
+        });
+        ui.add_space(6.0);
 
+        let altura_lista = (ui.available_height() - 120.0).max(90.0);
         egui::ScrollArea::vertical()
-            .max_height(180.0)
+            .max_height(altura_lista)
+            .auto_shrink([false, false])
             .show(ui, |ui| {
+                if self.files.is_empty() {
+                    ui.label(egui::RichText::new("nenhum movimento salvo").small().color(COR_MUTED));
+                }
                 let files = self.files.clone();
                 for f in files {
                     let nome = f
@@ -464,7 +500,7 @@ impl App {
                         .unwrap_or_default();
                     ui.horizontal(|ui| {
                         if ui
-                            .add_sized([40.0, ALVO], egui::Button::new("▶"))
+                            .add_sized([ALVO, ALVO], egui::Button::new("▶"))
                             .on_hover_text("carregar")
                             .clicked()
                         {
@@ -476,12 +512,12 @@ impl App {
                                 Err(e) => self.loga(format!("erro ao ler {nome}: {e}")),
                             }
                         }
-                        let selecionado = self
-                            .loaded
-                            .as_ref()
-                            .is_some_and(|l| l.name == nome);
+                        let selecionado = self.loaded.as_ref().is_some_and(|l| l.name == nome);
                         if ui
-                            .add_sized([ui.available_width(), ALVO], egui::Button::selectable(selecionado, nome))
+                            .add_sized(
+                                [ui.available_width(), ALVO],
+                                egui::Button::selectable(selecionado, nome),
+                            )
                             .clicked()
                         {
                             if let Ok(r) = Recording::load(&f) {
@@ -492,11 +528,20 @@ impl App {
                 }
             });
 
-        ui.add_space(6.0);
         if let Some(r) = self.loaded.clone() {
+            ui.add_space(8.0);
             ui.separator();
             ui.label(egui::RichText::new(&r.name).strong());
-            ui.label(format!("{:.1}s · {} amostras", r.duration_ms() as f32 / 1000.0, r.samples.len()));
+            ui.label(
+                egui::RichText::new(format!(
+                    "{:.1}s · {} amostras",
+                    r.duration_ms() as f32 / 1000.0,
+                    r.samples.len()
+                ))
+                .small()
+                .color(COR_MUTED),
+            );
+            ui.add_space(4.0);
             ui.checkbox(&mut self.looping, "repetir");
             let pode = self.link.is_some() && self.play.is_none();
             if ui
@@ -518,6 +563,16 @@ impl App {
                 self.stop();
             }
         }
+
+        //  Rodapé: onde os arquivos vivem, para achar sem adivinhar.
+        ui.with_layout(egui::Layout::bottom_up(egui::Align::Min), |ui| {
+            ui.add_space(2.0);
+            ui.label(
+                egui::RichText::new(dir_movimentos().display().to_string())
+                    .small()
+                    .color(egui::Color32::from_rgb(0x5d, 0x6a, 0x78)),
+            );
+        });
     }
 
     /// Log recolhível: fechado, os pads ficam com a altura toda da tela.
@@ -539,14 +594,6 @@ impl App {
 
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // Alvos de toque: a janela vive no ScreenPad, onde o dedo é mais gordo
-        // que o mouse.
-        let mut estilo = (*ctx.style()).clone();
-        estilo.spacing.button_padding = egui::vec2(14.0, 9.0);
-        estilo.spacing.item_spacing = egui::vec2(10.0, 8.0);
-        estilo.spacing.interact_size.y = ALVO;
-        ctx.set_style(estilo);
-
         self.tick(Instant::now());
 
         egui::TopBottomPanel::top("topo").show(ctx, |ui| {
@@ -566,24 +613,130 @@ impl eframe::App for App {
     }
 }
 
+// ---------------------------------------------------------------- paleta --
+
+const fn cor(r: u8, g: u8, b: u8) -> egui::Color32 {
+    egui::Color32::from_rgb(r, g, b)
+}
+
+const COR_FUNDO: egui::Color32 = cor(0x18, 0x1d, 0x23);
+const COR_MUTED: egui::Color32 = cor(0x84, 0x93, 0xa1);
+const COR_ACENTO: egui::Color32 = cor(0x7f, 0xb2, 0xe5);
+const COR_OK: egui::Color32 = cor(0x8f, 0xd6, 0xa2);
+const COR_OK_FUNDO: egui::Color32 = cor(0x1b, 0x2e, 0x23);
+const COR_WARN: egui::Color32 = cor(0xd9, 0xc3, 0x76);
+const COR_WARN_FUNDO: egui::Color32 = cor(0x2c, 0x28, 0x18);
+const COR_ERRO: egui::Color32 = cor(0xe2, 0x86, 0x86);
+const COR_REC: egui::Color32 = cor(0xe0, 0x7b, 0x7b);
+
+/// Tema único do app: superfícies escuras azuladas, cantos de 8 px e alvos de
+/// toque de 36 px. Aplicado uma vez, no arranque.
+fn aplica_tema(ctx: &egui::Context) {
+    use egui::{FontFamily, FontId, TextStyle};
+    let mut st = (*ctx.style()).clone();
+    let mut v = egui::Visuals::dark();
+
+    v.panel_fill = cor(0x14, 0x18, 0x1e);
+    v.window_fill = cor(0x18, 0x1d, 0x23);
+    v.extreme_bg_color = cor(0x0d, 0x11, 0x15);
+    v.faint_bg_color = cor(0x1a, 0x20, 0x27);
+    v.override_text_color = Some(cor(0xd6, 0xdf, 0xe9));
+    v.selection.bg_fill = cor(0x2b, 0x5f, 0x8f);
+    v.selection.stroke = egui::Stroke::new(1.5_f32, COR_ACENTO);
+    v.hyperlink_color = COR_ACENTO;
+
+    let raio = egui::CornerRadius::same(8);
+    v.widgets.noninteractive.corner_radius = raio;
+    v.widgets.noninteractive.bg_fill = cor(0x19, 0x1f, 0x26);
+    v.widgets.noninteractive.bg_stroke = egui::Stroke::new(1.0_f32, cor(0x24, 0x2c, 0x35));
+
+    for w in [
+        &mut v.widgets.inactive,
+        &mut v.widgets.hovered,
+        &mut v.widgets.active,
+        &mut v.widgets.open,
+    ] {
+        w.corner_radius = raio;
+    }
+    v.widgets.inactive.weak_bg_fill = cor(0x20, 0x28, 0x32);
+    v.widgets.inactive.bg_fill = cor(0x20, 0x28, 0x32);
+    v.widgets.inactive.bg_stroke = egui::Stroke::new(1.0_f32, cor(0x2c, 0x36, 0x43));
+    v.widgets.hovered.weak_bg_fill = cor(0x27, 0x32, 0x40);
+    v.widgets.hovered.bg_fill = cor(0x27, 0x32, 0x40);
+    v.widgets.hovered.bg_stroke = egui::Stroke::new(1.0_f32, cor(0x42, 0x57, 0x6e));
+    v.widgets.active.weak_bg_fill = cor(0x30, 0x3e, 0x50);
+    v.widgets.active.bg_fill = cor(0x30, 0x3e, 0x50);
+    v.widgets.active.bg_stroke = egui::Stroke::new(1.5_f32, COR_ACENTO);
+
+    st.visuals = v;
+    st.spacing.button_padding = egui::vec2(14.0, 9.0);
+    st.spacing.item_spacing = egui::vec2(10.0, 8.0);
+    st.spacing.interact_size.y = ALVO;
+
+    st.text_styles.insert(TextStyle::Body, FontId::new(14.0, FontFamily::Proportional));
+    st.text_styles.insert(TextStyle::Button, FontId::new(14.5, FontFamily::Proportional));
+    st.text_styles.insert(TextStyle::Heading, FontId::new(19.0, FontFamily::Proportional));
+    st.text_styles.insert(TextStyle::Small, FontId::new(11.5, FontFamily::Proportional));
+    ctx.set_style(st);
+}
+
+/// Título de seção: caixa alta, pequeno e discreto.
+fn titulo_secao(ui: &mut egui::Ui, texto: &str) {
+    ui.label(
+        egui::RichText::new(texto.to_uppercase())
+            .small()
+            .strong()
+            .color(COR_MUTED),
+    );
+}
+
+/// Etiqueta arredondada de estado.
+fn pill(ui: &mut egui::Ui, texto: &str, cor_texto: egui::Color32, fundo: egui::Color32) {
+    egui::Frame::NONE
+        .fill(fundo)
+        .corner_radius(20)
+        .inner_margin(egui::Margin::symmetric(12, 5))
+        .show(ui, |ui| {
+            ui.label(egui::RichText::new(texto).strong().color(cor_texto));
+        });
+}
+
+/// Leitura de uma junta, com o número grande.
+fn chip(ui: &mut egui::Ui, nome: &str, valor: f32) {
+    egui::Frame::NONE
+        .fill(cor(0x1c, 0x23, 0x2b))
+        .corner_radius(10)
+        .inner_margin(egui::Margin::symmetric(16, 8))
+        .show(ui, |ui| {
+            ui.vertical(|ui| {
+                ui.label(egui::RichText::new(nome.to_uppercase()).small().color(COR_MUTED));
+                ui.label(
+                    egui::RichText::new(format!("{valor:.0}°"))
+                        .size(21.0)
+                        .strong()
+                        .color(cor(0xe8, 0xef, 0xf6)),
+                );
+            });
+        });
+}
+
 /// Pad de toque estilo alavanca: arrastar move o knob, soltar volta ao centro
 /// (centro = segurar a posição, igual ao joystick físico solto).
-fn pad(
-    ui: &mut egui::Ui,
-    id: &str,
-    titulo: &str,
-    v: &mut egui::Vec2,
-    lado: f32,
-    eixo_a: (&str, f32),
-    eixo_b: (&str, f32),
-) {
+fn pad(ui: &mut egui::Ui, id: &str, titulo: &str, v: &mut egui::Vec2, lado: f32) {
     ui.push_id(id, |ui| {
         ui.vertical(|ui| {
-            ui.label(egui::RichText::new(titulo).strong().size(15.0));
+            ui.label(
+                egui::RichText::new(titulo)
+                    .small()
+                    .strong()
+                    .color(COR_MUTED),
+            );
+            ui.add_space(2.0);
+
             let (rect, resp) =
                 ui.allocate_exact_size(egui::vec2(lado, lado), egui::Sense::click_and_drag());
             let centro = rect.center();
-            let raio = lado * 0.5 - 6.0;
+            let raio = lado * 0.5 - 4.0;
 
             if resp.is_pointer_button_down_on() {
                 if let Some(pos) = resp.interact_pointer_pos() {
@@ -597,39 +750,34 @@ fn pad(
                 *v = egui::Vec2::ZERO;
             }
 
-            let p = ui.painter();
-            p.circle_filled(centro, raio, egui::Color32::from_gray(34));
-            p.circle_stroke(centro, raio, egui::Stroke::new(2.0_f32, egui::Color32::from_gray(80)));
-            let linha = egui::Stroke::new(1.0_f32, egui::Color32::from_gray(58));
-            p.line_segment([centro - egui::vec2(raio, 0.0), centro + egui::vec2(raio, 0.0)], linha);
-            p.line_segment([centro - egui::vec2(0.0, raio), centro + egui::vec2(0.0, raio)], linha);
-
-            let knob = centro + *v * raio;
             let ativo = *v != egui::Vec2::ZERO;
+            let p = ui.painter();
+            p.circle_filled(centro, raio, cor(0x1c, 0x22, 0x2a));
             p.circle_filled(
-                knob,
-                raio * 0.24,
+                centro,
+                raio,
                 if ativo {
-                    egui::Color32::from_rgb(120, 190, 255)
+                    egui::Color32::from_rgba_unmultiplied(0x7f, 0xb2, 0xe5, 18)
                 } else {
-                    egui::Color32::from_rgb(95, 170, 235)
+                    egui::Color32::TRANSPARENT
                 },
             );
+            p.circle_stroke(
+                centro,
+                raio,
+                egui::Stroke::new(
+                    if ativo { 2.5_f32 } else { 1.5_f32 },
+                    if ativo { COR_ACENTO } else { cor(0x2f, 0x3a, 0x47) },
+                ),
+            );
+            let linha = egui::Stroke::new(1.0_f32, cor(0x25, 0x2d, 0x37));
+            p.line_segment([centro - egui::vec2(raio, 0.0), centro + egui::vec2(raio, 0.0)], linha);
+            p.line_segment([centro - egui::vec2(0.0, raio), centro + egui::vec2(0.0, raio)], linha);
+            p.circle_stroke(centro, raio * 0.30, egui::Stroke::new(1.0_f32, cor(0x22, 0x29, 0x32)));
 
-            ui.add_space(2.0);
-            ui.horizontal(|ui| {
-                ui.label(
-                    egui::RichText::new(format!("{} {:.0}°", eixo_a.0, eixo_a.1))
-                        .monospace()
-                        .size(13.0),
-                );
-                ui.label("·");
-                ui.label(
-                    egui::RichText::new(format!("{} {:.0}°", eixo_b.0, eixo_b.1))
-                        .monospace()
-                        .size(13.0),
-                );
-            });
+            let knob = centro + *v * raio;
+            p.circle_filled(knob, raio * 0.22, if ativo { cor(0x9e, 0xcb, 0xf5) } else { COR_ACENTO });
+            p.circle_stroke(knob, raio * 0.22, egui::Stroke::new(2.0_f32, cor(0x0f, 0x14, 0x19)));
         });
     });
 }
