@@ -89,7 +89,7 @@
  * ============================================================================
  */
 
-#define FW_VER "1.3.2"
+#define FW_VER "1.3.3"
 
 #include <Servo.h>
 #include <EEPROM.h>
@@ -292,6 +292,10 @@ const unsigned long BAUD = 115200;
 //  Liga/desliga a leitura contínua dos joysticks pelo comando 'd'.
 //  Inicia desligado (false) para a tela ficar parada esperando sua resposta!
 bool debugOn = false;
+
+//  Quem está no controle do braço: false = joystick, true = app USB.
+//  Declarado aqui em cima porque resetPark() também consulta.
+bool modoPC = false;
 
 // ===========================================================================
 //  9. FUNÇÕES AUXILIARES
@@ -567,6 +571,10 @@ bool btn2SalvouNoHold = false;
 unsigned long inicioPressaoBtn2Ms = 0;
 
 void resetPark() {
+  if (modoPC) {
+    Serial.println(F("PC no controle: irei a Posicao 0 so depois de soltar no app"));
+    return;
+  }
   voltandoZero = true;
   Serial.println(F("botao/comando: indo suavemente para a Posicao 0"));
 }
@@ -806,10 +814,9 @@ void descobrePinoBase() {
 //
 //  Regras de segurança:
 //    - 500 ms sem nenhum #P -> segura as juntas e volta ao joystick
-//    - qualquer deflexão do joystick -> devolve o controle na hora
-//      (é o modo híbrido: pegar no braço sempre vence o app)
+//    - com o PC no controle o joystick físico fica TRAVADO (não interfere);
+//      #J, #H, o timeout ou a queda do cabo devolvem o controle
 
-bool modoPC = false;
 unsigned long ultimoComandoPcMs = 0;
 const unsigned long PC_TIMEOUT_MS = 500;
 
@@ -1006,10 +1013,6 @@ void loop() {
   int joy2X = leEixoSuave(PIN_JOY2_X);
   int joy2Y = leEixoSuave(PIN_JOY2_Y);
 
-  //  Cópia da leitura física: é ela que decide se a mão no joystick retoma o
-  //  controle, mesmo quando os sticks virtuais do app estão ativos.
-  const int fis1X = joy1X, fis1Y = joy1Y, fis2X = joy2X, fis2Y = joy2Y;
-
   //  --- ETAPA B2: Botão 1 (Joystick Esquerdo, D2) -> Localização (Posição 0)
   //      * Segurar por ~2s (1800 ms) = Salva localização atual na EEPROM
   //      * Clique rápido             = Vai suavemente para a localização salva
@@ -1100,17 +1103,9 @@ void loop() {
   //    joy2X (A3) → Garra      (direito,  esquerda/direita) esquerda=fecha, direita=abre
 
   if (!voltandoZero) {
-    //  Modo híbrido: mexer o joystick FÍSICO devolve o controle na hora. O alvo
-    //  é travado no ângulo atual, senão o braço continuaria indo ao alvo do PC.
-    bool fisicoMexeu = (abs(fis1X - centroJoy1X) > JOY_DEADZONE ||
-                        abs(fis1Y - centroJoy1Y) > JOY1_DZ_Y_COTOVEL ||
-                        abs(fis2X - centroJoy2X) > JOY_DEADZONE ||
-                        abs(fis2Y - centroJoy2Y) > JOY_DEADZONE);
-    if (modoPC && fisicoMexeu) {
-      modoPC = false;
-      modoVirtual = false;
-      seguraJuntas();
-    }
+    //  Com o PC no controle o joystick FÍSICO fica travado: mexer a alavanca não
+    //  interfere. Quem devolve o controle é o app (#J), o STOP (#H), o timeout de
+    //  500 ms sem heartbeat, ou a desconexão do cabo.
 
     //  Sticks virtuais: substitui só o valor lido, o resto do caminho é o mesmo
     //  (isolação de eixo, zona morta, curva, ganho, suavização). Tem que ser

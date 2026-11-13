@@ -38,8 +38,9 @@ Arrastar move como alavanca; **soltar o dedo centraliza = segurar a posição**.
 |---|---|
 | Joystick na mão | o firmware ignora o PC |
 | **Assumir controle (PC)** | firmware adota os alvos partindo do ângulo atual |
-| Qualquer deflexão do joystick | devolve o controle na hora — pegar no braço sempre vence |
-| 500 ms sem alvos (app travou, cabo caiu) | segura a posição atual |
+| **Joystick com o PC no controle** | fica **travado**: mexer a alavanca não interfere (v1.3.3) |
+| **Devolver ao joystick** / STOP | única forma de pegar o controle de volta na mão |
+| 500 ms sem alvos (app travou, cabo caiu) | segura a posição atual e devolve ao joystick |
 | **STOP** | `#H`: segura as juntas agora |
 | **Travar garra** | `#L1`: mantém pressão contínua no objeto e bloqueia abertura |
 | **Liberar garra** | `#L0`: a garra volta a abrir pelo pad |

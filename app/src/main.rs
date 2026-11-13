@@ -377,7 +377,7 @@ impl App {
         self.pose = self.live;
     }
 
-    /// Cabeçalho da seção + dois pads + leitura das juntas em chips.
+    /// Cabeçalho da seção + dois pads (cada um com as duas leituras embaixo).
     fn sticks(&mut self, ui: &mut egui::Ui) {
         const GAP: f32 = 44.0;
 
@@ -387,35 +387,36 @@ impl App {
                 if self.link.is_none() {
                     pill(ui, "conecte a placa para começar", COR_MUTED, COR_FUNDO);
                 } else if self.pc {
-                    pill(ui, "PC no controle", COR_OK, COR_OK_FUNDO);
+                    pill(ui, "PC no controle · joystick travado", COR_OK, COR_OK_FUNDO);
                 } else {
                     pill(ui, "joystick no controle", COR_WARN, COR_WARN_FUNDO);
                 }
             });
         });
-        ui.add_space(8.0);
+        ui.add_space(10.0);
 
-        //  Espaço para: título dos pads, leituras embaixo e os chips.
-        let altura_util = ui.available_height() - 165.0;
-        let lado = altura_util
-            .min((ui.available_width() - GAP) * 0.5)
-            .clamp(140.0, 420.0);
+        let avail = ui.available_size();
+        //  Cada coluna = pad + leituras AO LADO (não embaixo): na tela baixa é o
+        //  que libera diâmetro. 2 colunas + GAP precisam caber na largura.
+        const COL_LADO: f32 = 116.0; // leituras empilhadas ao lado do pad
+        let lado = ((avail.y - 34.0)
+            .min((avail.x - GAP - 2.0 * COL_LADO) * 0.5))
+            .clamp(120.0, 420.0);
 
+        if Frames::a_cada(90) {
+            eprintln!("LAYOUT avail={avail:?} lado={lado}");
+        }
+
+        //  Centralização: o espaço tem que ser somado DENTRO do layout horizontal.
+        let sobra = (avail.x - (lado * 2.0 + GAP + 2.0 * COL_LADO)).max(0.0);
         let live = self.live;
-        ui.vertical_centered(|ui| {
-            ui.horizontal(|ui| {
-                pad(ui, "pad_esq", "BASE · COTOVELO", &mut self.stick_l, lado);
-                ui.add_space(GAP);
-                pad(ui, "pad_dir", "GARRA · OMBRO", &mut self.stick_r, lado);
-            });
-
-            ui.add_space(14.0);
-            ui.horizontal(|ui| {
-                chip(ui, "base", live[0]);
-                chip(ui, "ombro", live[1]);
-                chip(ui, "cotovelo", live[2]);
-                chip(ui, "garra", live[3]);
-            });
+        ui.horizontal(|ui| {
+            ui.add_space(sobra / 2.0);
+            pad(ui, "pad_esq", "BASE · COTOVELO", &mut self.stick_l, lado,
+                [("base", live[0]), ("cotovelo", live[2])]);
+            ui.add_space(GAP);
+            pad(ui, "pad_dir", "GARRA · OMBRO", &mut self.stick_r, lado,
+                [("garra", live[3]), ("ombro", live[1])]);
         });
     }
 
@@ -701,13 +702,24 @@ fn pill(ui: &mut egui::Ui, texto: &str, cor_texto: egui::Color32, fundo: egui::C
         });
 }
 
-/// Leitura de uma junta, com o número grande.
-fn chip(ui: &mut egui::Ui, nome: &str, valor: f32) {
+/// Contador de frames só para não inundar o stderr com diagnóstico de layout.
+struct Frames;
+impl Frames {
+    fn a_cada(n: u32) -> bool {
+        use std::sync::atomic::{AtomicU32, Ordering};
+        static CONT: AtomicU32 = AtomicU32::new(0);
+        CONT.fetch_add(1, Ordering::Relaxed) % n == 0
+    }
+}
+
+/// Leitura de uma junta, com largura fixa para alinhar com o pad.
+fn chip(ui: &mut egui::Ui, nome: &str, valor: f32, largura: f32) {
     egui::Frame::NONE
         .fill(cor(0x1c, 0x23, 0x2b))
         .corner_radius(10)
-        .inner_margin(egui::Margin::symmetric(16, 8))
+        .inner_margin(egui::Margin::symmetric(12, 7))
         .show(ui, |ui| {
+            ui.set_width((largura - 24.0).max(24.0));
             ui.vertical(|ui| {
                 ui.label(egui::RichText::new(nome.to_uppercase()).small().color(COR_MUTED));
                 ui.label(
@@ -721,63 +733,85 @@ fn chip(ui: &mut egui::Ui, nome: &str, valor: f32) {
 }
 
 /// Pad de toque estilo alavanca: arrastar move o knob, soltar volta ao centro
-/// (centro = segurar a posição, igual ao joystick físico solto).
-fn pad(ui: &mut egui::Ui, id: &str, titulo: &str, v: &mut egui::Vec2, lado: f32) {
+/// (centro = segurar a posição, igual ao joystick físico solto). As duas
+/// leituras ficam empilhadas ao lado, para o pad poder usar toda a altura.
+fn pad(
+    ui: &mut egui::Ui,
+    id: &str,
+    titulo: &str,
+    v: &mut egui::Vec2,
+    lado: f32,
+    leituras: [(&str, f32); 2],
+) {
+    const LARG_LEITURA: f32 = 116.0;
+    const ESPACO: f32 = 12.0;
+
     ui.push_id(id, |ui| {
         ui.vertical(|ui| {
-            ui.label(
-                egui::RichText::new(titulo)
-                    .small()
-                    .strong()
-                    .color(COR_MUTED),
-            );
+            ui.set_width(lado + ESPACO + LARG_LEITURA);
+            ui.label(egui::RichText::new(titulo).small().strong().color(COR_MUTED));
             ui.add_space(2.0);
 
-            let (rect, resp) =
-                ui.allocate_exact_size(egui::vec2(lado, lado), egui::Sense::click_and_drag());
-            let centro = rect.center();
-            let raio = lado * 0.5 - 4.0;
+            ui.horizontal(|ui| {
+                let (rect, resp) =
+                    ui.allocate_exact_size(egui::vec2(lado, lado), egui::Sense::click_and_drag());
+                let centro = rect.center();
+                let raio = lado * 0.5 - 4.0;
 
-            if resp.is_pointer_button_down_on() {
-                if let Some(pos) = resp.interact_pointer_pos() {
-                    let mut d = (pos - centro) / raio;
-                    if d.length() > 1.0 {
-                        d = d.normalized();
+                if resp.is_pointer_button_down_on() {
+                    if let Some(pos) = resp.interact_pointer_pos() {
+                        let mut d = (pos - centro) / raio;
+                        if d.length() > 1.0 {
+                            d = d.normalized();
+                        }
+                        *v = d;
                     }
-                    *v = d;
-                }
-            } else {
-                *v = egui::Vec2::ZERO;
-            }
-
-            let ativo = *v != egui::Vec2::ZERO;
-            let p = ui.painter();
-            p.circle_filled(centro, raio, cor(0x1c, 0x22, 0x2a));
-            p.circle_filled(
-                centro,
-                raio,
-                if ativo {
-                    egui::Color32::from_rgba_unmultiplied(0x7f, 0xb2, 0xe5, 18)
                 } else {
-                    egui::Color32::TRANSPARENT
-                },
-            );
-            p.circle_stroke(
-                centro,
-                raio,
-                egui::Stroke::new(
-                    if ativo { 2.5_f32 } else { 1.5_f32 },
-                    if ativo { COR_ACENTO } else { cor(0x2f, 0x3a, 0x47) },
-                ),
-            );
-            let linha = egui::Stroke::new(1.0_f32, cor(0x25, 0x2d, 0x37));
-            p.line_segment([centro - egui::vec2(raio, 0.0), centro + egui::vec2(raio, 0.0)], linha);
-            p.line_segment([centro - egui::vec2(0.0, raio), centro + egui::vec2(0.0, raio)], linha);
-            p.circle_stroke(centro, raio * 0.30, egui::Stroke::new(1.0_f32, cor(0x22, 0x29, 0x32)));
+                    *v = egui::Vec2::ZERO;
+                }
 
-            let knob = centro + *v * raio;
-            p.circle_filled(knob, raio * 0.22, if ativo { cor(0x9e, 0xcb, 0xf5) } else { COR_ACENTO });
-            p.circle_stroke(knob, raio * 0.22, egui::Stroke::new(2.0_f32, cor(0x0f, 0x14, 0x19)));
+                let ativo = *v != egui::Vec2::ZERO;
+                let p = ui.painter();
+                p.circle_filled(centro, raio, cor(0x1c, 0x22, 0x2a));
+                if ativo {
+                    p.circle_filled(
+                        centro,
+                        raio,
+                        egui::Color32::from_rgba_unmultiplied(0x7f, 0xb2, 0xe5, 18),
+                    );
+                }
+                p.circle_stroke(
+                    centro,
+                    raio,
+                    egui::Stroke::new(
+                        if ativo { 2.5_f32 } else { 1.5_f32 },
+                        if ativo { COR_ACENTO } else { cor(0x2f, 0x3a, 0x47) },
+                    ),
+                );
+                let linha = egui::Stroke::new(1.0_f32, cor(0x25, 0x2d, 0x37));
+                p.line_segment([centro - egui::vec2(raio, 0.0), centro + egui::vec2(raio, 0.0)], linha);
+                p.line_segment([centro - egui::vec2(0.0, raio), centro + egui::vec2(0.0, raio)], linha);
+                p.circle_stroke(centro, raio * 0.30, egui::Stroke::new(1.0_f32, cor(0x22, 0x29, 0x32)));
+
+                let knob = centro + *v * raio;
+                p.circle_filled(
+                    knob,
+                    raio * 0.22,
+                    if ativo { cor(0x9e, 0xcb, 0xf5) } else { COR_ACENTO },
+                );
+                p.circle_stroke(knob, raio * 0.22, egui::Stroke::new(2.0_f32, cor(0x0f, 0x14, 0x19)));
+
+                ui.add_space(ESPACO);
+                ui.vertical(|ui| {
+                    ui.set_width(LARG_LEITURA);
+                    //  Centraliza o par de leituras na altura do pad.
+                    let altura_par = 118.0;
+                    ui.add_space(((lado - altura_par) * 0.5).max(0.0));
+                    chip(ui, leituras[0].0, leituras[0].1, LARG_LEITURA);
+                    ui.add_space(8.0);
+                    chip(ui, leituras[1].0, leituras[1].1, LARG_LEITURA);
+                });
+            });
         });
     });
 }
