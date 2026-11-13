@@ -186,7 +186,7 @@ impl App {
         self.pose = self.live;
         self.stick_l = egui::Vec2::ZERO;
         self.stick_r = egui::Vec2::ZERO;
-        self.loga("STOP — juntas seguradas");
+        self.loga("STOP — movimento parado, controle de volta no joystick");
     }
 
     /// Leitura da serial, heartbeat de 20 Hz, gravação e replay.
@@ -348,6 +348,11 @@ impl App {
             }
 
             if icons::botao_cor(ui, Icone::Stop, "STOP", 118.0, cor(0x4a, 0x1c, 0x1c), cor(0xf0, 0xb4, 0xb4))
+                .on_hover_text(
+                    "Para o braço onde está e devolve o controle ao joystick.\n\
+                     Cancela o replay. Depois de ~0,6 s os servos desenergizam\n\
+                     (economia), então o braço pode ceder com o próprio peso.",
+                )
                 .clicked()
             {
                 self.stop();
