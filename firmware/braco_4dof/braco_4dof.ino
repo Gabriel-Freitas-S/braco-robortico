@@ -27,11 +27,11 @@
  *
  *  Exemplo com o ombro: se você joga o joystick para cima, o ALVO vai para
  *  150°. Mas o ATUAL não vira 150° de uma vez — ele avança a uma velocidade
- *  FIXA (VEL_SUAVE, em graus/segundo), nunca de um salto. Essa constante é
- *  o que elimina o tranco.
+ *  FIXA (VEL_SUAVE, em graus por milissegundo: 0,038 = 38°/s), nunca de um
+ *  salto. Essa constante é o que elimina o tranco.
  *
  *  Sem essa separação, o servo receberia um comando de 150° e se jogaria
- *  a 150° imediatamente, causa comum de "o braço treme ao Controlling".
+ *  a 150° imediatamente, causa comum de tranco ao assumir o controle.
  *
  *
  *  HARDWARE
@@ -51,13 +51,17 @@
  *
  *  PINAGEM
  *  -------
- *  Dos quatro atuadores, apenas três canais PWM são necessários porque a
- *  garra não faz PWM — os pinos chosen aqui evitam conflito com os leds.
+ *  Os quatro servos usam a biblioteca Servo (PWM por software em qualquer pino
+ *  digital). Os pinos abaixo evitam conflito com o LED e com o espelhamento do
+ *  cotovelo na shield.
  *
- *    Servo Base (Yaw)    D11    0..180    neutro 90
- *    Servo Ombro         D10   30..150    neutro 90
- *    Servo Cotovelo      D9    20..160    neutro 90
- *    Servo Garra         D5      0..90    neutro  0 (fechada)
+ *    Servo Base (Yaw)    D11    12..168   repouso 90
+ *    Servo Ombro         D10     0..180*  repouso 60
+ *    Servo Cotovelo      D9      0..180*  repouso 45
+ *    Servo Garra         D5      0..90    repouso 35 (fechada)
+ *
+ *    * faixa de software; ajuste ao curso mecânico real antes de usar.
+ *    "repouso" é a Posição 0 (posZero*), ajustável e salva na EEPROM.
  *
  *    Joystick esquerdo X A0   → Base (esquerda/direita)
  *    Joystick esquerdo Y A1   → Cotovelo (cima/baixo)
@@ -73,12 +77,12 @@
  *  COMANDOS NO MONITOR SERIAL (115200 baud, fim de linha "Newline")
  *  ---------------------------------------------------------------
  *    h → ajuda (lista os comandos)
- *    t → teste: varre cada servo de ponta a ponta. LIGUE O BRAÇO LONGE
- *        DA MÃO E DO ROSTO — ele se move sozinho!
- *    s → status: ângulos atuais das quatro juntas
- *    r → reset: volta todas as juntas para a posição de repouso
+ *    s → status: ângulos atuais, limites e centros dos joysticks
+ *    r → reset: volta suavemente para a Posição 0
  *    d → liga/desliga a leitura contínua dos joysticks
- *    b → varre os pinos candidatos e mostra qual deles move a base
+ *    b → teste de pino da base (conte os toques do corpo)
+ *    l → restaura os limites amplos da Base (5..175)
+ *    [ / ] → salva o limite mínimo / máximo da Base no ângulo atual
  *
  *  PROTOCOLO DO APP (prefixo #, linha inteira terminada em newline)
  *    #P<b>;<o>;<c>;<g>  alvos em graus (20 Hz; reenviar é o heartbeat)
@@ -103,8 +107,9 @@
 const uint8_t PIN_SERVO_BASE    = 11;
 const uint8_t PIN_SERVO_OMBRO   = 10;
 const uint8_t PIN_SERVO_COTOVEL = 9;
-//  Pinos extras da fileira da Shield espelhados para o Cotovelo (D9/D3/D7/D8/D12).
-//  O D5 saiu do espelho: agora e o canal da Garra.
+//  A shield liga o cotovelo em vários pads em paralelo (D9/D3/D7/D8/D12);
+//  mandamos o mesmo pulso em todos para funcionar em qualquer revisão da placa.
+//  O D5 saiu do espelho: agora é o canal da Garra.
 const uint8_t PIN_COTOV_ALT_D3  = 3;
 const uint8_t PIN_COTOV_ALT_D7  = 7;
 const uint8_t PIN_COTOV_ALT_D8  = 8;
@@ -121,6 +126,7 @@ Servo servoCotovD8;
 Servo servoCotovD12;
 Servo servoGarra;
 
+//  Attach sob demanda e aplica o pulso em µs. Detach = servo sem torque.
 void escreveBase(int pulsoUs) {
   if (!servoBase.attached()) {
     servoBase.attach(PIN_SERVO_BASE);
@@ -128,12 +134,14 @@ void escreveBase(int pulsoUs) {
   servoBase.writeMicroseconds(pulsoUs);
 }
 
+//  Solta a base: sem pulso, sem torque e sem aquecimento parado.
 void desligaBase() {
   if (servoBase.attached()) {
     servoBase.detach();
   }
 }
 
+//  O cotovelo tem cinco canais espelhados; todos recebem o mesmo pulso.
 void escreveCotovelo(int pulsoUs) {
   if (!servoCotovelo.attached()) {
     servoCotovelo.attach(PIN_SERVO_COTOVEL);
@@ -149,6 +157,7 @@ void escreveCotovelo(int pulsoUs) {
   servoCotovD12.writeMicroseconds(pulsoUs);
 }
 
+//  Solta os cinco canais do cotovelo de uma vez.
 void desligaCotovelo() {
   if (servoCotovelo.attached()) {
     servoCotovelo.detach();
@@ -177,8 +186,6 @@ const uint8_t PIN_JOY2_Y = A2;   // joystick direito:  cima/baixo       → Ombr
 //      * 2º clique -> LIBERA A GARRA (permite abrir novamente pelo joystick)
 const uint8_t PIN_BTN_JOY1 = 2;  // botão do joystick esquerdo (INPUT_PULLUP)
 const uint8_t PIN_BTN_JOY2 = 4;  // botão do joystick direito  (INPUT_PULLUP)
-
-const int JOY_CENTER = 512;
 
 //  Zona morta calibrada (28 ≈ 5.5%) para resposta rápida sem captar inclinação involuntária.
 const int JOY_DEADZONE = 28;
@@ -247,7 +254,7 @@ float limGarraMin    = 0.0,   limGarraMax    = 90.0;   // 0° permite fechamento
 //    GANHO 0.50 = máx 25°/s (Cotovelo: movimento lento e milimétrico)
 //    GANHO 0.65 = máx 32°/s (Ombro: subida e descida controlada)
 //    GANHO 0.75 = máx 37°/s (Base)
-//    GANHO 1.35 = máx 67°/s (Garra: abre e fecha com firmeza e agilidade)
+//    GANHO 1.35 = até 67°/s no alvo, mas a rampa limita a 57°/s (Garra: abre e fecha com firmeza)
 const float GANHO_BASE    = 0.75;
 const float GANHO_OMBRO   = 0.65;
 const float GANHO_COTOVEL = 0.50;
@@ -273,7 +280,7 @@ const float FATOR_SUAVIZACAO = 0.50;   // acompanha o alvo na hora (sem delay ao
 //  Por que usar microssegundos em vez de servo.write(graus)?
 //  servo.write() só aceita INTEIROS de 0 a 180, então guarda a posição com
 //  resolução de 1 grau — o servo fica parado dentro dessa faixa, sem
-// Interpolação. writeMicroseconds() dá resolução de ~0.3°, o servo pode
+// Interpolação. writeMicroseconds() dá resolução de ~0.1°, o servo pode
 //  assumir qualquer posição intermediária. Para um braço com 4 juntas
 //  combinando, essa diferença é visível: os cantos ficam mais contínuos.
 //
@@ -321,9 +328,9 @@ float constrainAngle(float v, float lo, float hi) {
 //  Faz uma interpolação linear: 0° → US_MIN, 180° → US_MAX, e tudo
 //  entre eles proporcionalmente. Exemplo, 90° (metade do caminho):
 //
-//      544 + (90/180) × (2336 - 544)
-//      544 + 0.5 × 1792
-//      544 + 896 = 1440 µs
+//      544 + (90/180) × (2400 - 544)
+//      544 + 0.5 × 1856
+//      544 + 928 = 1472 µs
 //
 //  Depois travamos o resultado entre US_MIN e US_MAX, para que uma falha
 //  de cálculo nunca envie um pulso fora da faixa segura do servo.
@@ -365,7 +372,8 @@ float suaviza(float atual, float alvo, float passoMax) {
 //  Esta função roda UMA vez, no setup(). A ordem das operações não é
 //  aleatória — é uma sequência de segurança:
 //
-//    Passo 1: só a GARRA se move, e vai para FECHADA.
+//    Passo 1: só a GARRA se move, e vai para a Posição 0 dela (padrão 35°,
+//             parcialmente fechada).
 //
 //      Os quatro servos são ligados ao mesmo tempo, mas ainda estão em
 //      posição aleatória (o servo não tem memória de onde parou). Ao
@@ -377,8 +385,11 @@ float suaviza(float atual, float alvo, float passoMax) {
 //      primeiro porque é a única que se fecha sem mover o resto do braço:
 //      não há risco de colisão, e ela fica protegida desde o início.
 //
-//    Passo 2: base, ombro e cotovelo juntas, já que não têm colisão
-//             entre si nesta posição.
+//    Passo 2: a BASE vai para a Posição 0 e é solta.
+//
+//      Ombro e cotovelo NÃO são energizados na partida a frio: alvo e atual
+//      começam iguais, então o loop não vê movimento e o servo fica sem torque
+//      até o primeiro toque no joystick. Na primeira ligação, apoie o braço.
 //
 //    Passo 3: LED pisca 3 vezes = "programa pronto, pode mexer".
 //
@@ -394,11 +405,20 @@ unsigned long ativoBaseMs     = 0;
 unsigned long ativoOmbroMs    = 0;
 unsigned long ativoCotoveloMs = 0;
 unsigned long ativoGarraMs    = 0;
+//  Quanto tempo cada servo continua energizado depois do último movimento.
+//  Detach economiza e evita aquecimento, mas solta a junta: tempo curto demais
+//  deixa o braço ceder com o próprio peso.
 const unsigned long TEMPO_HOLD_MS = 240;
 //  A base sustenta o braco inteiro: solta o motor mais devagar para nao despencar
 //  quando voce para de empurrar por um instante no meio do giro.
 const unsigned long TEMPO_HOLD_BASE_MS = 600;
 
+//  Calibra o centro de cada eixo no arranque, com média de 8 leituras.
+//  O primeiro analogRead de cada canal é descartado de propósito: o mux do ADC
+//  precisa de tempo para trocar de canal (acoplamento A0↔A1 e A3↔A2).
+//  Centro fora de 400..620 é considerado inválido e cai para o nominal 512.
+//  Depois de um brownout, reaproveita a calibração em .noinit para não gravar
+//  a posição inclinada da mão do usuário.
 void calibraJoysticks() {
   // Se foi um micro-reset (brownout) com os centros já válidos em .noinit,
   // preserva a calibração para não gravar a posição inclinada da mão do usuário
@@ -427,6 +447,10 @@ void calibraJoysticks() {
   if (c2y > 400 && c2y < 620) centroJoy2Y = c2y; else centroJoy2Y = 512;
 }
 
+//  Mapa da EEPROM (float = 4 bytes):
+//    0  magic da Posição 0     2 base   6 ombro   10 cotovelo   14 garra
+//    18 magic dos limites      20 baseMin  24 baseMax
+//  Só os limites da BASE são persistidos; os demais são fixos no código.
 void carregaPosicaoZeroEEPROM() {
   uint16_t limMagic = 0;
   EEPROM.get(18, limMagic);
@@ -458,6 +482,8 @@ void carregaPosicaoZeroEEPROM() {
   }
 }
 
+//  Confirmação visual de gravação: 4 piscadas curtas e deixa o LED no estado
+//  da trava (aceso = garra travada).
 void piscaConfirmacaoLED() {
   for (uint8_t i = 0; i < 4; i++) {
     digitalWrite(PIN_LED, HIGH); delay(60);
@@ -466,6 +492,8 @@ void piscaConfirmacaoLED() {
   digitalWrite(PIN_LED, garraTravada ? HIGH : LOW);
 }
 
+//  Grava o limite da Base em uso. O recuo de 1.5° aplicado por quem chama
+//  garante que o servo pare antes do parafuso.
 void salvaLimitesBaseEEPROM() {
   EEPROM.put(18, EEPROM_LIM_MAGIC);
   EEPROM.put(20, limBaseMin);
@@ -475,6 +503,7 @@ void salvaLimitesBaseEEPROM() {
   piscaConfirmacaoLED();
 }
 
+//  Salva a pose atual como nova Posição 0 (também usada pelo botão D2).
 void salvaPosicaoZeroEEPROM() {
   posZeroBase     = angBase;
   posZeroOmbro    = angOmbro;
@@ -498,7 +527,8 @@ void sequenceInicial() {
   carregaPosicaoZeroEEPROM();
 
   // Se foi um micro-reset por queda de tensão (brownout da fonte 12V),
-  // restaura imediatamente os ângulos e mantém o torque ativo para o braço não cair!
+  // restaura imediatamente os ângulos e reenergiza as juntas presas. O torque
+  // dura TEMPO_HOLD_MS; depois o loop solta como em qualquer repouso.
   if (savedMagic == NOINIT_MAGIC &&
       angBase >= 0.0 && angBase <= 180.0 &&
       angOmbro >= limOmbroMin && angOmbro <= limOmbroMax &&
@@ -572,7 +602,7 @@ unsigned long inicioPressaoBtn2Ms = 0;
 
 void resetPark() {
   if (modoPC) {
-    Serial.println(F("PC no controle: irei a Posicao 0 so depois de soltar no app"));
+    Serial.println(F("PC no controle: solte no app (#J) e mande 'r' de novo"));
     return;
   }
   voltandoZero = true;
@@ -581,7 +611,7 @@ void resetPark() {
 
 void mostraAjuda() {
   Serial.println(F("\n========================================================"));
-  Serial.println(F("   BRACO ROBOTICO 4-DOF — CONTROLE POR JOYSTICK (9600)"));
+  Serial.println(F("   BRACO ROBOTICO 4-DOF — CONTROLE POR JOYSTICK (115200)"));
   Serial.println(F("========================================================"));
   Serial.println(F("  Botao Joy Esq (D2): clique = Ir Pos 0 | segurar 2s = Salvar Pos 0"));
   Serial.println(F("  Botao Joy Dir (D4): clique = Travar/Liberar pressao da Garra"));
@@ -599,8 +629,11 @@ void mostraAjuda() {
 
 //  Mostra o ângulo ATUAL das quatro juntas (não o alvo — o que o servo
 //  está fazendo de verdade agora).
+//  Status manual para o monitor serial. Não confundir com o #S do app: este
+//  texto começa com "[status]" de propósito, para o parser do app não tomar a
+//  linha por uma mensagem de diagnóstico (prefixo B) enquanto estiver conectado.
 void status() {
-  Serial.print(F("B=")); Serial.print((int)angBase);
+  Serial.print(F("[status] B=")); Serial.print((int)angBase);
   Serial.print(F(" (Lim:")); Serial.print((int)limBaseMin);
   Serial.print(F("..")); Serial.print((int)limBaseMax);
   Serial.print(F(") O=")); Serial.print((int)angOmbro);
@@ -642,10 +675,12 @@ uint8_t eixoTravaJoy2 = 0;
 unsigned long ultimoBaseJoy1Ms = 0;
 
 //  No Joystick Esquerdo (Base + Cotovelo):
-//  - Prioridade total para Esquerda/Direita (Base): qualquer movimento lateral (dx >= 65)
+//  - Prioridade total para Esquerda/Direita (Base): qualquer desvio lateral
+//    acima da zona morta (dx > 28, ou > 14 se a Base já está engatada)
 //    bloqueia 100% o Cotovelo e NUNCA fica preso no modo vertical.
 //  - O Cotovelo (Cima/Baixo) só se move quando a alavanca está alinhada no centro
-//    horizontal (dx < 65) e é empurrada claramente para cima ou para baixo (dy > 130).
+//    horizontal e é empurrada claramente para cima ou para baixo (dy > 80; 230
+//    nos 250 ms seguintes a um movimento lateral, para não disparar ao cruzar).
 const int JOY1_DZ_Y_COTOVEL = 80;
 const int JOY_DZ_Y_SOLTA = 45;
 
@@ -660,7 +695,6 @@ void isolaEixoJoy1Esquerdo(int &leituraX, int centroX, int &leituraY, int centro
   int dzY = (eixoTravaJoy1 == 2) ? JOY_DZ_Y_SOLTA : JOY1_DZ_Y_COTOVEL;
 
   // Qualquer desvio lateral acima da zona morta engata a Base e zera o Cotovelo.
-  // (antes exigia dx >= 70, e o comando entre 29 e 69 era descartado sem mover nada)
   if (dx > dzX) {
     eixoTravaJoy1 = 1;
     ultimoBaseJoy1Ms = agora;
@@ -685,6 +719,11 @@ void isolaEixoJoy1Esquerdo(int &leituraX, int centroX, int &leituraY, int centro
   leituraY = centroY;
 }
 
+//  Versão para o joystick direito (Garra + Ombro), com engate assimétrico:
+//    - X engata com dx > 28 e claramente horizontal (dx*10 >= dy*8);
+//    - Y engata com dy > 48 e claramente vertical (dy*10 > dx*14);
+//    - já engatado, solta abaixo de 28 e só troca de eixo se o outro passar de 90.
+//  A histerese evita piscar entre Garra e Ombro no meio de uma diagonal.
 void isolaEixoExclusivo(int &leituraX, int centroX, int &leituraY, int centroY, uint8_t &eixoTrava) {
   int dx = abs(leituraX - centroX);
   int dy = abs(leituraY - centroY);
@@ -734,6 +773,11 @@ void isolaEixoExclusivo(int &leituraX, int centroX, int &leituraY, int centroY, 
   }
 }
 
+//  Converte o desvio do joystick em passo de alvo:
+//    - descarta a zona morta e normaliza o resto para -1..+1;
+//    - aplica curva 70% linear + 30% quadrática (responde já na metade do curso);
+//    - multiplica pelo ganho, em graus por ciclo de 20 ms (pode ser negativo);
+//    - limita ao curso da junta. Centro do joystick = alvo não muda.
 float aplicaEixoZona(int leitura, int centro, float atual, float min, float max, float ganho, int dz) {
   int e = leitura - centro;
 
@@ -766,7 +810,7 @@ void descobrePinoBase() {
   const uint8_t candidatos[] = { 11, 10, 6, 9, 5, 7 };
   const uint8_t total = sizeof(candidatos);
 
-  Serial.println(F("\n>>> TESTE DA BASE — o braco se mexe sozinho por ~16s."));
+  Serial.println(F("\n>>> TESTE DA BASE — o braco se mexe sozinho por ~18s."));
   Serial.println(F(">>> CONTE quantas vezes o CORPO (a base) gira. Comeca em 3s."));
   delay(3000);
 
@@ -775,9 +819,10 @@ void descobrePinoBase() {
   if (servoOmbro.attached()) servoOmbro.detach();
   if (servoGarra.attached()) servoGarra.detach();
 
-  //  Cada pino pisca um número diferente de vezes: o servo ligado àquele pino
-  //  pisca igual. Contando as piscadas do corpo você nos diz qual pino é a base
-  //  sem precisar ler nada no monitor.  D11=1, D10=2, D6=3, D9=4, D5=5, D7=6.
+  //  Cada pino dá um número diferente de toques (70°↔110°); o servo ligado
+  //  àquele pino se mexe o mesmo número de vezes. Contando os toques do corpo
+  //  você nos diz qual pino é a base sem precisar ler nada no monitor.
+  //  D11=1, D10=2, D6=3, D9=4, D5=5, D7=6.
   for (uint8_t i = 0; i < total; i++) {
     Serial.print(F("  D")); Serial.print(candidatos[i]);
     Serial.print(F(" -> ")); Serial.print(i + 1); Serial.println(F(" piscada(s)"));
@@ -851,7 +896,8 @@ void seguraJuntas() {
 }
 
 //  Status de 1 linha: ângulos atuais + quem está no controle.
-//  Buffer montado de uma vez para não segurar o loop com 10 Serial.print.
+//  Buffer montado de uma vez (snprintf) para não segurar o loop com vários
+//  Serial.print.
 void enviaStatus() {
   char buf[48];
   int n = snprintf_P(buf, sizeof(buf), PSTR("S%d;%d;%d;%d;%d;%d\n"),
@@ -1155,9 +1201,9 @@ void loop() {
   //  --- ETAPA D: SUAVIZAÇÃO + ISOLAMENTO DE JUNTAS + PRESSÃO DA GARRA --
   //    - Base: energiza durante o giro e corta em 120 ms ao atingir o limite
   //      (limBaseMin/limBaseMax) para nunca ficar forçando contra parafuso ou batente.
-  //    - Ombro e Cotovelo: energizam quando se movem e continuam recebendo o pulso
-  //      do angulo atual enquanto a Base gira (desligados nesse instante, o braco
-  //      despencaria por gravidade).
+  //    - Ombro e Cotovelo: energizam quando se movem e mantêm o pulso por
+  //      240 ms (TEMPO_HOLD_MS) após o último movimento; depois soltam. Só a
+  //      Base fica energizada por mais tempo (600 ms) para não largar o braço.
   //    - Garra: quando `garraTravada` está ativa (Botão 2), mantém o servo ligado
   //      continuamente aplicando pressão constante no objeto; quando liberada,
   //      energiza durante o movimento (+500 ms) e depois descansa o motor.
