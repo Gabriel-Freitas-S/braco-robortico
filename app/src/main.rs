@@ -15,6 +15,8 @@ use std::time::{Duration, Instant};
 
 const DIR_MOVIMENTOS: &str = "movimentos";
 const TICK: Duration = Duration::from_millis(50);
+/// Altura mínima de qualquer botão (tela de toque).
+const ALVO: f32 = 36.0;
 
 fn main() -> eframe::Result {
     let options = eframe::NativeOptions {
@@ -136,6 +138,8 @@ impl App {
         self.pc = false;
         self.play = None;
         self.recording = None;
+        self.boots = None;
+        self.reboot = None;
     }
 
     fn send(&mut self, cmd: &str) {
@@ -188,7 +192,7 @@ impl App {
                     self.version = d.version.clone();
                     self.limits = d.limits;
                     if let Some(antes) = self.boots {
-                        if d.boots != antes {
+                        if d.boots > antes && antes > 0 {
                             self.reboot = Some(format!(
                                 "a placa reiniciou (boots {antes} → {}) — suspeite da alimentação",
                                 d.boots
@@ -260,10 +264,11 @@ impl App {
 
     fn top_bar(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
-            if ui.button("Atualizar portas").clicked() {
+            if ui.add_sized([110.0, ALVO], egui::Button::new("Atualizar")).clicked() {
                 self.refresh_ports();
             }
             egui::ComboBox::from_id_salt("porta")
+                .width(150.0)
                 .selected_text(
                     self.ports
                         .get(self.port_idx)
@@ -277,75 +282,76 @@ impl App {
                 });
 
             if self.link.is_none() {
-                if ui.button("Conectar").clicked() {
+                if ui.add_sized([110.0, ALVO], egui::Button::new("Conectar")).clicked() {
                     self.connect();
                 }
-            } else if ui.button("Desconectar").clicked() {
+            } else if ui.add_sized([130.0, ALVO], egui::Button::new("Desconectar")).clicked() {
                 self.disconnect();
             }
 
             ui.separator();
 
             if self.pc {
-                if ui.button("Devolver ao joystick").clicked() {
+                if ui.add_sized([190.0, ALVO], egui::Button::new("Devolver ao joystick")).clicked() {
                     self.send(protocol::CMD_RELEASE);
                     self.pc = false;
                     self.reset_targets();
                 }
-            } else if ui
-                .add_enabled(self.link.is_some(), egui::Button::new("Assumir controle (PC)"))
-                .clicked()
-            {
-                self.assume();
+            } else {
+                if ui
+                    .add_enabled(
+                        self.link.is_some(),
+                        egui::Button::new("Assumir controle (PC)").min_size(egui::vec2(200.0, ALVO)),
+                    )
+                    .clicked()
+                {
+                    self.assume();
+                }
             }
 
-            let (rotulo, dica) = if self.garra_travada {
-                ("Liberar garra", "solta a pressão e permite abrir")
+            let (rotulo, cor_fundo, cor_txt) = if self.garra_travada {
+                ("Liberar garra", egui::Color32::from_rgb(34, 62, 46), egui::Color32::from_rgb(130, 210, 150))
             } else {
-                ("Travar garra", "segura o objeto com pressão contínua")
-            };
-            let cor = if self.garra_travada {
-                egui::Color32::from_rgb(120, 200, 140)
-            } else {
-                egui::Color32::from_rgb(110, 150, 210)
+                ("Travar garra", egui::Color32::from_rgb(30, 42, 62), egui::Color32::from_rgb(120, 165, 225))
             };
             if ui
                 .add_sized(
-                    [130.0, 32.0],
-                    egui::Button::new(egui::RichText::new(rotulo).color(cor)).fill(if self.garra_travada {
-                        egui::Color32::from_rgb(35, 60, 45)
-                    } else {
-                        egui::Color32::from_rgb(30, 40, 58)
-                    }),
+                    [150.0, ALVO],
+                    egui::Button::new(egui::RichText::new(rotulo).color(cor_txt)).fill(cor_fundo),
                 )
-                .on_hover_text(dica)
+                .on_hover_text("mantém pressão contínua no objeto e bloqueia a abertura")
                 .clicked()
             {
                 let travar = !self.garra_travada;
                 self.send(protocol::cmd_lock(travar));
-                self.garra_travada = travar;   // o firmware confirma no próximo status
+                self.garra_travada = travar;
             }
 
             if ui
-                .add_sized([120.0, 32.0], egui::Button::new(egui::RichText::new("STOP").strong()))
+                .add_sized(
+                    [130.0, ALVO + 6.0],
+                    egui::Button::new(egui::RichText::new("STOP").strong().size(16.0))
+                        .fill(egui::Color32::from_rgb(70, 26, 26)),
+                )
                 .clicked()
             {
                 self.stop();
             }
 
-            ui.separator();
-            let (txt, cor) = if self.link.is_none() {
-                ("desconectado", egui::Color32::GRAY)
-            } else if self.pc {
-                ("PC no controle", egui::Color32::from_rgb(90, 200, 120))
-            } else {
-                ("joystick no controle", egui::Color32::from_rgb(220, 190, 90))
-            };
-            ui.colored_label(cor, txt);
-            ui.label(format!("fw {}", self.version));
-            if let Some(b) = self.boots {
-                ui.label(format!("boots={b}"));
-            }
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                if let Some(b) = self.boots {
+                    ui.label(format!("boots={b}"));
+                }
+                ui.label(format!("fw {}", self.version));
+                let (txt, cor) = if self.link.is_none() {
+                    ("desconectado", egui::Color32::GRAY)
+                } else if self.pc {
+                    ("PC no controle", egui::Color32::from_rgb(90, 200, 120))
+                } else {
+                    ("joystick no controle", egui::Color32::from_rgb(220, 190, 90))
+                };
+                ui.colored_label(cor, egui::RichText::new(txt).strong());
+            });
         });
         if let Some(w) = &self.reboot {
             ui.colored_label(egui::Color32::from_rgb(230, 120, 120), w);
@@ -356,27 +362,46 @@ impl App {
         self.pose = self.live;
     }
 
-    /// Dois pads de toque, no mesmo layout da bancada: esquerdo = Base/Cotovelo,
-    /// direito = Garra/Ombro. Soltar o dedo centraliza = segurar a posição.
+    /// Dois pads de toque ocupando a altura disponível, no layout da bancada:
+    /// esquerdo = Base/Cotovelo, direito = Garra/Ombro.
     fn sticks(&mut self, ui: &mut egui::Ui) {
-        let lado = ((ui.available_width() * 0.42).min(ui.available_height() * 0.62)).clamp(140.0, 320.0);
-        ui.horizontal_top(|ui| {
-            pad(ui, "pad_esq", "Base · Cotovelo", &mut self.stick_l, lado);
-            ui.add_space(24.0);
-            pad(ui, "pad_dir", "Garra · Ombro", &mut self.stick_r, lado);
+        const GAP: f32 = 36.0;
+        let altura_util = ui.available_height() - 110.0; // rótulo + leituras
+        let lado = altura_util
+            .min((ui.available_width() - GAP) * 0.5)
+            .clamp(150.0, 460.0);
+
+        let sobra = (ui.available_width() - (lado * 2.0 + GAP)).max(0.0);
+        ui.add_space(sobra / 2.0);
+
+        let live = self.live;
+        ui.horizontal(|ui| {
+            pad(ui, "pad_esq", "BASE · COTOVELO", &mut self.stick_l, lado,
+                ("base", live[0]), ("cotovelo", live[2]));
+            ui.add_space(GAP);
+            pad(ui, "pad_dir", "GARRA · OMBRO", &mut self.stick_r, lado,
+                ("garra", live[3]), ("ombro", live[1]));
         });
-        ui.add_space(8.0);
-        ui.label(format!(
-            "atual  base {:.0}° · ombro {:.0}° · cotovelo {:.0}° · garra {:.0}°",
-            self.live[0], self.live[1], self.live[2], self.live[3]
-        ));
     }
 
     fn recordings_panel(&mut self, ui: &mut egui::Ui) {
+        ui.add_space(4.0);
         ui.heading("Gravação");
+        ui.add_space(2.0);
 
         if self.recording.is_some() {
-            if ui.button("Parar gravação").clicked() {
+            if let Some((rec, t0)) = &self.recording {
+                ui.label(format!(
+                    "gravando… {:.1}s · {} amostras",
+                    t0.elapsed().as_secs_f32(),
+                    rec.samples.len()
+                ));
+            }
+            ui.add_space(4.0);
+            if ui
+                .add_sized([ui.available_width(), ALVO], egui::Button::new("Parar e salvar"))
+                .clicked()
+            {
                 if let Some((mut rec, _)) = self.recording.take() {
                     rec.name = self.rec_name.clone();
                     match rec.save(std::path::Path::new(DIR_MOVIMENTOS)) {
@@ -388,17 +413,15 @@ impl App {
                     }
                 }
             }
-            if let Some((rec, t0)) = &self.recording {
-                ui.label(format!(
-                    "gravando… {:.1}s · {} amostras",
-                    t0.elapsed().as_secs_f32(),
-                    rec.samples.len()
-                ));
-            }
         } else {
-            ui.text_edit_singleline(&mut self.rec_name);
+            ui.label("nome");
+            ui.add_sized([ui.available_width(), ALVO], egui::TextEdit::singleline(&mut self.rec_name));
+            ui.add_space(4.0);
             if ui
-                .add_enabled(self.link.is_some(), egui::Button::new("Gravar"))
+                .add_enabled(
+                    self.link.is_some(),
+                    egui::Button::new("Gravar").min_size(egui::vec2(ui.available_width(), ALVO)),
+                )
                 .clicked()
             {
                 self.recording = Some((
@@ -409,76 +432,122 @@ impl App {
             }
         }
 
+        ui.add_space(10.0);
         ui.separator();
-        ui.heading("Movimentos salvos");
-        if ui.button("Atualizar lista").clicked() {
+        ui.heading("Movimentos");
+        if ui.add_sized([ui.available_width(), ALVO], egui::Button::new("Atualizar lista")).clicked() {
             self.refresh_files();
         }
-        let files = self.files.clone();
-        for f in files {
-            let nome = f.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
-            ui.horizontal(|ui| {
-                if ui.small_button("▶").clicked() {
-                    match Recording::load(&f) {
-                        Ok(r) => {
-                            self.loaded = Some(r);
-                            self.loga(format!("carregado {nome}"));
-                        }
-                        Err(e) => self.loga(format!("erro ao ler {nome}: {e}")),
-                    }
-                }
-                ui.label(nome);
-            });
-        }
+        ui.add_space(4.0);
 
-        ui.separator();
+        egui::ScrollArea::vertical()
+            .max_height(180.0)
+            .show(ui, |ui| {
+                let files = self.files.clone();
+                for f in files {
+                    let nome = f
+                        .file_name()
+                        .map(|n| n.to_string_lossy().trim_end_matches(".json").to_string())
+                        .unwrap_or_default();
+                    ui.horizontal(|ui| {
+                        if ui
+                            .add_sized([40.0, ALVO], egui::Button::new("▶"))
+                            .on_hover_text("carregar")
+                            .clicked()
+                        {
+                            match Recording::load(&f) {
+                                Ok(r) => {
+                                    self.loaded = Some(r);
+                                    self.loga(format!("carregado {nome}"));
+                                }
+                                Err(e) => self.loga(format!("erro ao ler {nome}: {e}")),
+                            }
+                        }
+                        let selecionado = self
+                            .loaded
+                            .as_ref()
+                            .is_some_and(|l| l.name == nome);
+                        if ui
+                            .add_sized([ui.available_width(), ALVO], egui::Button::selectable(selecionado, nome))
+                            .clicked()
+                        {
+                            if let Ok(r) = Recording::load(&f) {
+                                self.loaded = Some(r);
+                            }
+                        }
+                    });
+                }
+            });
+
+        ui.add_space(6.0);
         if let Some(r) = self.loaded.clone() {
-            ui.label(format!(
-                "{} — {:.1}s, {} amostras",
-                r.name,
-                r.duration_ms() as f32 / 1000.0,
-                r.samples.len()
-            ));
+            ui.separator();
+            ui.label(egui::RichText::new(&r.name).strong());
+            ui.label(format!("{:.1}s · {} amostras", r.duration_ms() as f32 / 1000.0, r.samples.len()));
             ui.checkbox(&mut self.looping, "repetir");
             let pode = self.link.is_some() && self.play.is_none();
-            if ui.add_enabled(pode, egui::Button::new("Reproduzir")).clicked() {
+            if ui
+                .add_enabled(
+                    pode,
+                    egui::Button::new("Reproduzir").min_size(egui::vec2(ui.available_width(), ALVO)),
+                )
+                .clicked()
+            {
                 self.assume();
                 self.play = Some((r.clone(), Instant::now()));
                 self.loga("reproduzindo…");
             }
-            if self.play.is_some() && ui.button("Parar replay").clicked() {
+            if self.play.is_some()
+                && ui
+                    .add_sized([ui.available_width(), ALVO], egui::Button::new("Parar replay"))
+                    .clicked()
+            {
                 self.stop();
             }
         }
     }
 
-    fn log_panel(&self, ui: &mut egui::Ui) {
-        egui::ScrollArea::vertical()
-            .stick_to_bottom(true)
-            .max_height(140.0)
+    /// Log recolhível: fechado, os pads ficam com a altura toda da tela.
+    fn log_panel(&mut self, ui: &mut egui::Ui) {
+        egui::CollapsingHeader::new(egui::RichText::new("log").small())
+            .default_open(false)
             .show(ui, |ui| {
-                for l in &self.log {
-                    ui.monospace(l);
-                }
+                egui::ScrollArea::vertical()
+                    .stick_to_bottom(true)
+                    .max_height(110.0)
+                    .show(ui, |ui| {
+                        for l in &self.log {
+                            ui.monospace(egui::RichText::new(l).small());
+                        }
+                    });
             });
     }
 }
 
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // Alvos de toque: a janela vive no ScreenPad, onde o dedo é mais gordo
+        // que o mouse.
+        let mut estilo = (*ctx.style()).clone();
+        estilo.spacing.button_padding = egui::vec2(14.0, 9.0);
+        estilo.spacing.item_spacing = egui::vec2(10.0, 8.0);
+        estilo.spacing.interact_size.y = ALVO;
+        ctx.set_style(estilo);
+
         self.tick(Instant::now());
 
-        egui::TopBottomPanel::top("topo").show(ctx, |ui| self.top_bar(ui));
+        egui::TopBottomPanel::top("topo").show(ctx, |ui| {
+            ui.add_space(4.0);
+            self.top_bar(ui);
+            ui.add_space(4.0);
+        });
         egui::TopBottomPanel::bottom("log").show(ctx, |ui| self.log_panel(ui));
         egui::SidePanel::right("gravacao")
             .resizable(true)
-            .default_width(300.0)
+            .default_width(330.0)
+            .min_width(280.0)
             .show(ctx, |ui| self.recordings_panel(ui));
-        egui::CentralPanel::default().show(ctx, |ui| {
-            ui.heading("Controle por toque");
-            ui.add_space(6.0);
-            self.sticks(ui);
-        });
+        egui::CentralPanel::default().show(ctx, |ui| self.sticks(ui));
 
         ctx.request_repaint_after(Duration::from_millis(20));
     }
@@ -486,10 +555,18 @@ impl eframe::App for App {
 
 /// Pad de toque estilo alavanca: arrastar move o knob, soltar volta ao centro
 /// (centro = segurar a posição, igual ao joystick físico solto).
-fn pad(ui: &mut egui::Ui, id: &str, titulo: &str, v: &mut egui::Vec2, lado: f32) {
+fn pad(
+    ui: &mut egui::Ui,
+    id: &str,
+    titulo: &str,
+    v: &mut egui::Vec2,
+    lado: f32,
+    eixo_a: (&str, f32),
+    eixo_b: (&str, f32),
+) {
     ui.push_id(id, |ui| {
         ui.vertical(|ui| {
-            ui.label(egui::RichText::new(titulo).strong());
+            ui.label(egui::RichText::new(titulo).strong().size(15.0));
             let (rect, resp) =
                 ui.allocate_exact_size(egui::vec2(lado, lado), egui::Sense::click_and_drag());
             let centro = rect.center();
@@ -508,22 +585,38 @@ fn pad(ui: &mut egui::Ui, id: &str, titulo: &str, v: &mut egui::Vec2, lado: f32)
             }
 
             let p = ui.painter();
-            let fundo = egui::Color32::from_gray(28);
-            let linha = egui::Stroke::new(1.0_f32, egui::Color32::from_gray(60));
-            p.circle_filled(centro, raio, fundo);
-            p.circle_stroke(centro, raio, egui::Stroke::new(2.0_f32, egui::Color32::from_gray(75)));
+            p.circle_filled(centro, raio, egui::Color32::from_gray(28));
+            p.circle_stroke(centro, raio, egui::Stroke::new(2.0_f32, egui::Color32::from_gray(80)));
+            let linha = egui::Stroke::new(1.0_f32, egui::Color32::from_gray(58));
             p.line_segment([centro - egui::vec2(raio, 0.0), centro + egui::vec2(raio, 0.0)], linha);
             p.line_segment([centro - egui::vec2(0.0, raio), centro + egui::vec2(0.0, raio)], linha);
 
             let knob = centro + *v * raio;
-            p.circle_filled(knob, raio * 0.26, egui::Color32::from_rgb(95, 170, 235));
-            p.text(
-                rect.left_top() + egui::vec2(8.0, 6.0),
-                egui::Align2::LEFT_TOP,
-                format!("{:+.0} / {:+.0}", v.x * 100.0, -v.y * 100.0),
-                egui::FontId::monospace(11.0),
-                egui::Color32::from_gray(160),
+            let ativo = *v != egui::Vec2::ZERO;
+            p.circle_filled(
+                knob,
+                raio * 0.24,
+                if ativo {
+                    egui::Color32::from_rgb(120, 190, 255)
+                } else {
+                    egui::Color32::from_rgb(95, 170, 235)
+                },
             );
+
+            ui.add_space(2.0);
+            ui.horizontal(|ui| {
+                ui.label(
+                    egui::RichText::new(format!("{} {:.0}°", eixo_a.0, eixo_a.1))
+                        .monospace()
+                        .size(13.0),
+                );
+                ui.label("·");
+                ui.label(
+                    egui::RichText::new(format!("{} {:.0}°", eixo_b.0, eixo_b.1))
+                        .monospace()
+                        .size(13.0),
+                );
+            });
         });
     });
 }
