@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Braço Robótico 4-DOF — projeto, montagem e impressão</title>
-<meta name="description" content="Braço robótico de 4 eixos impresso em PLA na Bambu Lab A1, com firmware Arduino e app desktop em Rust para controle, gravação e replay de movimentos.">
+<meta name="description" content="Braço robótico de 4 eixos impresso em PLA na Bambu Lab A1, com firmware Arduino e app desktop em Rust para controle por toque e teclado, gravação e replay de movimentos.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Braço Robótico 4-DOF">
-<meta property="og:description" content="Quatro eixos, dois joysticks e um app que grava e repete movimentos. Peças em PLA, firmware próprio e controle híbrido.">
+<meta property="og:description" content="Quatro eixos, dois joysticks, teclado e um app que grava e repete movimentos. Peças em PLA, firmware próprio e controle híbrido.">
 <meta property="og:image" content="https://gabriel-freitas-s.github.io/braco-robortico/assets/site/hero.png">
 <link rel="icon" href="assets/site/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -542,7 +542,7 @@
     <div class="wrap">
       <div>
         <h1 id="titulo">Braço robótico<br><em>4-DOF</em></h1>
-        <p class="lede">Quatro eixos, dois joysticks e um app que <strong>grava e repete movimentos</strong>. Peças em PLA na Bambu Lab A1, firmware próprio e controle híbrido: o firmware continua dono do movimento, então um comando perdido no USB não vira tranco.</p>
+        <p class="lede">Quatro eixos, dois joysticks, teclado e um app que <strong>grava e repete movimentos</strong>. Peças em PLA na Bambu Lab A1, firmware próprio e controle híbrido: o firmware continua dono do movimento, então um comando perdido no USB não vira tranco.</p>
         <div class="cta">
           <a class="btn btn-primary" href="manual_braco_robotico.html">Abrir o manual
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -571,7 +571,7 @@
     <div class="wrap">
       <div class="section-head">
         <h2 id="projeto-titulo">Um braço que obedece sem largar o controle</h2>
-        <p>O app propõe alvos; a placa executa com rampa, limites mecânicos e hold. O joystick físico tem a palavra final.</p>
+        <p>O app propõe alvos; a placa executa com rampa, limites mecânicos e hold. No modo PC o joystick físico fica travado; Devolver/STOP devolvem o comando à placa.</p>
       </div>
       <div class="cols">
         <div class="feature">
@@ -582,7 +582,7 @@
         <div class="feature">
           <span class="mono">controle híbrido</span>
           <h3>PC e joystick no mesmo barramento</h3>
-          <p>Assumir o controle pelo app adota os ângulos atuais; tocar no joystick devolve o comando à placa.</p>
+          <p>Assumir o controle pelo app adota os ângulos atuais; o teclado usa o mesmo stick dos pads. Devolver/STOP (J/Espaço) soltam o comando; o joystick fica travado enquanto o PC controla.</p>
         </div>
         <div class="feature">
           <span class="mono">gravação</span>
@@ -820,7 +820,7 @@
     <div class="wrap">
       <div class="section-head">
         <h2 id="software-titulo">Software</h2>
-        <p>O RoboControl conversa com o firmware pela USB a 115200 baud. O app propõe alvos; a placa executa a rampa, os limites e o hold.</p>
+        <p>O RoboControl conversa com o firmware pela USB a 115200 baud. O app propõe alvos; a placa executa a rampa, os limites e o hold. Pads e teclado usam o mesmo stick virtual.</p>
       </div>
       <figure class="app-shot">
         <img src="assets/site/app.png" alt="Janela do RoboControl: dois pads de toque, ângulos atuais, gravação, replay e log" width="1179" height="569">
@@ -831,12 +831,14 @@
           <h3>O que tem</h3>
           <ul class="app-features">
             <li><span>pads</span>Dois controles de toque: base/cotovelo à esquerda, garra/ombro à direita. Soltar o dedo centraliza e segura a posição.</li>
-            <li><span>assumir</span>Assume o controle partindo dos ângulos atuais. O joystick físico devolve o comando à placa.</li>
-            <li><span>travar garra</span>Mantém a pressão da pinça sem forçar o servo.</li>
-            <li><span>gravação</span>Nomeie, grave e salve o movimento em <code>~/.local/share/robocontrol/movimentos/</code>.</li>
-            <li><span>replay</span>Lista os movimentos salvos, repete e exclui com confirmação.</li>
-            <li><span>STOP</span>Para o movimento e desenergiza os servos em ~0,6 s.</li>
-            <li><span>log</span>Mensagens de conexão e status, recolhíveis.</li>
+            <li><span>teclado</span>WASD/setas movem pelo mesmo stick virtual dos pads; Shift deixa fino. M/J/Espaço/G/R/P/L/1/2/3 são atalhos; H/F1 abre a lista.</li>
+            <li><span>atalhos</span>Botão Atalhos ou H/F1 abre o popup; passar o mouse nos controles mostra a ação e a tecla.</li>
+            <li><span>assumir</span>Assume o controle partindo dos ângulos atuais (M). O joystick físico fica travado enquanto o PC controla; Devolver (J) ou STOP devolvem o comando.</li>
+            <li><span>travar garra</span>Mantém a pressão da pinça sem forçar o servo (G).</li>
+            <li><span>gravação</span>Nomeie, grave e salve o movimento em <code>~/.local/share/robocontrol/movimentos/</code> (R).</li>
+            <li><span>replay</span>Lista os movimentos salvos, repete com pausa, velocidade 0.5×/1×/2× e loop (P/1/2/3/L). Exclui com confirmação.</li>
+            <li><span>STOP</span>Para o movimento e desenergiza os servos em ~0,6 s (Espaço).</li>
+            <li><span>log</span>Mensagens de conexão e status; aberto, tem cores, copiar/limpar e linhas selecionáveis.</li>
           </ul>
         </div>
         <div>

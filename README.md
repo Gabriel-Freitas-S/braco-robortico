@@ -21,12 +21,14 @@ Peças em PLA na Bambu Lab A1, firmware Arduino e controle híbrido.</p>
 Braço de 4 eixos — base (Yaw), ombro, cotovelo e garra — com um SG90 por
 articulação. O app desktop (Rust + egui) propõe alvos; o firmware executa com
 rampa, limites mecânicos e hold. Se o USB perder um comando, o braço não dá
-tranco. O joystick físico tem a palavra final: ao tocá-lo, a placa retoma o
-controle.
+tranco. No modo PC o joystick físico fica travado; Devolver/STOP, o timeout de
+500 ms ou a queda do cabo devolvem o controle à placa.
 
 - **29 peças** (27 numeradas + H1/H2) impressas em PLA preto.
 - **2 pratos**, ~102 g e ~4h13 de impressão na A1.
 - **Gravação e replay** de movimentos direto no app.
+- **Teclado e atalhos**: WASD/setas, Shift fino, M/J/Espaço/G/R/P/L/1-3;
+  H/F1 abre a lista.
 - **Firmware híbrido**: PC e joystick no mesmo barramento, com transferência
   suave de controle.
 
@@ -118,6 +120,8 @@ Porta típica: `COM3`, `COM4`… (Gerenciador de Dispositivos). Clone CH340 prec
 do driver do fabricante. Movimentos: `%APPDATA%\robocontrol\movimentos`.
 
 Em qualquer sistema: escolha a porta → **Conectar** → **Assumir controle (PC)**.
+
+Teclado: **WASD**/setas movem os pads, **Shift** deixa fino; **M**/`J` assumem/devolvem, **Espaço** é STOP, **R**/`P` gravam/reproduzem, **1**/**2**/**3** mudam a velocidade e **H**/**F1** abrem a lista. Passe o mouse nos controles para ver a tecla. Tabela completa em [`app/README.md`](app/README.md).
 
 ## Firmware
 
