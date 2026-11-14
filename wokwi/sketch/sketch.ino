@@ -3,6 +3,15 @@
  *  BRAÇO ROBÓTICO 4-DOF — Firmware
  * ============================================================================
  *
+ *  PROJETO ACADÊMICO — disciplina de Sistemas Embarcados, Engenharia da
+ *  Computação. Sem fins comerciais.
+ *
+ *  LICENÇA
+ *  -------
+ *  Código deste firmware: MIT (ver LICENSE na raiz do repositório).
+ *  Modelos 3D, imagens e documentação: CC BY 4.0 (ver
+ *  LICENSE-CC-BY-4.0.txt).
+ *
  *  O QUE ESTE CÓDIGO FAZ
  *  ----------------------
  *  Você move dois joysticks e o braço robótico acompanha o movimento.

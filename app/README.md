@@ -176,3 +176,9 @@ de `docs/rust/` para `robocontrol/`.
 pad esquerdo **aumenta** o cotovelo; X do pad direito **abre** a garra; Y para
 cima **aumenta** o ombro. Se algum ficar invertido na mão, é só trocar o sinal
 na montagem de `cmd_sticks` em `tick()`.
+
+## Licença
+
+Código do app sob MIT. Projeto acadêmico da disciplina de Sistemas Embarcados
+(Engenharia da Computação); modelos 3D, imagens e documentação sob
+[CC BY 4.0](../LICENSE-CC-BY-4.0.txt). Ver [`LICENSE`](../LICENSE) na raiz.

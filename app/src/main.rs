@@ -63,6 +63,12 @@
 //!
 //! Movimentos gravados ficam no diretório de dados do usuário, nunca no cwd —
 //! ver [`dir_movimentos`].
+//!
+//! # Licença
+//!
+//! Código sob MIT (ver `LICENSE`). Modelos 3D, imagens e documentação sob
+//! CC BY 4.0 (ver `LICENSE-CC-BY-4.0.txt`). Projeto acadêmico da disciplina de
+//! Sistemas Embarcados do curso de Engenharia da Computação.
 
 mod icons;
 mod link;

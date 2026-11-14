@@ -32,6 +32,10 @@ tranco. No modo PC o joystick físico fica travado; Devolver/STOP, o timeout de
 - **Firmware híbrido**: PC e joystick no mesmo barramento, com transferência
   suave de controle.
 
+> **Projeto acadêmico** — desenvolvido para fins estudantis na disciplina de
+> **Sistemas Embarcados** do curso de **Engenharia da Computação**. Não é um
+> produto comercial; use por sua conta e risco.
+
 ## Estado atual (nov/2026)
 
 | Peça | Situação |
@@ -161,6 +165,18 @@ No Windows troque `/dev/ttyACM0` por `COM3`; no macOS, por `/dev/cu.usbmodem...`
 | `montagens/` | Modelo montado/numerado e o gerador |
 | `docs/` | Manual, guia e imagens |
 | `ref/mdf/` | Modelo de referência em MDF |
+
+## Licença
+
+- **Código** (`app/`, `firmware/`, `wokwi/` e scripts de geração): [MIT](LICENSE).
+- **Modelos 3D e artefatos de impressão** (`cad-output/`, `bambu-output/`,
+  `impressao/`, modelos em `montagens/`): [CC BY 4.0](LICENSE-CC-BY-4.0.txt).
+- **Site, manual e imagens** (`docs/index.html`, `docs/manual_*`,
+  `docs/assets/`, `docs/guia_montagem.md`): CC BY 4.0.
+- **Documentação rustdoc** (`docs/rust/`): acompanha o código (MIT).
+- **Referência** (`ref/mdf/`): modelo original, CC BY 4.0, com o crédito abaixo.
+
+A atribuição exigida pela CC BY 4.0 está em [Créditos](#créditos).
 
 ## Créditos
 
