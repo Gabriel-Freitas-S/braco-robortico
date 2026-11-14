@@ -88,12 +88,12 @@
  *    #P<b>;<o>;<c>;<g>  alvos em graus (20 Hz; reenviar é o heartbeat)
  *    #V<lx>;<ly>;<rx>;<ry> sticks virtuais do app (-100..100)
  *    #L0 / #L1          libera / trava a pressão da garra
- *    #M assume | #J devolve ao joystick | #H segura | #S status | #B diagnóstico
+ *    #M assume e congela | #J devolve e congela | #H STOP | #S status | #B diagnóstico
  *
  * ============================================================================
  */
 
-#define FW_VER "1.3.3"
+#define FW_VER "1.3.4"
 
 #include <Servo.h>
 #include <EEPROM.h>
@@ -623,7 +623,7 @@ void mostraAjuda() {
   Serial.println(F("  d = Ligar/desligar leitura continua dos joysticks (valores crus A0/A1/A3/A2)"));
   Serial.println(F("  b = Teste: a base pisca N vezes; conte para saber o pino"));
   Serial.println(F("  h = Mostrar este menu"));
-  Serial.println(F("  app USB: #M assume | #P<b>;<o>;<c>;<g> alvos | #J solta | #H segura | #S status"));
+  Serial.println(F("  app USB: #M assume e congela | #P<b>;<o>;<c>;<g> alvos | #J devolve e congela | #H STOP | #S status"));
   Serial.println(F("========================================================"));
 }
 
@@ -851,9 +851,9 @@ void descobrePinoBase() {
 //
 //    #P<b>;<o>;<c>;<g>   alvos das 4 juntas, em graus (o app manda a 20 Hz).
 //                        O próprio reenvio é o heartbeat.
-//    #M                  assume o controle (parte do ângulo atual, sem salto)
-//    #J                  devolve o controle ao joystick
-//    #H                  segura agora (STOP)
+//    #M                  assume o controle e congela no ângulo atual
+//    #J                  devolve ao joystick e congela no ângulo atual
+//    #H                  STOP: cancela o retorno à Posição 0 e segura agora
 //    #S                  manda o status uma vez
 //    #B                  diagnóstico: versão, boots e limites
 //
@@ -861,6 +861,8 @@ void descobrePinoBase() {
 //    - 500 ms sem nenhum #P -> segura as juntas e volta ao joystick
 //    - com o PC no controle o joystick físico fica TRAVADO (não interfere);
 //      #J, #H, o timeout ou a queda do cabo devolvem o controle
+//    - qualquer #P/#V/#M cancela um retorno à Posição 0 em andamento: o app
+//      vira a nova autoridade e o home não pode continuar reescrevendo alvos
 
 unsigned long ultimoComandoPcMs = 0;
 const unsigned long PC_TIMEOUT_MS = 500;
@@ -893,6 +895,15 @@ void seguraJuntas() {
   alvoOmbro    = angOmbro;
   alvoCotovelo = angCotovelo;
   alvoGarra    = angGarra;
+}
+
+//  Assume o controle do PC e cancela um retorno à Posição 0 em andamento.
+//  Sem isso, o home continuaria reescrevendo os alvos do app a cada ciclo.
+//  Usado por #M, #P e #V: qualquer alvo do app vira a nova autoridade.
+void assumeControlePc() {
+  modoPC = true;
+  voltandoZero = false;
+  ultimoComandoPcMs = millis();
 }
 
 //  Status de 1 linha: ângulos atuais + quem está no controle.
@@ -945,7 +956,7 @@ void processaComandoPc(const char *l, uint8_t n) {
   switch (l[1]) {
     case 'P':                                // alvos absolutos (replay/ajuste fino)
       if (!leQuatroInteiros(l, n, 2, v)) return;
-      modoPC = true;
+      assumeControlePc();
       modoVirtual = false;
       alvoBase     = constrainAngle(v[0], limBaseMin, limBaseMax);
       alvoOmbro    = constrainAngle(v[1], limOmbroMin, limOmbroMax);
@@ -953,18 +964,16 @@ void processaComandoPc(const char *l, uint8_t n) {
       alvoGarra    = constrainAngle(v[3], limGarraMin, limGarraMax);
       //  Com a trava ativa a garra só aperta: nunca solta o objeto sozinha.
       if (garraTravada && alvoGarra > angGarra) alvoGarra = angGarra;
-      ultimoComandoPcMs = millis();
       break;
 
     case 'V':                                // sticks virtuais, -100..100
       if (!leQuatroInteiros(l, n, 2, v)) return;
-      modoPC = true;
+      assumeControlePc();
       modoVirtual = true;
       vJoy1X = constrain(v[0], -100, 100) / 100.0;
       vJoy1Y = constrain(v[1], -100, 100) / 100.0;
       vJoy2X = constrain(v[2], -100, 100) / 100.0;
       vJoy2Y = constrain(v[3], -100, 100) / 100.0;
-      ultimoComandoPcMs = millis();
       break;
 
     case 'L':                                // #L1 trava a garra, #L0 libera
@@ -972,9 +981,26 @@ void processaComandoPc(const char *l, uint8_t n) {
       else if (l[2] == '0') aplicaTravaGarra(false);
       break;
 
-    case 'M': modoPC = true; modoVirtual = false; ultimoComandoPcMs = millis(); break;
-    case 'J': modoPC = false; modoVirtual = false; vJoy1X = vJoy1Y = vJoy2X = vJoy2Y = 0; break;
-    case 'H': modoPC = false; modoVirtual = false; seguraJuntas(); break;
+    case 'M':
+      assumeControlePc();
+      modoVirtual = false;
+      seguraJuntas();
+      break;
+    //  Devolver ao joystick também congela: sem isso o braço continuaria até
+    //  o último alvo do app (ex.: um alvo manual de 90°) depois de solto.
+    case 'J':
+      modoPC = false;
+      modoVirtual = false;
+      vJoy1X = vJoy1Y = vJoy2X = vJoy2Y = 0;
+      seguraJuntas();
+      break;
+    //  STOP de verdade: também cancela um retorno à Posição 0 em andamento.
+    case 'H':
+      modoPC = false;
+      modoVirtual = false;
+      voltandoZero = false;
+      seguraJuntas();
+      break;
     case 'S': enviaStatus(); break;
     case 'B': enviaDiag();   break;
   }
@@ -1309,6 +1335,11 @@ void setup() {
   sequenceInicial();
   mostraAjuda();
   Serial.println(F("braco_4dof pronto — parado aguardando movimento nos joysticks!"));
+
+  //  Comandos que chegaram enquanto a placa inicializava (o app pode estar
+  //  repetindo #P) são descartados: um alvo antigo não pode assumir o controle
+  //  no primeiro ciclo depois do boot.
+  while (Serial.available() > 0) Serial.read();
 }
 
 // ===========================================================================
