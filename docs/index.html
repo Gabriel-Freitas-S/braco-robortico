@@ -354,13 +354,34 @@
     overflow: hidden;
     background: var(--panel);
   }
-  .part img { width: 100%; height: auto; }
+  .part img { width: 100%; height: auto; background: #e7ebf0; }
   .part figcaption { padding: 12px 14px 14px; background: #1d2229; border-top: 1px solid var(--line-soft); }
   .part figcaption strong { display: block; font-family: var(--mono); font-size: .72rem; color: var(--accent); letter-spacing: .04em; }
   .part figcaption span { display: block; font-size: .9rem; margin-top: 2px; }
   .part figcaption small { display: block; font-size: .82rem; color: var(--muted); margin-top: 3px; }
   @media (max-width: 900px) { .parts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   @media (max-width: 460px) { .parts { grid-template-columns: 1fr; } }
+
+  /* fotos do braco montado */
+  .shots { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin-bottom: 34px; }
+  .shot {
+    margin: 0;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--panel);
+  }
+  .shot img { width: 100%; height: 300px; object-fit: contain; padding: 12px 12px 0; }
+  .shot figcaption {
+    padding: 10px 14px;
+    background: #1d2229;
+    border-top: 1px solid var(--line-soft);
+    font-size: .82rem;
+    color: var(--muted);
+    text-align: center;
+  }
+  @media (max-width: 900px) { .shots { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 460px) { .shots { grid-template-columns: 1fr; } .shot img { height: 260px; } }
 
   /* software */
   .app-shot {
@@ -585,6 +606,24 @@
         <h2 id="montagem-titulo">Como o braço fica montado</h2>
         <p>Quatro subconjuntos, do chassi à garra. O manual traz as fotos e o passo a passo; o guia resume o hardware e as peças novas.</p>
       </div>
+      <div class="shots">
+        <figure class="shot">
+          <img src="assets/site/braco-frente.png" alt="Vista frontal do braço montado, com o braço recolhido" width="560" height="1200" loading="lazy">
+          <figcaption>frontal · braço recolhido</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="assets/site/braco-garra.png" alt="Vista lateral com a garra estendida à esquerda" width="1200" height="1092" loading="lazy">
+          <figcaption>lateral · garra estendida</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="assets/site/braco-lateral.png" alt="Vista em três quartos, com os joysticks à esquerda e a garra à direita" width="724" height="681" loading="lazy">
+          <figcaption>3/4 · joysticks à esquerda</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="assets/site/braco-controle.png" alt="Vista traseira, com a placa e os dois joysticks em primeiro plano" width="596" height="1200" loading="lazy">
+          <figcaption>traseira · placa e joysticks</figcaption>
+        </figure>
+      </div>
       <ol class="stages">
         <li class="stage">
           <span class="stage-num">ETAPA 1</span>
@@ -650,25 +689,125 @@
   <section id="pecas" aria-labelledby="pecas-titulo">
     <div class="wrap">
       <div class="section-head">
-        <h2 id="pecas-titulo">A revisão de novembro</h2>
-        <p>A 04 e a 12 mudaram de geometria; as peças H1 e H2 assumiram o acionamento da garra no lugar da engrenagem 26.</p>
+        <h2 id="pecas-titulo">As 29 peças</h2>
+        <p>Todo o conjunto impresso em PLA preto, do chassi à garra, com dimensões e peso de cada peça. A 04 e a 12 mudaram de geometria; H1 e H2 assumiram o acionamento da garra no lugar da engrenagem 26.</p>
       </div>
       <div class="parts">
         <figure class="part">
-          <img src="assets/site/peca04.png" alt="Peça 04 — tirante do paralelogramo com encaixe de 10 mm" width="620" height="620">
-          <figcaption><strong>04</strong><span>Tirante do paralelogramo</span><small>encaixe de 10 mm, furos a 80 mm</small></figcaption>
+          <img src="assets/parts/part_01_Base_Chassi_Inferior.png" alt="Peça 01 — Chassi inferior" loading="lazy" width="1024" height="1024">
+          <figcaption><strong>01</strong><span>Chassi inferior</span><small>95,0 × 145,0 × 3,0 mm · 25,1 g</small></figcaption>
         </figure>
         <figure class="part">
-          <img src="assets/site/peca12.png" alt="Peça 12 — mesa giratória redonda de 86 mm" width="620" height="620">
-          <figcaption><strong>12</strong><span>Mesa giratória</span><small>Turret V7 Redonda · 86 mm</small></figcaption>
+          <img src="assets/parts/part_02_Braco_Principal_Esquerdo.png" alt="Peça 02 — Braço principal esquerdo" loading="lazy" width="1024" height="1024">
+          <figcaption><strong>02</strong><span>Braço principal esquerdo</span><small>114,8 × 49,8 × 4,8 mm · 2,8 g</small></figcaption>
         </figure>
         <figure class="part">
-          <img src="assets/site/olhal.png" alt="Haste de olhal, peça H1" width="620" height="620">
-          <figcaption><strong>H1</strong><span>Haste de olhal</span><small>manivela no Servo 4</small></figcaption>
+          <img src="assets/parts/part_03_Tirante_Paralelogramo_Longo.png" alt="Peça 03 — Tirante do paralelogramo longo" loading="lazy" width="1024" height="1024">
+          <figcaption><strong>03</strong><span>Tirante do paralelogramo longo</span><small>103,0 × 15,6 × 3,5 mm · 3,1 g</small></figcaption>
         </figure>
         <figure class="part">
-          <img src="assets/site/curta.png" alt="Haste curta, peça H2" width="620" height="620">
-          <figcaption><strong>H2</strong><span>Haste curta</span><small>biela até o dedo móvel</small></figcaption>
+          <img src="assets/parts/part_04_Tirante_Paralelogramo_Medio.png" alt="Peça 04 — Tirante do paralelogramo médio" loading="lazy" width="1024" height="1024">
+          <figcaption><strong>04</strong><span>Tirante do paralelogramo médio</span><small>90,0 × 10,0 × 3,2 mm · 2,4 g</small></figcaption>
+        </figure>
+        <figure class="part">
+          <img src="assets/parts/part_05_Haste_Acionamento_Servo_Braco.png" alt="Peça 05 — Haste de acionamento do braço" loading="lazy" width="1024" height="1024">
+          <figcaption><strong>05</strong><span>Haste de acionamento do braço</span><small>87,0 × 7,7 × 3,6 mm · 1,9 g</small></figcaption>
+        </figure>
+        <figure class="part">
+          <img src="assets/parts/part_06_Antebraco_Esquerdo.png" alt="Peça 06 — Antebraço esquerdo" loading="lazy" width="1024" height="1024">
+          <figcaption><strong>06</strong><span>Antebraço esquerdo</span><small>85,8 × 21,4 × 3,2 mm · 1,9 g</small></figcaption>
+        </figure>
+        <figure class="part">
+          <img src="assets/parts/part_07_Braco_Principal_Direito.png" alt="Peça 07 — Braço principal direito" loading="lazy" width="1024" height="1024">
+          <figcaption><strong>07</strong><span>Braço principal direito</span><small>84,4 × 39,1 × 3,2 mm · 2,1 g</small></figcaption>
+        </figure>
+        <figure class="part">
+          <img src="assets/parts/part_08_Antebraco_Direito.png" alt="Peça 08 — Antebraço direito" loading="lazy" width="1024" height="1024">
+          <figcaption><strong>08</strong><span>Antebraço direito</span><small>81,6 × 36,4 × 3,1 mm · 1,9 g</small></figcaption>
+        </figure>
+        <figure class="part">
+          <img src="assets/parts/part_09_Torre_Suporte_Servo_Direita.png" alt="Peça 09 — Torre do servo direita" loading="lazy" width="1024" height="1024">
+          <figcaption><strong>09</strong><span>Torre do servo direita</span><small>52,5 × 60,2 × 3,6 mm · 6,5 g</small></figcaption>
+        </figure>
+        <figure class="part">
+          <img src="assets/parts/part_10_Balancim_Triangular_Articulador.png" alt="Peça 10 — Balancim triangular" loading="lazy" width="1024" height="1024">
+          <figcaption><strong>10</strong><span>Balancim triangular</span><small>25,4 × 60,1 × 3,1 mm · 3,0 g</small></figcaption>
+        </figure>
+        <figure class="part">
+          <img src="assets/parts/part_11_Torre_Suporte_Servo_Esquerda.png" alt="Peça 11 — Torre do servo esquerda" loading="lazy" width="1024" height="1024">
+          <figcaption><strong>11</strong><span>Torre do servo esquerda</span><small>43,5 × 60,0 × 3,9 mm · 5,8 g</small></figcaption>
+        </figure>
+        <figure class="part">
+          <img src="assets/parts/part_12_Mesa_Giratoria_Turntable.png" alt="Peça 12 — Mesa giratória" loading="lazy" width="1024" height="1024">
+          <figcaption><strong>12</strong><span>Mesa giratória</span><small>86,0 × 86,0 × 4,7 mm · 15,2 g</small></figcaption>
+        </figure>
+        <figure class="part">
+          <img src="assets/parts/part_13_Tirante_Superior_Garra.png" alt="Peça 13 — Tirante superior da garra" loading="lazy" width="1024" height="1024">
+          <figcaption><strong>13</strong><span>Tirante superior da garra</span><small>56,1 × 12,0 × 3,2 mm · 1,2 g</small></figcaption>
+        </figure>
+        <figure class="part">
+          <img src="assets/parts/part_14_Separador_Espacador_Central_Base.png" alt="Peça 14 — Espaçador central da base" loading="lazy" width="1024" height="1024">
+          <figcaption><strong>14</strong><span>Espaçador central da base</span><small>34,5 × 54,4 × 3,8 mm · 2,8 g</small></figcaption>
+        </figure>
+        <figure class="part">
+          <img src="assets/parts/part_15_Suporte_Cabeca_Garra.png" alt="Peça 15 — Suporte do cabeçote" loading="lazy" width="1024" height="1024">
+          <figcaption><strong>15</strong><span>Suporte do cabeçote</span><small>27,0 × 53,5 × 3,0 mm · 1,8 g</small></figcaption>
+        </figure>
+        <figure class="part">
+          <img src="assets/parts/part_16_Berco_Servo_Rotacao_Base.png" alt="Peça 16 — Berço do servo de rotação" loading="lazy" width="1024" height="1024">
+          <figcaption><strong>16</strong><span>Berço do servo de rotação</span><small>52,1 × 48,2 × 3,1 mm · 5,6 g</small></figcaption>
+        </figure>
+        <figure class="part">
+          <img src="assets/parts/part_17_Travessa_Reforco_Base_Frontal.png" alt="Peça 17 — Travessa frontal da base" loading="lazy" width="1024" height="1024">
+          <figcaption><strong>17</strong><span>Travessa frontal da base</span><small>51,5 × 18,8 × 3,8 mm · 2,3 g</small></figcaption>
+        </figure>
+        <figure class="part">
+          <img src="assets/parts/part_18_Travessa_Reforco_Base_Traseira.png" alt="Peça 18 — Travessa traseira da base" loading="lazy" width="1024" height="1024">
+          <figcaption><strong>18</strong><span>Travessa traseira da base</span><small>51,4 × 18,8 × 3,8 mm · 2,1 g</small></figcaption>
+        </figure>
+        <figure class="part">
+          <img src="assets/parts/part_19_Garra_Base_Suporte_Fixo.png" alt="Peça 19 — Base fixa da garra" loading="lazy" width="1024" height="1024">
+          <figcaption><strong>19</strong><span>Base fixa da garra</span><small>25,1 × 50,7 × 3,2 mm · 2,2 g</small></figcaption>
+        </figure>
+        <figure class="part">
+          <img src="assets/parts/part_20_Garra_Dedo_Movel_Direito.png" alt="Peça 20 — Dedo móvel direito" loading="lazy" width="1024" height="1024">
+          <figcaption><strong>20</strong><span>Dedo móvel direito</span><small>21,3 × 47,6 × 3,2 mm · 1,3 g</small></figcaption>
+        </figure>
+        <figure class="part">
+          <img src="assets/parts/part_21_Garra_Dedo_Movel_Esquerdo.png" alt="Peça 21 — Dedo móvel esquerdo" loading="lazy" width="1024" height="1024">
+          <figcaption><strong>21</strong><span>Dedo móvel esquerdo</span><small>20,3 × 47,1 × 3,2 mm · 1,3 g</small></figcaption>
+        </figure>
+        <figure class="part">
+          <img src="assets/parts/part_22_Biela_Conexao_Horn_Direito.png" alt="Peça 22 — Biela do horn direito" loading="lazy" width="1024" height="1024">
+          <figcaption><strong>22</strong><span>Biela do horn direito</span><small>25,6 × 39,5 × 3,6 mm · 2,0 g</small></figcaption>
+        </figure>
+        <figure class="part">
+          <img src="assets/parts/part_23_Biela_Conexao_Horn_Esquerdo.png" alt="Peça 23 — Biela do horn esquerdo" loading="lazy" width="1024" height="1024">
+          <figcaption><strong>23</strong><span>Biela do horn esquerdo</span><small>25,5 × 39,4 × 3,6 mm · 2,0 g</small></figcaption>
+        </figure>
+        <figure class="part">
+          <img src="assets/parts/part_24_Suporte_Encaixe_Servo_Garra.png" alt="Peça 24 — Suporte do servo da garra" loading="lazy" width="1024" height="1024">
+          <figcaption><strong>24</strong><span>Suporte do servo da garra</span><small>25,0 × 36,8 × 3,1 mm · 1,4 g</small></figcaption>
+        </figure>
+        <figure class="part">
+          <img src="assets/parts/part_25_Trava_Horn_Servo_Base.png" alt="Peça 25 — Trava do horn da base" loading="lazy" width="1024" height="1024">
+          <figcaption><strong>25</strong><span>Trava do horn da base</span><small>24,3 × 31,6 × 3,0 mm · 1,3 g</small></figcaption>
+        </figure>
+        <figure class="part">
+          <img src="assets/parts/part_27_Guia_Articulacao_Garra.png" alt="Peça 27 — Guia de articulação da garra" loading="lazy" width="1024" height="1024">
+          <figcaption><strong>27</strong><span>Guia de articulação da garra</span><small>24,8 × 25,6 × 3,0 mm · 0,8 g</small></figcaption>
+        </figure>
+        <figure class="part">
+          <img src="assets/parts/part_28_Biela_Articulacao_Curta.png" alt="Peça 28 — Biela de articulação curta" loading="lazy" width="1024" height="1024">
+          <figcaption><strong>28</strong><span>Biela de articulação curta</span><small>8,1 × 23,7 × 3,3 mm · 0,4 g</small></figcaption>
+        </figure>
+        <figure class="part">
+          <img src="assets/parts/part_H1_Haste_Olhal.png" alt="Peça H1 — Haste de olhal" loading="lazy" width="1024" height="1024">
+          <figcaption><strong>H1</strong><span>Haste de olhal</span><small>37,15 × 14,0 × 3,0 mm · 1,0 g</small></figcaption>
+        </figure>
+        <figure class="part">
+          <img src="assets/parts/part_H2_Haste_Curta.png" alt="Peça H2 — Haste curta" loading="lazy" width="1024" height="1024">
+          <figcaption><strong>H2</strong><span>Haste curta</span><small>27,69 × 8,0 × 3,0 mm · 0,6 g</small></figcaption>
         </figure>
       </div>
       <p class="section-foot"><a href="manual_braco_robotico.html#pag4">Catálogo completo no manual</a> — as 29 peças com foto, dimensões, peso, tempo e função.</p>
