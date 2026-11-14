@@ -65,10 +65,10 @@ Arrastar move como alavanca; **soltar o dedo centraliza = segurar a posição**.
 |---|---|
 | Joystick na mão | o firmware ignora o PC |
 | **Assumir controle (PC)** | firmware adota os alvos partindo do ângulo atual |
-| **Joystick com o PC no controle** | fica **travado**: mexer a alavanca não interfere (v1.3.3) |
-| **Devolver ao joystick** / STOP | única forma de pegar o controle de volta na mão |
+| **Joystick com o PC no controle** | fica **travado**: mexer a alavanca não interfere (v1.3.4) |
+| **Devolver ao joystick** | `#J`: congela no ângulo atual e devolve o controle |
 | 500 ms sem alvos (app travou, cabo caiu) | segura a posição atual e devolve ao joystick |
-| **STOP** | `#H`: segura as juntas agora |
+| **STOP** | `#H`: cancela o retorno à Posição 0 e segura as juntas agora |
 | **Travar garra** | `#L1`: mantém pressão contínua no objeto e bloqueia abertura |
 | **Liberar garra** | `#L0`: a garra volta a abrir pelo pad |
 
@@ -76,22 +76,58 @@ A trava é a mesma do botão físico D4 — um só estado (`garraTravada`) no fi
 então o botão da bancada e o botão do app nunca discordam. Com a trava ativa a
 garra **só aperta**: nem o pad, nem o replay (`#P`) conseguem abrir.
 
+## Teclado
+
+O botão **Atalhos** (na faixa “Controle”) e `H`/`F1` abrem a lista.
+Os atalhos valem com o app em foco e nenhum campo de texto ativo; o movimento
+exige o PC no controle (`M`). Passar o mouse sobre os controles mostra a ação e
+a tecla correspondente.
+
+| Tecla | Ação |
+|---|---|
+| `A` / `D` | Base: girar à esquerda / direita |
+| `W` / `S` | Cotovelo: subir / descer |
+| `←` / `→` | Garra: fechar / abrir |
+| `↑` / `↓` | Ombro: subir / descer |
+| `Shift` + movimento | modo fino (metade da velocidade) |
+| `M` | assumir o controle (PC) |
+| `J` | devolver ao joystick |
+| `Espaço` | STOP |
+| `G` | travar / liberar a garra |
+| `R` | iniciar / parar e salvar a gravação |
+| `P` | reproduzir / pausar / continuar |
+| `1` / `2` / `3` | velocidade 0.5× / 1× / 2× |
+| `L` | repetir o movimento (loop) |
+| `H` / `F1` | abrir / fechar a lista de atalhos |
+| `Esc` | fechar a lista ou o modal de ângulo |
+
+Conectar, escolher a porta, carregar/excluir movimentos e digitar o nome
+continuam no mouse/toque.
+
+## Log
+
+A barra inferior mostra o último evento. Clique para abrir: o painel expande
+com contagem de eventos, cores para erros/STOP e ações **Copiar** e **Limpar**.
+As linhas são selecionáveis para copiar um trecho.
+
 ## Gravação
 
-- **Gravar** captura a pose a 20 Hz — inclusive quando você está movendo no
-  joystick (é "ensinar fazendo").
-- **Parar e salvar** grava em `~/.local/share/robocontrol/movimentos/<nome>.json` (Windows: `%APPDATA%\robocontrol\movimentos`).
-- **▶** carrega um movimento; **✕** exclui (com confirmação na própria linha); **Reproduzir** manda os alvos interpolados.
-  Tocar o joystick cancela o replay (o firmware sai do modo PC).
+- **Gravar** captura a pose a 20 Hz (via `#S` quando no joystick e `S...` no modo
+  PC) — inclusive quando você está movendo no joystick físico (é "ensinar fazendo").
+- **Parar e salvar** remove pausas paradas no início/fim, grava em `~/.local/share/robocontrol/movimentos/<nome>.json` (Windows: `%APPDATA%\robocontrol\movimentos`) e já deixa o movimento carregado para replay.
+- Se o cabo cair, a placa reiniciar ou você desconectar, a gravação em andamento é encerrada e salva (com sufixo `_2`, `_3`… se o nome já existir).
+- **Reproduzir** aguarda o braço alcançar a pose inicial antes de iniciar o
+  cronômetro, oferece barra de progresso, **Pausar/Continuar** e seletor de
+  velocidade (**0.5×**, **1×**, **2×**). **✕** exclui (com confirmação na própria linha). Tocar num pad ou usar STOP cancela o replay.
 
 ## Protocolo (firmware v1.3+)
 
 ```
 #P<b>;<o>;<c>;<g>   alvos em graus (replay / ajuste fino)
 #V<lx>;<ly>;<rx>;<ry>  sticks virtuais -100..100 (20 Hz; reenviar é o heartbeat)
-#M                  assume o controle
-#J                  devolve ao joystick
-#H                  segura agora
+#M                  assume o controle e congela no ângulo atual
+#J                  devolve ao joystick e congela no ângulo atual
+#H                  STOP: cancela o retorno à Posição 0 e segura agora
 #L0 / #L1           libera / trava a pressão da garra
 #S                  status  →  S<b>;<o>;<c>;<g>;<modo>;<trava>
 #B                  diagnóstico → B<versão>;boots=N;limb=min;max;limo=...;limc=...;limg=...
@@ -107,8 +143,8 @@ printf '#B\n' > /dev/ttyACM0 && cat /dev/ttyACM0
 
 ## Diagnóstico de alimentação
 
-O app mostra `boots=N` (contador de resets em `.noinit`). **Se esse número subir
-enquanto o braço se move, a placa reiniciou** — é a alimentação, não o servo.
+O app mostra `boots=N` (contador de resets em `.noinit`). **Se esse número
+mudar enquanto o braço se move, a placa reiniciou** — é a alimentação, não o servo.
 O aviso aparece em vermelho na barra superior.
 
 ## Estrutura
@@ -116,7 +152,7 @@ O aviso aparece em vermelho na barra superior.
 - `src/protocol.rs` — codificação/decodificação das linhas (testado)
 - `src/link.rs` — porta serial: leitura em thread, escrita síncrona
 - `src/motion.rs` — gravação, interpolação do replay, JSON (testado)
-- `src/main.rs` — UI egui (pads de toque, gravação, replay)
+- `src/main.rs` — UI egui (pads de toque, teclado, atalhos, log, gravação, replay)
 
 ## Documentação
 

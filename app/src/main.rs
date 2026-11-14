@@ -23,12 +23,30 @@
 //!
 //! # Invariantes de segurança
 //!
-//! - STOP (`#H`) está sempre visível e devolve o controle ao joystick.
-//! - Tocar num pad cancela replay e alvo manual: quem está com a mão manda.
+//! - STOP (`#H`, tecla Espaço) está sempre visível e devolve o controle ao
+//!   joystick; o firmware cancela um retorno à Posição 0 em andamento.
+//! - Tocar num pad ou usar uma tecla de movimento cancela replay e alvo manual:
+//!   quem está com a mão (ou no teclado) manda.
 //! - A trava da garra é um único estado no firmware (botão D4 e app), e com ela
 //!   ativa a garra só aperta.
 //! - Os limites usados na validação da UI vêm do diagnóstico; quem os aplica de
 //!   verdade é o firmware, então um alvo fora da faixa não vira movimento.
+//! - Queda de link ou reinício da placa encerra a gravação, salva o que foi
+//!   capturado e derruba a autoridade do PC; o usuário precisa assumir de novo.
+//!
+//! # Teclado
+//!
+//! WASD controla o pad esquerdo (Base/Cotovelo) e as setas o direito
+//! (Garra/Ombro), pelo mesmo stick virtual `#V` dos pads; Shift deixa fino.
+//! `M`/`J`/`Espaço`/`G`/`R`/`P`/`L`/`1`/`2`/`3` são ações e `H`/`F1` abrem a
+//! lista de atalhos. Movimento exige o PC no controle; campo de texto, modal ou
+//! popup bloqueiam o teclado. O mapa completo fica em [`App::processa_teclado`].
+//!
+//! # Log
+//!
+//! O painel inferior guarda os últimos 400 eventos, com cor para erros/STOP.
+//! Aberto, permite copiar tudo, limpar e selecionar linhas. Ver
+//! [`App::log_panel`].
 //!
 //! # Ritmo
 //!
@@ -53,7 +71,7 @@ mod protocol;
 
 use icons::{botao, botao_quadrado, Icone};
 use link::{Event, Link};
-use motion::Recording;
+use motion::{PlayState, Recording, VELOCIDADES_REPLAY};
 use protocol::Msg;
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
@@ -81,10 +99,10 @@ fn dir_movimentos() -> std::path::PathBuf {
 /// firmware. Também é o intervalo mínimo entre dois comandos de alvo.
 const TICK: Duration = Duration::from_millis(50);
 
-/// Alvo mínimo de toque dos controles, em pontos lógicos.
+/// Alvo mínimo de toque dos controles principais, em pontos lógicos.
 ///
 /// 48 pt é o menor valor confortável em tela touch (e o que o tema aplica em
-/// `interact_size.y`); nenhum botão do app fica abaixo disso.
+/// `interact_size.y`). O log usa botões compactos de 26 pt por ser secundário.
 const ALVO: f32 = 48.0;
 
 /// Largura mínima para o painel de gravação virar dock lateral. Abaixo disso
@@ -202,6 +220,34 @@ fn texto_curto(texto: &str, limite: usize) -> String {
     curto
 }
 
+/// `true` só na primeira pressão da tecla, ignorando o auto-repeat do SO.
+///
+/// `InputState::key_pressed` conta repetições; usar a versão direta faria a
+/// lista de atalhos piscar enquanto H fica segurado.
+fn tecla_pressionada(ctx: &egui::Context, tecla: egui::Key) -> bool {
+    ctx.input(|i| {
+        i.events.iter().any(|e| {
+            matches!(
+                e,
+                egui::Event::Key { key, pressed: true, repeat: false, .. } if *key == tecla
+            )
+        })
+    })
+}
+
+/// Eixo digital de um par de teclas: -1, 0 ou +1; `fino` reduz para ±0.5.
+///
+/// As duas teclas juntas se anulam (0) para o braço parar em vez de escolher
+/// um lado por acaso.
+fn stick_digital(negativo: bool, positivo: bool, fino: bool) -> f32 {
+    let v = match (negativo, positivo) {
+        (true, false) => -1.0,
+        (false, true) => 1.0,
+        _ => 0.0,
+    };
+    if fino { v * 0.5 } else { v }
+}
+
 /// Abre a janela e instala o tema.
 ///
 /// O tamanho inicial é fixo (1180×560) e `persist_window` fica desligado de
@@ -251,6 +297,10 @@ struct App {
     pad_l: PadState,
     /// Pad direito: X = Garra, Y = Ombro.
     pad_r: PadState,
+    /// Stick sintetizado pelo teclado (mesma convenção de `PadState::stick`:
+    /// `-1..=1`, Y para baixo). O send usa o toque quando ativo; senão, este.
+    tecla_l: egui::Vec2,
+    tecla_r: egui::Vec2,
     /// Limites mecânicos por junta vindos do diagnóstico; padrão otimista
     /// `[0,180]` (garra `[0,90]`) até a primeira resposta.
     limits: [[f32; 2]; 4],
@@ -276,6 +326,14 @@ struct App {
     last_send: Instant,
     /// Instante do último `#B`; o diagnóstico é pedido a cada 2 s.
     last_diag: Instant,
+    /// Instante do último `Status` (ou do último `#M`). Em modo PC o firmware
+    /// manda status a 20 Hz; 1 s sem nenhum significa placa travada ou sem
+    /// resposta — o timeout de 500 ms sozinho é revivido pelo próximo `#P`.
+    last_status: Option<Instant>,
+    /// Instante do último `tick` para medir `dt_ms` real do replay.
+    last_tick: Instant,
+    /// Janela curta após `assume()` para não descartar `pc` por um `Status` antigo em trânsito.
+    last_assume: Option<Instant>,
 
     /// Gravação em andamento + instante inicial (base dos carimbos em ms).
     recording: Option<(Recording, Instant)>,
@@ -283,12 +341,22 @@ struct App {
     excluir: Option<PathBuf>,
     /// Nome que será dado ao próximo movimento salvo.
     rec_name: String,
+    /// `true` enquanto o campo de nome do movimento tem foco de texto.
+    /// `wants_keyboard_input` do egui fica verdadeiro para qualquer widget
+    /// focado (inclusive o combo de portas), então o teclado usa este campo.
+    nome_em_foco: bool,
     /// Caminhos dos movimentos salvos, em ordem, atualizados por `refresh_files`.
     files: Vec<PathBuf>,
     /// Movimento carregado para replay (não é o mesmo que estar reproduzindo).
     loaded: Option<Recording>,
-    /// Replay em andamento + instante inicial do replay.
-    play: Option<(Recording, Instant)>,
+    /// Caminho do arquivo carregado. A lista usa o nome sanitizado do arquivo,
+    /// que não bate com `Recording::name` quando há espaço ou pontuação; o
+    /// caminho é a identidade estável para destaque e exclusão.
+    loaded_path: Option<PathBuf>,
+    /// Replay em andamento (com pré-posicionamento, pausa e posição na linha do tempo).
+    play: Option<PlayState>,
+    /// Fator de velocidade selecionado para o replay (`0.5`, `1.0`, `2.0`).
+    vel_replay: f32,
     /// Ao terminar, recomeça do início em vez de parar.
     looping: bool,
     /// Alvo pontual definido pelo modal de ângulo; enviado via `#P` até ser
@@ -300,6 +368,8 @@ struct App {
     editando_texto: String,
     /// Pede foco no campo de ângulo no próximo frame (só uma vez).
     focar_angulo: bool,
+    /// Popup com a lista de atalhos do teclado.
+    atalhos_abertos: bool,
 }
 
 impl App {
@@ -314,6 +384,8 @@ impl App {
             live: [90.0; 4],
             pad_l: PadState::default(),
             pad_r: PadState::default(),
+            tecla_l: egui::Vec2::ZERO,
+            tecla_r: egui::Vec2::ZERO,
             limits: [[0.0, 180.0], [0.0, 180.0], [0.0, 180.0], [0.0, 90.0]],
             pc: false,
             garra_travada: false,
@@ -325,17 +397,24 @@ impl App {
             log_aberta: false,
             last_send: Instant::now(),
             last_diag: Instant::now(),
+            last_status: None,
+            last_tick: Instant::now(),
+            last_assume: None,
             recording: None,
             excluir: None,
             rec_name: "movimento".into(),
+            nome_em_foco: false,
             files: Vec::new(),
             loaded: None,
+            loaded_path: None,
             play: None,
+            vel_replay: 1.0,
             looping: false,
             alvo_manual: false,
             editando_junta: None,
             editando_texto: String::new(),
             focar_angulo: false,
+            atalhos_abertos: false,
         };
         app.refresh_ports();
         app.refresh_files();
@@ -396,6 +475,73 @@ impl App {
         self.erro = Some(s);
     }
 
+    /// Encerra a gravação em andamento, corta o silêncio das pontas e salva.
+    ///
+    /// Usado pelo botão "Parar gravação" e por qualquer queda de link ou
+    /// reinício da placa: sem isso, a UI continuaria "gravando" sem receber
+    /// amostras. `permitir_sobrescrever` mantém o comportamento do botão de
+    /// regravar o mesmo nome; nos teardowns automáticos, um nome já ocupado
+    /// ganha sufixo `_2`, `_3`… para não apagar outro movimento. A gravação é
+    /// consumida mesmo se o save falhar (o erro vai para o banner).
+    fn finalizar_gravacao(&mut self, motivo: &str, permitir_sobrescrever: bool) {
+        let Some((mut rec, _)) = self.recording.take() else { return };
+        rec.name = self.rec_name.clone();
+        rec.trim_idle();
+        if rec.samples.is_empty() {
+            self.loga(format!("gravação vazia descartada ({motivo})"));
+            return;
+        }
+        let dir = dir_movimentos();
+        let mut path = Recording::path_for(&dir, &rec.name);
+        if !permitir_sobrescrever && path.exists() && self.loaded_path.as_ref() != Some(&path) {
+            let base = rec.name.clone();
+            let mut n = 2;
+            loop {
+                rec.name = format!("{base}_{n}");
+                path = Recording::path_for(&dir, &rec.name);
+                if !path.exists() {
+                    break;
+                }
+                n += 1;
+            }
+        }
+        match rec.save(&dir) {
+            Ok(p) => {
+                self.loga(format!(
+                    "salvo em {} ({:.1}s, {} amostras) — {motivo}",
+                    p.display(),
+                    rec.duration_ms() as f32 / 1000.0,
+                    rec.samples.len()
+                ));
+                self.refresh_files();
+                self.loaded = Some(rec);
+                self.loaded_path = Some(p);
+            }
+            Err(e) => self.falha(format!("Não foi possível salvar o movimento: {e}")),
+        }
+    }
+
+    /// Compara o contador de boots e trata um reinício como perda de autoridade.
+    ///
+    /// O banner de boot chega antes do `loop()` do firmware começar, então ele
+    /// fecha a janela em que o app ainda mandaria `#P` para uma placa recém-
+    /// reiniciada. O diagnóstico (a cada 2 s) é o fallback se o banner se perder.
+    fn registra_boots(&mut self, boots: u32) {
+        if let Some(antes) = self.boots {
+            //  Qualquer mudança é reinício: um reset a frio perde o `.noinit`
+            //  e o contador volta para 1, então `>` sozinho não pegaria.
+            if boots != antes && antes > 0 {
+                self.reboot = Some(format!(
+                    "a placa reiniciou (boots {antes} → {boots}) — suspeite da alimentação"
+                ));
+                self.finalizar_gravacao("placa reiniciou", false);
+                self.solta_controle();
+                self.loga("placa reiniciou — assuma o controle de novo");
+            }
+        }
+        self.boots = Some(boots);
+    }
+
     /// Abre a porta selecionada. Não assume o controle: isso é ação explícita
     /// do usuário em [`Self::assume`].
     ///
@@ -410,6 +556,9 @@ impl App {
                 self.link = Some(l);
                 self.boots = None;
                 self.reboot = None;
+                self.last_assume = None;
+                self.last_status = None;
+                self.last_send = Instant::now() - TICK;
                 self.last_diag = Instant::now() - Duration::from_secs(10);
             }
             Err(e) => self.falha(format!("Não foi possível abrir {path}: {e}")),
@@ -419,18 +568,16 @@ impl App {
     /// Fecha a porta devolvendo o controle ao joystick antes de soltar o handle.
     ///
     /// Tudo que depende do link é zerado; a pose mostrada continua a última
-    /// leitura (não inventamos posição).
+    /// leitura (não inventamos posição). Uma gravação em andamento é encerrada
+    /// e salva, para a captura não se perder com a porta.
     fn disconnect(&mut self) {
         if let Some(mut l) = self.link.take() {
             l.send(protocol::CMD_RELEASE);
         }
-        self.pc = false;
-        self.play = None;
-        self.alvo_manual = false;
-        self.recording = None;
+        self.finalizar_gravacao("desconectado", false);
+        self.solta_controle();
         self.boots = None;
         self.reboot = None;
-        self.reset_targets();
     }
 
     /// Envia um comando se houver link; sem conexão é no-op silencioso.
@@ -449,6 +596,42 @@ impl App {
         self.reset_targets();
         self.send(protocol::CMD_ASSUME);
         self.pc = true;
+        self.last_assume = Some(Instant::now());
+        self.last_status = Some(Instant::now());
+        self.last_send = Instant::now() - TICK;
+    }
+
+    /// Devolve o controle ao joystick e congela onde o braço está (`#J`).
+    fn devolve_ao_joystick(&mut self) {
+        self.send(protocol::CMD_RELEASE);
+        self.solta_controle();
+    }
+
+    /// Alterna a trava de pressão da garra (a mesma do botão físico D4).
+    fn alterna_trava_garra(&mut self) {
+        let travar = !self.garra_travada;
+        self.send(protocol::cmd_lock(travar));
+        self.garra_travada = travar;
+    }
+
+    /// Começa uma nova gravação com o nome atual.
+    fn inicia_gravacao(&mut self) {
+        self.recording = Some((
+            Recording { name: self.rec_name.clone(), samples: Vec::new() },
+            Instant::now(),
+        ));
+        self.loga("gravação iniciada");
+    }
+
+    /// Assume o PC e começa o replay de `rec` (se houver placa).
+    fn inicia_replay(&mut self, rec: Recording) {
+        if self.link.is_none() {
+            return;
+        }
+        self.assume();
+        self.alvo_manual = false;
+        self.play = Some(PlayState::new(rec));
+        self.loga("reproduzindo…");
     }
 
     /// STOP: segura as juntas (`#H`), encerra replay/alvo manual e devolve o
@@ -459,15 +642,107 @@ impl App {
     fn stop(&mut self) {
         let conectado = self.link.is_some();
         self.send(protocol::CMD_STOP);
-        self.pc = false;
-        self.play = None;
-        self.alvo_manual = false;
-        self.reset_targets();
+        self.solta_controle();
         if conectado {
             self.loga("STOP — movimento parado, controle de volta no joystick");
         } else {
             self.loga("STOP local — nenhuma placa conectada");
         }
+    }
+
+    /// Traduz o teclado nos mesmos comandos dos botões e pads.
+    ///
+    /// Só age sem campo de texto (ou combo) focado: digitar um nome de movimento
+    /// não pode assumir o controle nem mover o braço. Espaço (STOP) continua
+    /// valendo com a lista de atalhos aberta; os demais atalhos ficam desligados
+    /// enquanto ela ou o modal de ângulo estiverem na frente.
+    fn processa_teclado(&mut self, ctx: &egui::Context) {
+        //  `wants_keyboard_input` fica verdadeiro para qualquer widget focado
+        //  (inclusive o combo de portas), então o bloqueio de texto é explícito:
+        //  campo de nome ou modal de ângulo.
+        let digitando = self.nome_em_foco || self.editando_junta.is_some();
+        let popup = ctx.is_popup_open();
+
+        //  H/F1 alterna a lista. Com campo de texto focado, H é uma letra.
+        if !digitando && !popup
+            && (tecla_pressionada(ctx, egui::Key::H)
+                || tecla_pressionada(ctx, egui::Key::F1))
+        {
+            self.atalhos_abertos = !self.atalhos_abertos;
+        }
+
+        //  STOP é a exceção: vale mesmo com a ajuda aberta; só um campo de
+        //  texto (onde espaço é uma letra) o bloqueia.
+        if !digitando && tecla_pressionada(ctx, egui::Key::Space) {
+            self.stop();
+        }
+
+        if self.atalhos_abertos || digitando || popup {
+            self.tecla_l = egui::Vec2::ZERO;
+            self.tecla_r = egui::Vec2::ZERO;
+            return;
+        }
+
+        if self.link.is_some() && !self.pc && tecla_pressionada(ctx, egui::Key::M) {
+            self.assume();
+        }
+        if self.pc && tecla_pressionada(ctx, egui::Key::J) {
+            self.devolve_ao_joystick();
+        }
+        if self.link.is_some() && tecla_pressionada(ctx, egui::Key::G) {
+            self.alterna_trava_garra();
+        }
+        if self.link.is_some() && tecla_pressionada(ctx, egui::Key::R) {
+            if self.recording.is_some() {
+                self.finalizar_gravacao("atalho R", true);
+            } else {
+                self.inicia_gravacao();
+            }
+        }
+        if tecla_pressionada(ctx, egui::Key::P) {
+            if self.play.is_some() {
+                let pausado = self
+                    .play
+                    .as_mut()
+                    .map(|p| {
+                        p.pausado = !p.pausado;
+                        p.pausado
+                    })
+                    .unwrap_or(false);
+                self.loga(if pausado { "replay pausado" } else { "replay retomado" });
+            } else if let Some(r) = self.loaded.clone() {
+                self.inicia_replay(r);
+            }
+        }
+        if self.loaded.is_some() && tecla_pressionada(ctx, egui::Key::L) {
+            self.looping = !self.looping;
+            self.loga(if self.looping { "repetir ligado" } else { "repetir desligado" });
+        }
+        for (tecla, vel) in [
+            (egui::Key::Num1, 0.5),
+            (egui::Key::Num2, 1.0),
+            (egui::Key::Num3, 2.0),
+        ] {
+            if tecla_pressionada(ctx, tecla) {
+                self.vel_replay = vel;
+            }
+        }
+
+        let fino = ctx.input(|i| i.modifiers.shift);
+        let (a, d, w, s, esq, dir, cima, baixo) = ctx.input(|i| {
+            (
+                i.key_down(egui::Key::A),
+                i.key_down(egui::Key::D),
+                i.key_down(egui::Key::W),
+                i.key_down(egui::Key::S),
+                i.key_down(egui::Key::ArrowLeft),
+                i.key_down(egui::Key::ArrowRight),
+                i.key_down(egui::Key::ArrowUp),
+                i.key_down(egui::Key::ArrowDown),
+            )
+        });
+        self.tecla_l = egui::vec2(stick_digital(a, d, fino), stick_digital(w, s, fino));
+        self.tecla_r = egui::vec2(stick_digital(esq, dir, fino), stick_digital(cima, baixo, fino));
     }
 
     /// Um passo do laço: leitura da serial, heartbeat de diagnóstico, gravação,
@@ -480,27 +755,37 @@ impl App {
     ///    `Status` (pose, trava e quem está no controle — o firmware vence).
     /// 3. Pede `#B` a cada 2 s, para detectar reinício da placa.
     /// 4. Avança o replay ou o encerra (com loop opcional).
-    /// 5. Toque em qualquer pad cancela replay e alvo manual.
+    /// 5. Toque num pad ou tecla de movimento cancela replay e alvo manual.
     /// 6. Se o PC está no controle, envia `#P` (replay/alvo manual) ou `#V`
     ///    (sticks) no máximo a cada [`TICK`].
     fn tick(&mut self, now: Instant) {
+        let dt_ms = (now.saturating_duration_since(self.last_tick).as_secs_f32() * 1000.0).min(250.0);
+        self.last_tick = now;
+
         let mut events = Vec::new();
         if let Some(l) = self.link.as_ref() {
             if !l.drain(&mut events) {
                 self.falha("A conexão serial foi perdida. Reconecte a placa.");
                 self.link = None;
-                self.pc = false;
-                self.reset_targets();
+                self.finalizar_gravacao("conexão perdida", false);
+                self.solta_controle();
             }
         }
 
         for ev in events {
             match ev {
-                Event::Error(e) => self.falha(format!("Erro na serial: {e}")),
+                //  O banner amigável já foi posto acima; aqui só fica o detalhe
+                //  no log (antes este `falha` sobrescrevia a mensagem melhor).
+                Event::Error(e) => self.loga(format!("Erro na serial: {e}")),
                 Event::Msg(Msg::Text(t)) => {
-                    if t.starts_with("firmware v") {
-                        if let Some(v) = t.strip_prefix("firmware v") {
-                            self.version = v.split_whitespace().next().unwrap_or("?").into();
+                    if let Some(rest) = t.strip_prefix("firmware v") {
+                        let mut campos = rest.split_whitespace();
+                        self.version = campos.next().unwrap_or("?").into();
+                        if let Some(boots) = campos
+                            .find_map(|w| w.strip_prefix("boots="))
+                            .and_then(|v| v.parse().ok())
+                        {
+                            self.registra_boots(boots);
                         }
                     }
                     if !t.starts_with("[JOYSTICKS]") {
@@ -510,24 +795,21 @@ impl App {
                 Event::Msg(Msg::Diag(d)) => {
                     self.version = d.version.clone();
                     self.limits = d.limits;
-                    if let Some(antes) = self.boots {
-                        if d.boots > antes && antes > 0 {
-                            self.reboot = Some(format!(
-                                "a placa reiniciou (boots {antes} → {}) — suspeite da alimentação",
-                                d.boots
-                            ));
-                        }
-                    }
-                    self.boots = Some(d.boots);
+                    self.registra_boots(d.boots);
                 }
                 Event::Msg(Msg::Status(s)) => {
+                    self.last_status = Some(now);
                     self.live = s.pose;
                     self.garra_travada = s.trava;
+                    if s.pc_mode {
+                        self.last_assume = None;
+                    }
+                    let em_transicao = self
+                        .last_assume
+                        .is_some_and(|t| now.saturating_duration_since(t) < Duration::from_millis(250));
                     // O firmware é dono da verdade sobre quem controla.
-                    if self.pc && !s.pc_mode {
-                        self.pc = false;
-                        self.play = None;
-                        self.reset_targets();
+                    if self.pc && !s.pc_mode && !em_transicao {
+                        self.solta_controle();
                         self.loga("joystick assumiu o controle");
                     }
                     if let Some((rec, t0)) = self.recording.as_mut() {
@@ -537,54 +819,93 @@ impl App {
             }
         }
 
-        if self.link.is_some() {
-            if now - self.last_diag >= Duration::from_secs(2) {
-                self.last_diag = now;
-                self.send(protocol::CMD_DIAG);
-            }
+        //  Em modo PC o firmware manda status a 20 Hz. Um segundo de silêncio
+        //  significa placa travada ou sem resposta; devolver o controle evita
+        //  continuar mandando #P para uma placa que não está ouvindo.
+        if self.pc
+            && self.link.is_some()
+            && self
+                .last_status
+                .is_some_and(|t| now.saturating_duration_since(t) > Duration::from_secs(1))
+        {
+            self.solta_controle();
+            self.loga("placa parou de responder — controle devolvido ao joystick");
         }
 
-        // Replay: a posição vem da gravação, o firmware interpola o resto.
-        if let Some((rec, t0)) = self.play.clone() {
-            let dur = rec.duration_ms() as f32;
-            let t = t0.elapsed().as_millis() as f32;
-            if dur > 0.0 && t > dur {
-                if self.looping {
-                    self.play = Some((rec.clone(), Instant::now()));
-                } else {
-                    self.play = None;
+        if self.link.is_some() && now.saturating_duration_since(self.last_diag) >= Duration::from_secs(2) {
+            self.last_diag = now;
+            self.send(protocol::CMD_DIAG);
+        }
+
+        // Replay: aguarda pré-posicionamento e avança conforme velocidade e pausa.
+        if let Some(mut play) = self.play.take() {
+            match play.step(
+                dt_ms,
+                self.vel_replay,
+                self.looping,
+                self.live,
+                self.limits,
+                self.garra_travada,
+            ) {
+                Some(p) => {
+                    self.pose = p;
+                    self.play = Some(play);
+                }
+                None => {
+                    if let Some(last) = play.rec.sample_at(play.rec.duration_ms() as f32) {
+                        self.pose = last;
+                    }
                     self.loga("fim do movimento");
                 }
-            } else if let Some(p) = rec.sample_at(t) {
-                self.pose = p;
             }
         }
 
-        // Toque num pad cancela o replay e o alvo manual: quem está com a mão manda.
-        if self.pad_l.stick != egui::Vec2::ZERO || self.pad_r.stick != egui::Vec2::ZERO {
+        // Toque ou tecla cancela o replay e o alvo manual: quem está com a mão
+        // (ou no teclado) manda.
+        let teclado_ativo = self.tecla_l != egui::Vec2::ZERO || self.tecla_r != egui::Vec2::ZERO;
+        if self.pad_l.stick != egui::Vec2::ZERO
+            || self.pad_r.stick != egui::Vec2::ZERO
+            || teclado_ativo
+        {
             if self.play.is_some() {
                 self.play = None;
-                self.loga("replay cancelado (toque no pad)");
+                self.loga("replay cancelado (pad ou teclado)");
             }
             if self.alvo_manual {
                 self.alvo_manual = false;
-                self.loga("alvo manual cancelado (toque no pad)");
+                self.loga("alvo manual cancelado (pad ou teclado)");
             }
         }
 
-        if self.link.is_some() && self.pc && now - self.last_send >= TICK {
+        if self.link.is_some() && now.saturating_duration_since(self.last_send) >= TICK {
             self.last_send = now;
-            let cmd = if self.play.is_some() || self.alvo_manual {
-                protocol::cmd_targets(self.pose)
+            if self.pc {
+                let cmd = if self.play.is_some() || self.alvo_manual {
+                    protocol::cmd_targets(self.pose)
+                } else {
+                    //  Toque tem prioridade; sem toque, o teclado sintetiza o
+                    //  mesmo stick e passa pela mesma rampa/limites do firmware.
+                    let stick_l = if self.pad_l.stick != egui::Vec2::ZERO {
+                        self.pad_l.stick
+                    } else {
+                        self.tecla_l
+                    };
+                    let stick_r = if self.pad_r.stick != egui::Vec2::ZERO {
+                        self.pad_r.stick
+                    } else {
+                        self.tecla_r
+                    };
+                    protocol::cmd_sticks([
+                        (stick_l.x * 100.0) as i32,
+                        (-stick_l.y * 100.0) as i32, // tela: y para baixo; stick: y para cima
+                        (stick_r.x * 100.0) as i32,
+                        (-stick_r.y * 100.0) as i32,
+                    ])
+                };
+                self.send(&cmd);
             } else {
-                protocol::cmd_sticks([
-                    (self.pad_l.stick.x * 100.0) as i32,
-                    (-self.pad_l.stick.y * 100.0) as i32, // tela: y para baixo; stick: y para cima
-                    (self.pad_r.stick.x * 100.0) as i32,
-                    (-self.pad_r.stick.y * 100.0) as i32,
-                ])
-            };
-            self.send(&cmd);
+                self.send(protocol::CMD_STATUS);
+            }
         }
     }
 
@@ -656,7 +977,7 @@ impl App {
     /// falhar ao clicar.
     fn conexao_bar(&mut self, ui: &mut egui::Ui) {
         if botao_quadrado(ui, Icone::Atualizar, ALVO)
-            .on_hover_text("atualizar portas seriais")
+            .on_hover_text("Atualiza a lista de portas seriais")
             .clicked()
         {
             self.refresh_ports();
@@ -666,7 +987,7 @@ impl App {
             .get(self.port_idx)
             .map(|p| texto_curto(p, 18))
             .unwrap_or_else(|| "nenhuma porta".into());
-        egui::ComboBox::from_id_salt("porta")
+        let combo = egui::ComboBox::from_id_salt("porta")
             .width(140.0)
             .selected_text(porta)
             .show_ui(ui, |ui| {
@@ -677,6 +998,9 @@ impl App {
                     ui.selectable_value(&mut self.port_idx, i, p);
                 }
             });
+        combo
+            .response
+            .on_hover_text("Porta serial da placa (seleção pelo mouse)");
 
         if self.link.is_none() {
             let tem_porta = self.ports.get(self.port_idx).is_some();
@@ -684,15 +1008,20 @@ impl App {
                 .add_enabled_ui(tem_porta, |ui| botao(ui, Icone::Conectar, "Conectar", 124.0))
                 .inner
                 .on_hover_text(if tem_porta {
-                    "abrir a porta serial selecionada"
+                    "Abre a porta serial selecionada (conexão pelo mouse)"
                 } else {
-                    "conecte a placa e atualize a lista de portas"
+                    "Conecte a placa e atualize a lista de portas"
                 });
             if resposta.clicked() {
                 self.connect();
             }
-        } else if botao(ui, Icone::Desconectar, "Desconectar", 138.0).clicked() {
-            self.disconnect();
+        } else {
+            let resposta = botao(ui, Icone::Desconectar, "Desconectar", 138.0).on_hover_text(
+                "Fecha a porta, salva a gravação em andamento e devolve ao joystick",
+            );
+            if resposta.clicked() {
+                self.disconnect();
+            }
         }
     }
 
@@ -702,18 +1031,21 @@ impl App {
     /// clique; se a placa discordar, o botão acompanha a placa no próximo status.
     fn controle_bar(&mut self, ui: &mut egui::Ui) {
         if self.pc {
-            if botao(ui, Icone::Joystick, "Devolver ao joystick", 200.0).clicked() {
-                self.send(protocol::CMD_RELEASE);
-                self.pc = false;
-                self.alvo_manual = false;
-                self.reset_targets();
+            let resposta = botao(ui, Icone::Joystick, "Devolver ao joystick", 200.0).on_hover_text(
+                "Congela no ângulo atual e devolve o controle ao joystick\nTecla: J",
+            );
+            if resposta.clicked() {
+                self.devolve_ao_joystick();
             }
         } else {
             let resposta = ui
                 .add_enabled_ui(self.link.is_some(), |ui| {
                     botao(ui, Icone::Monitor, "Assumir controle", 184.0)
                 })
-                .inner;
+                .inner
+                .on_hover_text(
+                    "Assume o controle do PC a partir do ângulo atual\nTecla: M",
+                );
             if resposta.clicked() {
                 self.assume();
             }
@@ -735,12 +1067,12 @@ impl App {
             })
             .inner;
         if resposta
-            .on_hover_text("mantém pressão contínua no objeto e bloqueia a abertura")
+            .on_hover_text(
+                "Mantém pressão contínua no objeto e bloqueia a abertura\nTecla: G",
+            )
             .clicked()
         {
-            let travar = !self.garra_travada;
-            self.send(protocol::cmd_lock(travar));
-            self.garra_travada = travar;
+            self.alterna_trava_garra();
         }
     }
 
@@ -761,7 +1093,8 @@ impl App {
         .on_hover_text(
             "Para o braço onde está e devolve o controle ao joystick.\n\
              Cancela o replay. Depois de ~0,6 s os servos desenergizam\n\
-             (economia), então o braço pode ceder com o próprio peso.",
+             (economia), então o braço pode ceder com o próprio peso.\n\
+             Tecla: Espaço",
         )
         .clicked()
         {
@@ -812,6 +1145,21 @@ impl App {
         self.pad_r = PadState::default();
     }
 
+    /// Solta a autoridade do PC e zera tudo que depende dela.
+    ///
+    /// É o teardown único de "assumir/devolver/STOP/quedas": antes cada caminho
+    /// repetia os campos e já divergia (`alvo_manual` ficava fantasma e o app
+    /// continuava mandando `#P` em vez de `#V` até o primeiro toque). A
+    /// gravação não é tocada aqui — quem decide encerrar é
+    /// [`Self::finalizar_gravacao`].
+    fn solta_controle(&mut self) {
+        self.pc = false;
+        self.last_assume = None;
+        self.play = None;
+        self.alvo_manual = false;
+        self.reset_targets();
+    }
+
     /// Cabeçalho e pads. `altura_viewport` é medida antes do ScrollArea, para
     /// que a rolagem não confunda o cálculo do modo baixo com espaço infinito.
     ///
@@ -822,6 +1170,8 @@ impl App {
     /// | esquerdo | Base | Cotovelo |
     /// | direito | Garra | Ombro |
     ///
+    /// O teclado sintetiza o mesmo stick: A/D e W/S no pad esquerdo, setas no
+    /// direito (Shift = fino). O botão **Atalhos** no cabeçalho abre a lista.
     /// `centralizar` (dock lateral) divide a sobra vertical; empilhado, o
     /// conteúdo flui de cima. Clicar num chip de ângulo devolve a junta em
     /// `Option<usize>` para abrir o modal.
@@ -830,7 +1180,7 @@ impl App {
         let geo = geometria_pads(disponivel);
 
         ui.horizontal(|ui| {
-            titulo_secao(ui, "Controle por toque");
+            titulo_secao(ui, "Controle");
             if geo.compacto && disponivel.x >= 720.0 {
                 ui.add_space(8.0);
                 ui.label(
@@ -840,10 +1190,20 @@ impl App {
                 );
             }
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                if icons::botao_texto(ui, "Atalhos", self.atalhos_abertos, 96.0)
+                    .on_hover_text("lista de atalhos do teclado (H)")
+                    .clicked()
+                {
+                    self.atalhos_abertos = !self.atalhos_abertos;
+                }
+                if self.pc && (self.tecla_l != egui::Vec2::ZERO || self.tecla_r != egui::Vec2::ZERO)
+                {
+                    pill(ui, "teclado ativo", COR_ACENTO, cor(0x1b, 0x2a, 0x3a));
+                }
                 if self.link.is_none() {
                     pill(ui, "conecte e assuma o controle", COR_MUTED, COR_FUNDO);
                 } else if self.pc {
-                    pill(ui, "pads habilitados", COR_OK, COR_OK_FUNDO);
+                    pill(ui, "pads + teclado", COR_OK, COR_OK_FUNDO);
                 } else {
                     pill(ui, "joystick no controle", COR_WARN, COR_WARN_FUNDO);
                 }
@@ -862,7 +1222,10 @@ impl App {
         }
 
         let conectado = self.link.is_some();
-        let habilitado = conectado && self.pc;
+        //  Com a lista de atalhos ou o modal de ângulo na frente, os pads
+        //  ficam desligados: a tecla/modal é a única entrada de movimento.
+        let habilitado =
+            conectado && self.pc && !self.atalhos_abertos && self.editando_junta.is_none();
         let live = self.live;
         let esquerdo = [
             ("Base", 0, conectado.then_some(live[0])),
@@ -894,6 +1257,7 @@ impl App {
                     geo.compacto,
                     habilitado,
                     esquerdo,
+                    "Arraste para mover.\nTeclado: A/D = Base, W/S = Cotovelo\nShift = movimento fino",
                 ) {
                     clicado = Some(j);
                 }
@@ -907,6 +1271,7 @@ impl App {
                     geo.compacto,
                     habilitado,
                     direito,
+                    "Arraste para mover.\nTeclado: ←/→ = Garra, ↑/↓ = Ombro\nShift = movimento fino",
                 ) {
                     clicado = Some(j);
                 }
@@ -925,6 +1290,7 @@ impl App {
                     geo.compacto,
                     habilitado,
                     esquerdo,
+                    "Arraste para mover.\nTeclado: A/D = Base, W/S = Cotovelo\nShift = movimento fino",
                 ) {
                     clicado = Some(j);
                 }
@@ -942,6 +1308,7 @@ impl App {
                     geo.compacto,
                     habilitado,
                     direito,
+                    "Arraste para mover.\nTeclado: ←/→ = Garra, ↑/↓ = Ombro\nShift = movimento fino",
                 ) {
                     clicado = Some(j);
                 }
@@ -977,30 +1344,31 @@ impl App {
     /// assume o controle do PC antes de iniciar. Excluir pede confirmação na
     /// própria linha e cancela o replay se o arquivo era o carregado.
     fn recordings_body(&mut self, ui: &mut egui::Ui, compacta: bool) {
+        //  O campo de nome só existe quando não está gravando; o foco é
+        //  recalculado a cada frame para o teclado saber quando não deve agir.
+        self.nome_em_foco = false;
         let gap_secao = if compacta { 12.0 } else { 20.0 };
         ui.add_space(if compacta { 2.0 } else { 6.0 });
         titulo_secao(ui, "Gravação");
         ui.add_space(6.0);
 
-        if let Some((rec, t0)) = &self.recording {
+        if let Some((rec, _)) = &self.recording {
+            //  Tempo capturado (última amostra), não tempo de parede: se a
+            //  placa parar de responder, o contador não continua crescendo.
+            let dur_s = rec.samples.last().map(|s| s.0 as f32 / 1000.0).unwrap_or(0.0);
             pill(
                 ui,
-                &format!("Gravando · {:.1}s · {} amostras", t0.elapsed().as_secs_f32(), rec.samples.len()),
+                &format!("Gravando · {dur_s:.1}s · {} amostras", rec.samples.len()),
                 COR_REC,
                 COR_ERRO_FUNDO,
             );
             ui.add_space(8.0);
-            if botao(ui, Icone::Stop, "Parar gravação e salvar", ui.available_width()).clicked() {
-                if let Some((mut rec, _)) = self.recording.take() {
-                    rec.name = self.rec_name.clone();
-                    match rec.save(&dir_movimentos()) {
-                        Ok(p) => {
-                            self.loga(format!("salvo em {}", p.display()));
-                            self.refresh_files();
-                        }
-                        Err(e) => self.falha(format!("Não foi possível salvar o movimento: {e}")),
-                    }
-                }
+            let resposta = botao(ui, Icone::Stop, "Parar gravação e salvar", ui.available_width())
+                .on_hover_text(
+                    "Encerra a gravação, corta as pausas das pontas e salva\nTecla: R",
+                );
+            if resposta.clicked() {
+                self.finalizar_gravacao("parada manual", true);
             }
         } else {
             ui.label(egui::RichText::new("Nome do movimento").small().color(COR_MUTED));
@@ -1013,12 +1381,13 @@ impl App {
                 .show(ui, |ui| {
                     ui.set_height(ALVO);
                     ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
-                        ui.add_sized(
+                        let resp = ui.add_sized(
                             [ui.available_width(), 24.0],
                             egui::TextEdit::singleline(&mut self.rec_name)
                                 .frame(false)
                                 .vertical_align(egui::Align::Center),
                         );
+                        self.nome_em_foco = resp.has_focus();
                     });
                 });
             ui.add_space(8.0);
@@ -1035,16 +1404,12 @@ impl App {
                 })
                 .inner
                 .on_hover_text(if self.link.is_some() {
-                    "captura a posição a 20 Hz, inclusive pelo joystick"
+                    "Captura a posição a 20 Hz, inclusive pelo joystick\nTecla: R (também para e salva)"
                 } else {
-                    "conecte a placa para gravar"
+                    "Conecte a placa para gravar"
                 });
             if resposta.clicked() {
-                self.recording = Some((
-                    Recording { name: self.rec_name.clone(), samples: Vec::new() },
-                    Instant::now(),
-                ));
-                self.loga("gravação iniciada");
+                self.inicia_gravacao();
             }
         }
 
@@ -1067,44 +1432,149 @@ impl App {
                 });
             });
             ui.add_space(6.0);
-            if icons::toggle(
+            let resposta = icons::toggle(
                 ui,
                 self.looping,
                 Icone::Repetir,
                 "Repetir continuamente",
                 ui.available_width(),
             )
-            .clicked()
-            {
+            .on_hover_text("Repete o replay continuamente\nTecla: L");
+            if resposta.clicked() {
                 self.looping = !self.looping;
             }
             ui.add_space(6.0);
-            let pode = self.link.is_some() && self.play.is_none();
-            let resposta = ui
-                .add_enabled_ui(pode, |ui| {
-                    botao(ui, Icone::Play, "Reproduzir movimento", ui.available_width())
-                })
-                .inner
-                .on_hover_text(if pode {
-                    "assume o controle do PC e inicia o replay"
+            ui.label(egui::RichText::new("Velocidade").small().color(COR_MUTED));
+            ui.add_space(4.0);
+            ui.horizontal(|ui| {
+                let larg_vel = (ui.available_width() - 20.0) / 3.0;
+                for v in VELOCIDADES_REPLAY {
+                    let ativo = (self.vel_replay - v).abs() < 0.01;
+                    let rotulo = format!("{v}×");
+                    let tecla = match v {
+                        0.5 => "1",
+                        1.0 => "2",
+                        _ => "3",
+                    };
+                    let resposta = icons::botao_texto(ui, &rotulo, ativo, larg_vel)
+                        .on_hover_text(format!("Velocidade {rotulo}\nTecla: {tecla}"));
+                    if resposta.clicked() {
+                        self.vel_replay = v;
+                    }
+                }
+            });
+            ui.add_space(6.0);
+            if self.play.is_none() {
+                let pode = self.link.is_some();
+                let resposta = ui
+                    .add_enabled_ui(pode, |ui| {
+                        botao(ui, Icone::Play, "Reproduzir movimento", ui.available_width())
+                    })
+                    .inner
+                    .on_hover_text(if pode {
+                        "Assume o controle do PC e inicia o replay\nTecla: P"
+                    } else {
+                        "Conecte a placa para iniciar o replay"
+                    });
+                if resposta.clicked() {
+                    self.inicia_replay(r.clone());
+                }
+            } else if let Some(play) = &self.play {
+                let dur_ms = play.rec.duration_ms() as f32;
+                let frac = if play.preparando || dur_ms <= 0.0 {
+                    0.0
                 } else {
-                    "conecte a placa e aguarde o replay atual terminar"
-                });
-            if resposta.clicked() {
-                self.assume();
-                self.alvo_manual = false;
-                self.play = Some((r.clone(), Instant::now()));
-                self.loga("reproduzindo…");
-            }
-            if self.play.is_some() {
-                ui.add_space(4.0);
+                    (play.pos_ms / dur_ms).clamp(0.0, 1.0)
+                };
+                let status_txt = if play.preparando {
+                    if play.pausado {
+                        "Pausado no pré-posicionamento".to_string()
+                    } else {
+                        "Indo para o início…".to_string()
+                    }
+                } else if play.pausado {
+                    format!(
+                        "Pausado · {:.1}s / {:.1}s",
+                        play.pos_ms / 1000.0,
+                        dur_ms / 1000.0
+                    )
+                } else {
+                    format!(
+                        "Reproduzindo ({}×) · {:.1}s / {:.1}s",
+                        self.vel_replay,
+                        play.pos_ms / 1000.0,
+                        dur_ms / 1000.0
+                    )
+                };
                 ui.label(
-                    egui::RichText::new("Reproduzindo — toque num pad ou use STOP para interromper")
+                    egui::RichText::new(status_txt)
                         .small()
-                        .color(COR_OK),
+                        .color(if play.pausado { COR_WARN } else { COR_OK }),
                 );
+                ui.add_space(4.0);
+                let (bar_rect, _) = ui.allocate_exact_size(
+                    egui::vec2(ui.available_width(), 10.0),
+                    egui::Sense::hover(),
+                );
+                let painter = ui.painter();
+                painter.rect_filled(bar_rect, 5.0, cor(0x0d, 0x11, 0x15));
+                painter.rect_stroke(
+                    bar_rect,
+                    5.0,
+                    egui::Stroke::new(1.0_f32, cor(0x2c, 0x36, 0x43)),
+                    egui::StrokeKind::Inside,
+                );
+                if frac > 0.0 {
+                    let larg_fill = (bar_rect.width() * frac).max(8.0).min(bar_rect.width());
+                    let fill_rect = egui::Rect::from_min_size(
+                        bar_rect.min,
+                        egui::vec2(larg_fill, bar_rect.height()),
+                    );
+                    let fill_cor = if play.pausado { COR_WARN } else { COR_ACENTO };
+                    painter.rect_filled(fill_rect, 5.0, fill_cor);
+                }
                 ui.add_space(6.0);
-                if botao(ui, Icone::Stop, "Parar replay", ui.available_width()).clicked() {
+
+                let pausado = play.pausado;
+                let mut toggle_pausa = false;
+                let mut parar = false;
+                ui.horizontal(|ui| {
+                    let larg = (ui.available_width() - 10.0) / 2.0;
+                    let (ico, rot) = if pausado {
+                        (Icone::Play, "Continuar")
+                    } else {
+                        (Icone::Pause, "Pausar")
+                    };
+                    let resposta = botao(ui, ico, rot, larg).on_hover_text(if pausado {
+                        "Continua o replay de onde parou\nTecla: P"
+                    } else {
+                        "Pausa o replay\nTecla: P"
+                    });
+                    if resposta.clicked() {
+                        toggle_pausa = true;
+                    }
+                    let resposta = botao(ui, Icone::Stop, "Parar", ui.available_width())
+                        .on_hover_text(
+                            "Para o replay e devolve o controle ao joystick\nTecla: Espaço",
+                        );
+                    if resposta.clicked() {
+                        parar = true;
+                    }
+                });
+                if toggle_pausa {
+                    let mut agora_pausado = None;
+                    if let Some(play) = self.play.as_mut() {
+                        play.pausado = !play.pausado;
+                        agora_pausado = Some(play.pausado);
+                    }
+                    if let Some(pausado) = agora_pausado {
+                        self.loga(if pausado {
+                            "replay pausado"
+                        } else {
+                            "replay retomado"
+                        });
+                    }
+                } else if parar {
                     self.stop();
                 }
             }
@@ -1162,8 +1632,9 @@ impl App {
                         match Recording::delete(&f) {
                             Ok(()) => {
                                 self.loga(format!("excluído {nome}"));
-                                if self.loaded.as_ref().is_some_and(|l| l.name == nome) {
+                                if self.loaded_path.as_ref() == Some(&f) {
                                     self.loaded = None;
+                                    self.loaded_path = None;
                                     self.play = None;
                                 }
                                 self.refresh_files();
@@ -1180,7 +1651,7 @@ impl App {
             }
 
             ui.horizontal(|ui| {
-                let selecionado = self.loaded.as_ref().is_some_and(|l| l.name == nome);
+                let selecionado = self.loaded_path.as_ref() == Some(&f);
                 let largura_nome = (ui.available_width() - ALVO - 10.0).max(60.0);
                 let nome_visivel = texto_curto(&nome, 30);
                 let resposta = icons::botao_texto(ui, &nome_visivel, selecionado, largura_nome);
@@ -1188,6 +1659,7 @@ impl App {
                     match Recording::load(&f) {
                         Ok(r) => {
                             self.loaded = Some(r);
+                            self.loaded_path = Some(f.clone());
                             self.loga(format!("carregado {nome}"));
                         }
                         Err(e) => self.falha(format!("Não foi possível ler {nome}: {e}")),
@@ -1213,10 +1685,11 @@ impl App {
         );
     }
 
-    /// Log recolhível com área de toque confortável.
+    /// Log recolhível: última linha fechada, painel completo aberto.
     ///
-    /// Recolhido mostra só a última linha (com o texto encurtado pelo espaço);
-    /// aberto vira um scroll de 110 pt que acompanha o fim.
+    /// Fechado, mostra a última linha colorida por [`cor_log`] e a contagem.
+    /// Aberto, tem contagem, **Copiar**/**Limpar**, moldura escura e um scroll
+    /// fixo de 160 pt que acompanha o fim; as linhas são selecionáveis.
     fn log_panel(&mut self, ui: &mut egui::Ui) {
         let icone = if self.log_aberta {
             Icone::SetaBaixo
@@ -1225,6 +1698,7 @@ impl App {
         };
         let (rect, resp) =
             ui.allocate_exact_size(egui::vec2(ui.available_width(), 36.0), egui::Sense::click());
+        let resp = resp.on_hover_text("Mostra/oculta o histórico de eventos");
         if resp.clicked() {
             self.log_aberta = !self.log_aberta;
         }
@@ -1247,27 +1721,222 @@ impl App {
             COR_MUTED,
         );
         if !self.log_aberta {
-            if let Some(ultima) = self.log.last() {
-                let limite = ((rect.width() - 90.0) / 7.5).max(16.0) as usize;
+            let ultima = self.log.last().map(|s| s.as_str());
+            let texto = ultima.unwrap_or("sem eventos");
+            let limite = ((rect.width() - 130.0) / 7.5).max(16.0) as usize;
+            p.text(
+                egui::pos2(rect.left() + 72.0, rect.center().y),
+                egui::Align2::LEFT_CENTER,
+                texto_curto(texto, limite),
+                egui::FontId::monospace(12.0),
+                ultima.map(cor_log).unwrap_or(COR_MUTED),
+            );
+            if !self.log.is_empty() {
                 p.text(
-                    egui::pos2(rect.left() + 72.0, rect.center().y),
-                    egui::Align2::LEFT_CENTER,
-                    texto_curto(ultima, limite),
-                    egui::FontId::monospace(12.0),
+                    egui::pos2(rect.right() - 12.0, rect.center().y),
+                    egui::Align2::RIGHT_CENTER,
+                    format!("{}", self.log.len()),
+                    egui::FontId::proportional(11.5),
                     COR_MUTED,
                 );
             }
         }
         if self.log_aberta {
-            ui.add_space(4.0);
-            egui::ScrollArea::vertical()
-                .stick_to_bottom(true)
-                .max_height(110.0)
-                .show(ui, |ui| {
-                    for l in &self.log {
-                        ui.monospace(egui::RichText::new(l).small());
+            ui.add_space(6.0);
+            ui.horizontal(|ui| {
+                ui.label(
+                    egui::RichText::new(format!("{} eventos", self.log.len()))
+                        .small()
+                        .color(COR_MUTED),
+                );
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    let limpar = ui
+                        .add_enabled_ui(!self.log.is_empty(), |ui| {
+                            ui.add_sized(
+                                [64.0, 26.0],
+                                egui::Button::new(egui::RichText::new("Limpar").small()),
+                            )
+                        })
+                        .inner
+                        .on_hover_text("Apaga o histórico");
+                    if limpar.clicked() {
+                        self.log.clear();
+                    }
+                    let copiar = ui
+                        .add_enabled_ui(!self.log.is_empty(), |ui| {
+                            ui.add_sized(
+                                [64.0, 26.0],
+                                egui::Button::new(egui::RichText::new("Copiar").small()),
+                            )
+                        })
+                        .inner
+                        .on_hover_text("Copia todas as linhas para a área de transferência");
+                    if copiar.clicked() {
+                        ui.ctx().copy_text(self.log.join("\n"));
                     }
                 });
+            });
+            ui.add_space(6.0);
+            egui::Frame::NONE
+                .fill(cor(0x0d, 0x11, 0x15))
+                .stroke(egui::Stroke::new(1.0_f32, cor(0x2c, 0x36, 0x43)))
+                .corner_radius(8)
+                .inner_margin(egui::Margin::symmetric(10, 8))
+                .show(ui, |ui| {
+                    egui::ScrollArea::vertical()
+                        .stick_to_bottom(true)
+                        .auto_shrink([false, false])
+                        .max_height(160.0)
+                        .show(ui, |ui| {
+                            for l in &self.log {
+                                ui.add(
+                                    egui::Label::new(
+                                        egui::RichText::new(l)
+                                            .monospace()
+                                            .size(12.5)
+                                            .color(cor_log(l)),
+                                    )
+                                    .selectable(true),
+                                );
+                            }
+                        });
+                });
+        }
+    }
+
+    /// Popup com a lista de atalhos; abre pelo botão "Atalhos" ou H/F1.
+    ///
+    /// O tamanho é fixo por frame, derivado da janela do app: a lista usa duas
+    /// colunas e o miolo rola em tela baixa, com o botão Fechar fixo. A altura
+    /// do scroll nunca vem de `available_height`, senão a janela cresce junto.
+    /// Fecha no X, no botão, em Esc ou em H/F1.
+    fn atalhos_modal(&mut self, ctx: &egui::Context) {
+        if !self.atalhos_abertos {
+            return;
+        }
+        let tela = ctx.content_rect();
+        let largura = (tela.width() - 80.0).clamp(560.0, 760.0);
+        let altura = (tela.height() - 80.0).clamp(300.0, 560.0);
+        //  Altura do scroll derivada do tamanho fixo do popup, nunca de
+        //  `ui.available_height()`: o egui recalcula a janela a partir do
+        //  conteúdo e o scroll cresceria junto (popup "vivo").
+        let altura_scroll = (altura - 150.0).max(120.0);
+        let mut aberto = true;
+        let mut fechar = false;
+        egui::Window::new("Atalhos do teclado")
+            .collapsible(false)
+            .resizable(false)
+            .anchor(egui::Align2::CENTER_CENTER, egui::Vec2::ZERO)
+            .fixed_size(egui::vec2(largura, altura))
+            .open(&mut aberto)
+            .show(ctx, |ui| {
+                ui.label(
+                    egui::RichText::new(
+                        "Movimento exige o PC no controle (M). Com um campo de texto \
+                         focado, as teclas não controlam o braço.",
+                    )
+                    .small()
+                    .color(COR_MUTED),
+                );
+                ui.add_space(8.0);
+                egui::ScrollArea::vertical()
+                    .auto_shrink([false, false])
+                    .max_height(altura_scroll)
+                    .show(ui, |ui| {
+                        ui.columns(2, |cols| {
+                            let esq = &mut cols[0];
+                            titulo_secao(esq, "Movimento");
+                            egui::Grid::new("atalhos_movimento")
+                                .num_columns(2)
+                                .spacing([18.0, 6.0])
+                                .show(esq, |ui| {
+                                    linha_atalho(ui, "A / D", "Base: girar à esquerda / direita");
+                                    linha_atalho(ui, "W / S", "Cotovelo: subir / descer");
+                                    linha_atalho(ui, "← / →", "Garra: fechar / abrir");
+                                    linha_atalho(ui, "↑ / ↓", "Ombro: subir / descer");
+                                    linha_atalho(
+                                        ui,
+                                        "Shift",
+                                        "Movimento fino (metade da velocidade)",
+                                    );
+                                });
+                            esq.add_space(12.0);
+                            titulo_secao(esq, "Controle");
+                            egui::Grid::new("atalhos_controle")
+                                .num_columns(2)
+                                .spacing([18.0, 6.0])
+                                .show(esq, |ui| {
+                                    linha_atalho(ui, "M", "Assumir o controle (PC)");
+                                    linha_atalho(ui, "J", "Devolver ao joystick");
+                                    linha_atalho(
+                                        ui,
+                                        "Espaço",
+                                        "STOP: parar e devolver ao joystick",
+                                    );
+                                    linha_atalho(ui, "G", "Travar / liberar a garra");
+                                });
+
+                            let dir = &mut cols[1];
+                            titulo_secao(dir, "Gravação e replay");
+                            egui::Grid::new("atalhos_gravacao")
+                                .num_columns(2)
+                                .spacing([18.0, 6.0])
+                                .show(dir, |ui| {
+                                    linha_atalho(
+                                        ui,
+                                        "R",
+                                        "Iniciar / parar e salvar a gravação",
+                                    );
+                                    linha_atalho(
+                                        ui,
+                                        "P",
+                                        "Reproduzir / pausar / continuar",
+                                    );
+                                    linha_atalho(ui, "1 / 2 / 3", "Velocidade 0,5× / 1× / 2×");
+                                    linha_atalho(ui, "L", "Repetir o movimento (loop)");
+                                });
+                            dir.add_space(12.0);
+                            titulo_secao(dir, "Interface");
+                            egui::Grid::new("atalhos_interface")
+                                .num_columns(2)
+                                .spacing([18.0, 6.0])
+                                .show(dir, |ui| {
+                                    linha_atalho(ui, "H / F1", "Abrir / fechar esta lista");
+                                    linha_atalho(
+                                        ui,
+                                        "Esc",
+                                        "Fechar a lista ou o modal de ângulo",
+                                    );
+                                    linha_atalho(
+                                        ui,
+                                        "Enter",
+                                        "Confirmar o ângulo no modal",
+                                    );
+                                });
+                            dir.add_space(12.0);
+                            dir.label(
+                                egui::RichText::new(
+                                    "Conectar, escolher a porta, carregar/excluir movimentos \
+                                     e digitar o nome continuam no mouse/toque.",
+                                )
+                                .small()
+                                .color(COR_MUTED),
+                            );
+                        });
+                    });
+                ui.add_space(10.0);
+                if icons::botao_texto(ui, "Fechar", false, ui.available_width()).clicked() {
+                    fechar = true;
+                }
+            });
+        if ctx.input(|i| i.key_pressed(egui::Key::Escape)) {
+            fechar = true;
+        }
+        if !aberto {
+            fechar = true;
+        }
+        if fechar {
+            self.atalhos_abertos = false;
         }
     }
 
@@ -1357,13 +2026,22 @@ impl App {
 
                 ui.horizontal(|ui| {
                     let larg = (ui.available_width() - 10.0) / 2.0;
-                    if botao(ui, Icone::Stop, "Cancelar", larg).clicked() {
+                    let resposta = botao(ui, Icone::Stop, "Cancelar", larg)
+                        .on_hover_text("Fecha o modal sem mover\nTecla: Esc");
+                    if resposta.clicked() {
                         fechar = true;
                     }
                     let pode = avaliacao.is_ok();
                     let resp = ui
-                        .add_enabled_ui(pode, |ui| botao(ui, Icone::Play, "Mover", ui.available_width()))
-                        .inner;
+                        .add_enabled_ui(pode, |ui| {
+                            botao(ui, Icone::Play, "Mover", ui.available_width())
+                        })
+                        .inner
+                        .on_hover_text(if pode {
+                            "Move a junta para o ângulo digitado\nTecla: Enter"
+                        } else {
+                            "Corrija o valor para mover"
+                        });
                     if resp.clicked() {
                         confirmar = true;
                     }
@@ -1375,13 +2053,12 @@ impl App {
         }
         if confirmar {
             if let Ok(alvo) = avaliacao {
+                if !self.pc {
+                    self.assume();
+                }
                 self.pose = self.live;
                 self.pose[junta] = alvo as f32;
                 self.play = None;
-                if !self.pc {
-                    self.send(protocol::CMD_ASSUME);
-                    self.pc = true;
-                }
                 self.alvo_manual = true;
                 self.loga(format!("alvo manual: {nome} → {alvo}°"));
                 fechar = true;
@@ -1439,6 +2116,9 @@ impl eframe::App for App {
     /// modo baixo funcionar também com a janela redimensionada. O repaint a
     /// cada 20 ms mantém replay e pads suaves mesmo sem evento de entrada.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        //  Teclado antes do tick: o send do tick já leva o stick sintetizado e
+        //  as ações de controle (M/J/STOP/gravar) entram no mesmo frame.
+        self.processa_teclado(ctx);
         self.tick(Instant::now());
         let compacta = ctx.available_rect().height() < 560.0;
 
@@ -1474,6 +2154,7 @@ impl eframe::App for App {
         });
 
         self.editor_angulo_modal(ctx);
+        self.atalhos_modal(ctx);
         ctx.request_repaint_after(Duration::from_millis(20));
     }
 }
@@ -1583,6 +2264,42 @@ fn pill(ui: &mut egui::Ui, texto: &str, cor_texto: egui::Color32, fundo: egui::C
         });
 }
 
+/// Cor de uma linha do log: erros/STOP em vermelho, eventos bons em verde.
+fn cor_log(linha: &str) -> egui::Color32 {
+    let l = linha.to_lowercase();
+    let erro = l.contains("erro")
+        || l.contains("falha")
+        || l.contains("não foi possível")
+        || l.contains("perdida")
+        || l.contains("reiniciou")
+        || l.starts_with("stop");
+    if erro {
+        COR_ERRO
+    } else if l.contains("salvo")
+        || l.contains("conectado")
+        || l.contains("carregado")
+        || l.contains("iniciada")
+        || l.contains("reproduzindo")
+    {
+        COR_OK
+    } else {
+        cor(0xb8, 0xc4, 0xd0)
+    }
+}
+
+/// Uma linha da tabela de atalhos: tecla em monoespaçado + descrição.
+fn linha_atalho(ui: &mut egui::Ui, teclas: &str, descricao: &str) {
+    ui.label(
+        egui::RichText::new(teclas)
+            .monospace()
+            .size(14.5)
+            .strong()
+            .color(COR_ACENTO),
+    );
+    ui.label(egui::RichText::new(descricao).size(14.5));
+    ui.end_row();
+}
+
 /// Leitura clicável de uma junta, com largura fixa para alinhar com o pad.
 ///
 /// Mostra `—` quando desconectado. O anel de hover e o tooltip existem porque o
@@ -1672,7 +2389,8 @@ fn pos_pad(
 /// O vetor do stick é normalizado pelo raio e preso ao círculo unitário, então
 /// arrastar além da borda satura em 100% em vez de extrapolar. `habilitado`
 /// falso ignora a entrada e centraliza. O layout é sempre círculo + coluna de
-/// leituras (`lado + 12 + 116`); `compacto` só aperta os espaçamentos.
+/// leituras (`lado + 12 + 116`); `compacto` só aperta os espaçamentos. `dica`
+/// vira o tooltip do título (teclas equivalentes do teclado).
 ///
 /// Retorna o índice da junta caso o usuário toque em um dos cards de ângulo.
 #[allow(clippy::too_many_arguments)]
@@ -1685,6 +2403,7 @@ fn pad(
     compacto: bool,
     habilitado: bool,
     leituras: [(&str, usize, Option<f32>); 2],
+    dica: &str,
 ) -> Option<usize> {
     const LARG_LEITURA: f32 = 116.0;
     const ESPACO: f32 = 12.0;
@@ -1695,7 +2414,8 @@ fn pad(
         ui.vertical(|ui| {
             ui.spacing_mut().item_spacing = egui::Vec2::ZERO;
             ui.set_width(lado + ESPACO + LARG_LEITURA);
-            ui.label(egui::RichText::new(titulo).small().strong().color(COR_MUTED));
+            ui.label(egui::RichText::new(titulo).small().strong().color(COR_MUTED))
+                .on_hover_text(dica);
             ui.add_space(if compacto { 2.0 } else { 4.0 });
             ui.label(
                 egui::RichText::new(format!("X · {}   ·   Y · {}", leituras[0].0, leituras[1].0))
@@ -1865,6 +2585,15 @@ mod ui_layout_tests {
     }
 
     #[test]
+    fn teclas_digitais_respeitam_sinal_e_modo_fino() {
+        assert_eq!(stick_digital(true, false, false), -1.0);
+        assert_eq!(stick_digital(false, true, false), 1.0);
+        assert_eq!(stick_digital(true, true, false), 0.0);
+        assert_eq!(stick_digital(false, false, false), 0.0);
+        assert_eq!(stick_digital(false, true, true), 0.5);
+    }
+
+    #[test]
     fn avaliar_alvo_valida_limites_conexao_e_trava_da_garra() {
         let lim = [[5.0, 175.0], [10.0, 170.0], [0.0, 180.0], [0.0, 90.0]];
         let live = [90.0, 90.0, 90.0, 30.0];
@@ -1879,5 +2608,33 @@ mod ui_layout_tests {
         // Garra travada: só pode apertar (<= live[3]), nunca abrir (> live[3])
         assert_eq!(avaliar_alvo(3, "20", lim, live, true, true), Ok(20));
         assert!(avaliar_alvo(3, "45", lim, live, true, true).is_err());
+    }
+
+    #[test]
+    fn reinicio_derruba_autoridade_e_zera_alvos() {
+        let mut app = App::new();
+        app.pc = true;
+        app.alvo_manual = true;
+        app.boots = Some(3);
+        app.pad_l.stick = egui::vec2(1.0, 0.0);
+        app.play = Some(PlayState::new(Recording {
+            name: "t".into(),
+            samples: vec![(0, [90.0; 4])],
+        }));
+
+        app.registra_boots(4);
+
+        assert!(!app.pc);
+        assert!(!app.alvo_manual);
+        assert!(app.play.is_none());
+        assert_eq!(app.pad_l.stick, egui::Vec2::ZERO);
+        assert_eq!(app.boots, Some(4));
+        assert!(app.reboot.is_some());
+
+        // Reset a frio: o contador volta para 1 e ainda é reinício.
+        app.pc = true;
+        app.registra_boots(1);
+        assert!(!app.pc);
+        assert_eq!(app.boots, Some(1));
     }
 }

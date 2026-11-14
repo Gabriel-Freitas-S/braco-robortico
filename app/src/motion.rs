@@ -23,6 +23,9 @@
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
+/// Fatores de velocidade disponíveis para reprodução na interface.
+pub const VELOCIDADES_REPLAY: [f32; 3] = [0.5, 1.0, 2.0];
+
 /// Um movimento gravado: nome legível + amostras temporizadas.
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Recording {
@@ -67,13 +70,21 @@ impl Recording {
         Some(out)
     }
 
+    /// Caminho do arquivo para `name` em `dir` (nome sanitizado + `.json`).
+    ///
+    /// É a mesma regra usada por [`Recording::save`]; exposta para a UI poder
+    /// detectar colisão antes de gravar em cima de outro movimento.
+    pub fn path_for(dir: &Path, name: &str) -> PathBuf {
+        dir.join(format!("{}.json", sanitize(name)))
+    }
+
     /// Grava no diretório `dir`, criando-o se preciso.
     ///
     /// O nome do arquivo é o [`sanitize`] do `name` + `.json`; gravar de novo com
     /// o mesmo nome sobrescreve. Devolve o caminho final para o log.
     pub fn save(&self, dir: &Path) -> Result<PathBuf, String> {
         std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
-        let path = dir.join(format!("{}.json", sanitize(&self.name)));
+        let path = Self::path_for(dir, &self.name);
         let json = serde_json::to_string_pretty(self).map_err(|e| e.to_string())?;
         std::fs::write(&path, json).map_err(|e| e.to_string())?;
         Ok(path)
@@ -104,6 +115,137 @@ impl Recording {
             .unwrap_or_default();
         out.sort();
         out
+    }
+
+    /// Remove pausas paradas no início e no fim da gravação e realinha `t = 0`.
+    ///
+    /// Mantém uma amostra estacionária imediatamente antes do primeiro movimento e
+    /// uma imediatamente após o último movimento (limiar de `0.5°`). Se nenhuma
+    /// junta tiver se movido, reduz para uma única pose em `t = 0`.
+    pub fn trim_idle(&mut self) {
+        const EPS: f32 = 0.5;
+        if self.samples.len() < 2 {
+            if let Some(first) = self.samples.first_mut() {
+                first.0 = 0;
+            }
+            return;
+        }
+        let pose_inicial = self.samples[0].1;
+        let Some(first_move) = self.samples.iter().position(|(_, p)| pose_diff(*p, pose_inicial) > EPS)
+        else {
+            self.samples.truncate(1);
+            self.samples[0].0 = 0;
+            return;
+        };
+        let start_idx = first_move.saturating_sub(1);
+        let pose_final = self.samples[self.samples.len() - 1].1;
+        let last_change = self
+            .samples
+            .iter()
+            .rposition(|(_, p)| pose_diff(*p, pose_final) > EPS)
+            .unwrap_or(start_idx);
+        let end_idx = (last_change + 1).min(self.samples.len() - 1).max(start_idx);
+        self.samples = self.samples[start_idx..=end_idx].to_vec();
+        let t0 = self.samples[0].0;
+        for (t, _) in &mut self.samples {
+            *t = t.saturating_sub(t0);
+        }
+    }
+}
+
+/// Maior diferença absoluta (em graus) entre duas poses de 4 juntas.
+fn pose_diff(a: [f32; 4], b: [f32; 4]) -> f32 {
+    (0..4).map(|i| (a[i] - b[i]).abs()).fold(0.0_f32, f32::max)
+}
+
+/// Estado de execução de um replay com pré-posicionamento, pausa e velocidade.
+#[derive(Clone, Debug)]
+pub struct PlayState {
+    pub rec: Recording,
+    /// Posição atual na linha do tempo da gravação, em ms (`0..=duration_ms`).
+    pub pos_ms: f32,
+    /// `true` enquanto o braço ainda está viajando até a pose inicial (`samples[0]`).
+    pub preparando: bool,
+    /// Tempo acumulado (ms) aguardando o pré-posicionamento (timeout de segurança).
+    pub espera_ms: f32,
+    /// `true` quando pausado pelo usuário.
+    pub pausado: bool,
+}
+
+impl PlayState {
+    /// Inicia um replay em `0 ms`, aguardando o braço alcançar a pose inicial.
+    pub fn new(rec: Recording) -> Self {
+        Self {
+            rec,
+            pos_ms: 0.0,
+            preparando: true,
+            espera_ms: 0.0,
+            pausado: false,
+        }
+    }
+
+    /// Verifica se todas as juntas estão a até `2.5°` do alvo efetivo.
+    ///
+    /// Respeita os limites mecânicos e a trava da garra (que impede abertura
+    /// além de `live[3]`), para que o pré-posicionamento não trave esperando um
+    /// movimento bloqueado pelo firmware.
+    pub fn chegou(live: [f32; 4], alvo: [f32; 4], limits: [[f32; 2]; 4], garra_travada: bool) -> bool {
+        for i in 0..4 {
+            let mut esp = alvo[i].clamp(limits[i][0], limits[i][1]);
+            if i == 3 && garra_travada {
+                esp = esp.min(live[3]);
+            }
+            if (live[i] - esp).abs() > 2.5 {
+                return false;
+            }
+        }
+        true
+    }
+
+    /// Avança o replay por `dt_ms` no fator `vel` e devolve o próximo alvo `#P`.
+    ///
+    /// Devolve `None` quando o movimento termina sem `looping` (ou se a gravação
+    /// estiver vazia). Durante o pré-posicionamento, segura `pos_ms = 0` até o
+    /// braço alcançar `samples[0]` ou atingir o timeout de `4500 ms`.
+    pub fn step(
+        &mut self,
+        dt_ms: f32,
+        vel: f32,
+        looping: bool,
+        live: [f32; 4],
+        limits: [[f32; 2]; 4],
+        garra_travada: bool,
+    ) -> Option<[f32; 4]> {
+        let p0 = self.rec.sample_at(0.0)?;
+        if self.pausado {
+            return if self.preparando {
+                Some(live)
+            } else {
+                self.rec.sample_at(self.pos_ms)
+            };
+        }
+        if self.preparando {
+            self.espera_ms += dt_ms;
+            if Self::chegou(live, p0, limits, garra_travada) || self.espera_ms >= 4500.0 {
+                self.preparando = false;
+                self.espera_ms = 0.0;
+            }
+            return Some(p0);
+        }
+
+        self.pos_ms += dt_ms * vel;
+        let dur = self.rec.duration_ms() as f32;
+        let pose = self.rec.sample_at(self.pos_ms)?;
+        if self.pos_ms >= dur {
+            if looping {
+                self.pos_ms = 0.0;
+                self.preparando = true;
+                self.espera_ms = 0.0;
+                return Some(pose);
+            }
+            return None;
+        }
+        Some(pose)
     }
 }
 
@@ -157,5 +299,95 @@ mod tests {
         assert_eq!(lido.samples.len(), 2);
         assert_eq!(lido.name, "t");
         let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn caminho_usa_nome_sanitizado() {
+        let path = Recording::path_for(Path::new("/mov"), "pega peça");
+        assert_eq!(path.file_name().unwrap(), "pega_peça.json");
+    }
+
+    #[test]
+    fn corta_silencio_nas_pontas() {
+        let mut r = Recording {
+            name: "pausas".into(),
+            samples: vec![
+                (0, [90.0, 60.0, 45.0, 10.0]),
+                (250, [90.0, 60.0, 45.0, 10.0]),
+                (500, [90.0, 60.0, 45.0, 10.0]),
+                (1000, [100.0, 60.0, 45.0, 10.0]),
+                (1500, [110.0, 60.0, 45.0, 10.0]),
+                (1750, [110.0, 60.0, 45.0, 10.0]),
+                (2000, [110.0, 60.0, 45.0, 10.0]),
+            ],
+        };
+        r.trim_idle();
+        assert_eq!(r.samples.first().unwrap().0, 0);
+        assert_eq!(r.duration_ms(), 1000);
+        assert_eq!(r.samples.len(), 3);
+        assert_eq!(r.samples[0].1[0], 90.0);
+        assert_eq!(r.samples[2].1[0], 110.0);
+
+        let mut estatica = Recording {
+            name: "parada".into(),
+            samples: vec![
+                (100, [90.0, 60.0, 45.0, 10.0]),
+                (500, [90.2, 60.0, 45.0, 10.0]),
+            ],
+        };
+        estatica.trim_idle();
+        assert_eq!(estatica.samples.len(), 1);
+        assert_eq!(estatica.samples[0].0, 0);
+    }
+
+    #[test]
+    fn replay_pre_posiciona_pausa_e_escala_velocidade() {
+        let lim = [[0.0, 180.0], [0.0, 180.0], [0.0, 180.0], [0.0, 90.0]];
+        let r = Recording {
+            name: "t".into(),
+            samples: vec![
+                (0, [90.0, 60.0, 45.0, 10.0]),
+                (1000, [110.0, 60.0, 45.0, 10.0]),
+            ],
+        };
+        let mut play = PlayState::new(r.clone());
+
+        // Braço longe da pose inicial: permanece preparando em pos_ms = 0
+        let longe = [20.0, 60.0, 45.0, 10.0];
+        let p = play.step(50.0, 1.0, false, longe, lim, false).unwrap();
+        assert_eq!(p[0], 90.0);
+        assert!(play.preparando);
+        assert_eq!(play.pos_ms, 0.0);
+
+        // Braço chega perto de p0: libera o cronômetro
+        let perto = [89.0, 60.0, 45.0, 10.0];
+        let p = play.step(50.0, 1.0, false, perto, lim, false).unwrap();
+        assert_eq!(p[0], 90.0);
+        assert!(!play.preparando);
+        assert_eq!(play.pos_ms, 0.0);
+
+        // Escala de velocidade 2x: dt=100ms avança 200ms
+        let p = play.step(100.0, 2.0, false, perto, lim, false).unwrap();
+        assert!((play.pos_ms - 200.0).abs() < 1e-4);
+        assert!((p[0] - 94.0).abs() < 1e-4);
+
+        // Pausado: pos_ms não avança
+        play.pausado = true;
+        let p_pausa = play.step(100.0, 2.0, false, perto, lim, false).unwrap();
+        assert!((play.pos_ms - 200.0).abs() < 1e-4);
+        assert!((p_pausa[0] - 94.0).abs() < 1e-4);
+        play.pausado = false;
+
+        // Com looping = true ao passar da duração: reinicia pos_ms e volta a preparar
+        let mut play_loop = PlayState { pos_ms: 950.0, preparando: false, ..PlayState::new(r) };
+        let p_fim = play_loop.step(100.0, 1.0, true, perto, lim, false).unwrap();
+        assert_eq!(p_fim[0], 110.0);
+        assert_eq!(play_loop.pos_ms, 0.0);
+        assert!(play_loop.preparando);
+
+        // Sem looping ao passar da duração: retorna None
+        play_loop.preparando = false;
+        play_loop.pos_ms = 950.0;
+        assert!(play_loop.step(100.0, 1.0, false, perto, lim, false).is_none());
     }
 }

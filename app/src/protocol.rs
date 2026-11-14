@@ -15,13 +15,22 @@
 //!
 //! | Item | Bytes | Efeito |
 //! |---|---|---|
-//! | [`CMD_ASSUME`] | `#M\n` | adota o controle do PC |
-//! | [`CMD_RELEASE`] | `#J\n` | devolve o controle ao joystick |
-//! | [`CMD_STOP`] | `#H\n` | segura as juntas onde estão |
+//! | [`CMD_ASSUME`] | `#M\n` | adota o controle e congela no ângulo atual |
+//! | [`CMD_RELEASE`] | `#J\n` | devolve ao joystick e congela no ângulo atual |
+//! | [`CMD_STOP`] | `#H\n` | STOP: cancela o home e segura as juntas onde estão |
+//! | [`CMD_STATUS`] | `#S\n` | pede o status atual |
 //! | [`CMD_DIAG`] | `#B\n` | pede o diagnóstico |
 //! | [`cmd_lock`] | `#L1\n` / `#L0\n` | trava (só aperta) / libera a garra |
 //! | [`cmd_targets`] | `#P...` | alvos absolutos por junta |
 //! | [`cmd_sticks`] | `#V...` | sticks virtuais |
+//!
+//! # Autoridade
+//!
+//! O firmware é a fonte da verdade (campo `pc_mode` do [`Status`]). `#M`
+//! assume e congela no ângulo atual; `#P`/`#V` também cancelam um retorno à
+//! Posição 0 em andamento. `#J` devolve ao joystick congelando e `#H` é o STOP.
+//! O app abandona replay/alvo manual e solta o PC quando o firmware reporta
+//! joystick, o link cai ou a placa reinicia.
 //!
 //! # Mensagens (placa → PC)
 //!
@@ -37,6 +46,7 @@
 pub const CMD_ASSUME: &str = "#M\n";
 pub const CMD_RELEASE: &str = "#J\n";
 pub const CMD_STOP: &str = "#H\n";
+pub const CMD_STATUS: &str = "#S\n";
 
 /// Trava de pressão da garra: com ela ativa a garra só aperta, nunca solta.
 ///

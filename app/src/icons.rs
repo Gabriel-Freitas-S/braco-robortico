@@ -18,6 +18,7 @@ use egui::{Pos2, Response, Sense, Stroke, Ui, Vec2};
 #[derive(Clone, Copy)]
 pub enum Icone {
     Play,
+    Pause,
     Stop,
     Gravar,
     Travar,
@@ -38,6 +39,7 @@ impl Icone {
     fn rotulo(self) -> &'static str {
         match self {
             Self::Play => "reproduzir",
+            Self::Pause => "pausar",
             Self::Stop => "parar",
             Self::Gravar => "gravar",
             Self::Travar => "travar garra",
@@ -152,7 +154,7 @@ pub fn toggle(ui: &mut Ui, ativo: bool, icone: Icone, texto: &str, largura: f32)
 pub fn botao_texto(ui: &mut Ui, texto: &str, selecionado: bool, largura: f32) -> Response {
     let (rect, resp) = ui.allocate_exact_size(Vec2::new(largura, crate::ALVO), Sense::click());
     resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, ui.is_enabled(), texto));
-    let vis = ui.style().interact(&resp).clone();
+    let vis = *ui.style().interact(&resp);
     let fundo = if selecionado {
         ui.style().visuals.selection.bg_fill
     } else {
@@ -268,6 +270,18 @@ pub fn desenha(p: &egui::Painter, c: Pos2, r: f32, icone: Icone, cor: egui::Colo
                 cor,
                 Stroke::NONE,
             ));
+        }
+        Icone::Pause => {
+            let larg = r * 0.48;
+            let alt = r * 1.7;
+            let dx = r * 0.46;
+            for sinal in [-1.0_f32, 1.0_f32] {
+                let barra = egui::Rect::from_center_size(
+                    Pos2::new(c.x + sinal * dx, c.y),
+                    Vec2::new(larg, alt),
+                );
+                p.rect_filled(barra, 1.5, cor);
+            }
         }
         Icone::Stop => {
             let q = egui::Rect::from_center_size(c, Vec2::splat(r * 1.7));

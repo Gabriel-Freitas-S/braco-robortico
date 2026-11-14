@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["sanitize"],"struct":["Recording"]};
+window.SIDEBAR_ITEMS = {"constant":["VELOCIDADES_REPLAY"],"fn":["pose_diff","sanitize"],"struct":["PlayState","Recording"]};
