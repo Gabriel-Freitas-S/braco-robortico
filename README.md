@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="docs/assets/site/braco-garra.png" alt="Braço robótico 4-DOF montado, com a garra estendida e o shield de joysticks ao lado" width="420">
+  <img src="docs/assets/site/braco-garra.webp" alt="Braço robótico 4-DOF montado, com a garra estendida e o shield de joysticks ao lado" width="420">
 </div>
 
 <h1 align="center">Braço Robótico 4-DOF</h1>
@@ -8,12 +8,31 @@
 Peças em PLA na Bambu Lab A1, firmware Arduino e controle híbrido.</p>
 
 <p align="center">
+  <img alt="firmware 1.3.4" src="https://img.shields.io/badge/firmware-1.3.4-7fb2e5?style=flat-square">
+  <img alt="app 0.1.0" src="https://img.shields.io/badge/app-0.1.0-7fb2e5?style=flat-square">
+  <img alt="manual Rev 2.3" src="https://img.shields.io/badge/manual-Rev%202.3-7fb2e5?style=flat-square">
+  <img alt="código MIT" src="https://img.shields.io/badge/c%C3%B3digo-MIT-8fd6a2?style=flat-square">
+  <img alt="modelos CC BY 4.0" src="https://img.shields.io/badge/modelos-CC%20BY%204.0-d9c376?style=flat-square">
+</p>
+
+<p align="center">
   <a href="https://gabriel-freitas-s.github.io/braco-robortico/">Página do projeto</a> ·
   <a href="https://gabriel-freitas-s.github.io/braco-robortico/manual_braco_robotico.html">Manual</a> ·
   <a href="https://gabriel-freitas-s.github.io/braco-robortico/guia_montagem.html">Guia de montagem</a> ·
   <a href="https://gabriel-freitas-s.github.io/braco-robortico/hardware.html">Hardware</a> ·
   <a href="https://gabriel-freitas-s.github.io/braco-robortico/software.html">Software</a> ·
   <a href="impressao/pratos/fatiados/">Pratos fatiados</a>
+</p>
+
+<p align="center">
+  <a href="#o-que-é">O que é</a> ·
+  <a href="#estado-atual-nov2026">Estado atual</a> ·
+  <a href="#imprimir">Imprimir</a> ·
+  <a href="#montar">Montar</a> ·
+  <a href="#rodar-o-app">Rodar</a> ·
+  <a href="#firmware">Firmware</a> ·
+  <a href="#estrutura">Estrutura</a> ·
+  <a href="#licença">Licença</a>
 </p>
 
 ---
@@ -145,9 +164,28 @@ arduino-cli upload -p /dev/ttyACM0 --fqbn arduino:avr:uno firmware/braco_4dof
 
 No Windows troque `/dev/ttyACM0` por `COM3`; no macOS, por `/dev/cu.usbmodem...`.
 
+### Pinagem (v1.3.4)
+
+| Junta | Pino | Posição 0 | Faixa |
+|---|---|---|---|
+| Base (Yaw) | `D11` | 90° | 12–168° |
+| Ombro | `D10` | 60° | 0–180°* |
+| Cotovelo | `D9` | 45° | 0–180°* |
+| Garra | `D5` | 35° (fechada) | 0–90° |
+
+Joystick esquerdo: X `A0` (base), Y `A1` (cotovelo). Direito: X `A3` (garra),
+Y `A2` (ombro). Botões: `D2` (Posição 0) e `D4` (trava da garra / limite da
+base). LED de status: `D13`. *Faixa de software; o curso real depende da
+montagem.
+
+> **Energia:** fonte externa **5 V / 5 A** (3 A é o mínimo), GND comum ao
+> Arduino e capacitor de 1000 µF. Não alimente os quatro servos pelo USB.
+> O `#B` mostra `boots=N`; se o número mudar durante o movimento, a placa
+> reiniciou por brownout. Detalhes em [Hardware e eletrônica](https://gabriel-freitas-s.github.io/braco-robortico/hardware.html).
+
 ## Software
 
-![RoboControl aberto: dois pads, gravação e replay](docs/assets/site/app.png)
+![RoboControl aberto: dois pads, gravação e replay](docs/assets/site/app.webp)
 
 - [`app/`](app/) — RoboControl (Rust/egui): dois pads de toque, teclado, gravação, replay e log.
 - [Documentação do código (rustdoc)](https://gabriel-freitas-s.github.io/braco-robortico/rust/robocontrol/index.html) — API interna do app.
@@ -169,6 +207,7 @@ No Windows troque `/dev/ttyACM0` por `COM3`; no macOS, por `/dev/cu.usbmodem...`
 | `montagens/` | Modelo montado/numerado e o gerador |
 | `docs/` | Site, manual, guia, rustdoc e imagens |
 | `ref/mdf/` | Modelo de referência em MDF |
+| `CHANGELOG.md` | Versões do firmware, do app e mudanças de geometria |
 
 ## Licença
 
@@ -181,6 +220,7 @@ No Windows troque `/dev/ttyACM0` por `COM3`; no macOS, por `/dev/cu.usbmodem...`
 - **Referência** (`ref/mdf/`): modelo original, CC BY 4.0, com o crédito abaixo.
 
 A atribuição exigida pela CC BY 4.0 está em [Créditos](#créditos).
+O histórico de firmware, app e geometria está no [CHANGELOG](CHANGELOG.md).
 
 ## Créditos
 

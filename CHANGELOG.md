@@ -1,5 +1,13 @@
 # Changelog
 
+## Revisão de consistência — 2026-11-15
+
+- **Site mais leve:** fotos, renders e peças convertidos para WebP; `docs/` caiu de ~18 MB para ~8 MB.
+- **Navegação mobile:** menu em uma linha com rolagem horizontal, header sticky com blur e âncoras alinhadas.
+- **Correções:** dimensões declaradas de prato, app e peças 04/12/H1/H2; metadados sociais completos nas três páginas; `#B` documentado sem “centros”.
+- **Limpeza:** removidos a engrenagem 26 do `cad-output/`, 24 renders de debug, imagens de teste e fotos antigas com fundo branco.
+- **README:** badges de versão, sumário, pinagem rápida e link do changelog.
+
 ## Revisão nov/2026 — 2026-11-14
 
 - **Firmware 1.3.4:** STOP cancela o home; `#J`/`#M` congelam alvos; trava exclusiva de eixo no joystick.

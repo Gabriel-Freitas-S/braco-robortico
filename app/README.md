@@ -128,7 +128,7 @@ As linhas são selecionáveis para copiar um trecho.
 #M                  assume o controle e congela no ângulo atual
 #J                  devolve ao joystick e congela no ângulo atual
 #H                  STOP: cancela o retorno à Posição 0 e segura agora
-#L0 / #L1           libera / trava a pressão da garra
+#L0 / #L1           #L1 trava a pressão da garra; #L0 libera a abertura
 #S                  status  →  S<b>;<o>;<c>;<g>;<modo>;<trava>
 #B                  diagnóstico → B<versão>;boots=N;limb=min;max;limo=...;limc=...;limg=...
 ```

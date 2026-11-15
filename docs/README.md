@@ -15,8 +15,12 @@ Este diretório é o site publicado no GitHub Pages **e** a documentação de ba
 | `manual_braco_robotico_rev23.pdf` | Manual para impressão/offline |
 | `assets/site/site.css` | Estilo compartilhado da landing e das páginas |
 | `assets/site/docs.css` | Componentes das páginas de referência |
-| `assets/site/components/` | Fotos dos componentes eletrônicos |
+| `assets/site/components/` | Fotos dos componentes eletrônicos (WebP com fundo transparente) |
 | `rust/` | Rustdoc do app, gerado por `cargo doc` |
+
+As imagens do site são WebP para manter o Pages leve. Se precisar editar
+uma foto, trabalhe no PNG original e gere o WebP de novo com
+`magick foto.png -quality 82 foto.webp` (use `-alpha on` nas fotos recortadas).
 
 ## Fonte da verdade
 

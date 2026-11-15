@@ -99,20 +99,10 @@
   .doc-body .table td, .doc-body .table th { vertical-align: top; }
   .doc-body .code { margin: 0 0 18px; }
 
-  .callout {
-    margin: 20px 0;
-    padding: 18px 20px;
-    border: 1px solid var(--line);
-    border-left: 3px solid var(--accent);
-    border-radius: 8px;
-    background: var(--bg-raised);
-    color: #c6d0da;
-    font-size: .93rem;
+  .callout code {
+    font-family: var(--mono);
+    font-size: .84em;
   }
-  .callout strong { color: var(--text); }
-  .callout p:last-child, .callout ul:last-child { margin-bottom: 0; }
-  .callout.danger { border-left-color: #e08a8a; background: #211a1d; }
-  .callout.warn { border-left-color: var(--warn); background: #211f19; }
 
   .doc-cards {
     display: grid;
@@ -196,5 +186,5 @@
   }
 
   @media (max-width: 860px) {
-    .doc-body h2, .doc-body h3 { scroll-margin-top: 170px; }
+    .doc-body h2, .doc-body h3 { scroll-margin-top: 84px; }
   }
