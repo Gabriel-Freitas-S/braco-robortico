@@ -18,7 +18,7 @@ export default defineConfig({
         root: { label: 'Português', lang: 'pt-BR' },
       },
       logo: {
-        src: './src/assets/logo.svg',
+        src: './src/assets/logo.webp',
         alt: 'Braço Robótico 4-DOF',
       },
       favicon: '/favicon.png',
