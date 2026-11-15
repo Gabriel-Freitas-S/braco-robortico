@@ -141,3 +141,6 @@ details summary {
 }
 details summary::marker { color: var(--sl-color-accent); }
 details p { margin: 8px 0 0; }
+
+/* O projeto é dark-only: a landing e as fotos não têm versão clara. */
+starlight-theme-select { display: none; }

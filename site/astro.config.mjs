@@ -39,6 +39,11 @@ export default defineConfig({
       customCss: ['./src/styles/starlight.css'],
       head: [
         {
+          tag: 'script',
+          content:
+            "localStorage.setItem('starlight-theme','dark');document.documentElement.dataset.theme='dark';",
+        },
+        {
           tag: 'meta',
           attrs: {
             property: 'og:image',
