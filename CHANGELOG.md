@@ -1,5 +1,14 @@
 # Changelog
 
+## Migração para Astro + Starlight — 2026-11-15
+
+- **Stack:** site migrado para Astro 7 + Starlight + UnoCSS (ícones Lucide); landing e páginas de referência no mesmo header, busca e tema.
+- **Navegação:** sidebar com “← Voltar ao site”, TOC e busca em português; a home usa `StarlightPage` sem sidebar.
+- **Conteúdo:** hardware, software e guia em MDX; manual A4 e rustdoc estáticos em `site/public/`.
+- **URLs:** `/hardware/`, `/software/` e `/guia_montagem/`; redirects preservam os `.html` antigos.
+- **Deploy:** GitHub Actions (`withastro/action`) no lugar do Pages legacy em `/docs`.
+- **Logo:** `logo.svg` da raiz corrigido (cantos brancos removidos) e usado no site e no ícone do app.
+
 ## Revisão de consistência — 2026-11-15
 
 - **Site mais leve:** fotos, renders e peças convertidos para WebP; `docs/` caiu de ~18 MB para ~8 MB.

@@ -1,0 +1,40 @@
+---
+interface Props {
+  src: string;
+  alt: string;
+  width?: number;
+  height?: number;
+  class?: string;
+  loading?: 'lazy' | 'eager';
+  decoding?: 'async' | 'sync' | 'auto';
+  fetchpriority?: 'high' | 'low' | 'auto';
+}
+
+const {
+  src,
+  alt,
+  width,
+  height,
+  class: className,
+  loading = 'lazy',
+  decoding = 'async',
+  fetchpriority,
+} = Astro.props;
+
+// BASE_URL pode vir com ou sem barra final; normaliza para concatenar.
+const base = import.meta.env.BASE_URL.endsWith('/')
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+const url = `${base}${src.replace(/^\/+/, '')}`;
+---
+
+<img
+  src={url}
+  {alt}
+  {width}
+  {height}
+  {loading}
+  {decoding}
+  fetchpriority={fetchpriority}
+  class={className}
+/>

@@ -1,0 +1,19 @@
+{
+  "name": "braco-robortico-site",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "^0.43.1",
+    "@iconify-json/lucide": "^1.2.155",
+    "@unocss/astro": "^66.13.0",
+    "astro": "^7.4.12",
+    "unocss": "^66.13.0"
+  }
+}

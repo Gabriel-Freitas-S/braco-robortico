@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="docs/assets/site/braco-garra.webp" alt="Braço robótico 4-DOF montado, com a garra estendida e o shield de joysticks ao lado" width="420">
+  <img src="site/public/assets/site/braco-garra.webp" alt="Braço robótico 4-DOF montado, com a garra estendida e o shield de joysticks ao lado" width="420">
 </div>
 
 <h1 align="center">Braço Robótico 4-DOF</h1>
@@ -18,9 +18,9 @@ Peças em PLA na Bambu Lab A1, firmware Arduino e controle híbrido.</p>
 <p align="center">
   <a href="https://gabriel-freitas-s.github.io/braco-robortico/">Página do projeto</a> ·
   <a href="https://gabriel-freitas-s.github.io/braco-robortico/manual_braco_robotico.html">Manual</a> ·
-  <a href="https://gabriel-freitas-s.github.io/braco-robortico/guia_montagem.html">Guia de montagem</a> ·
-  <a href="https://gabriel-freitas-s.github.io/braco-robortico/hardware.html">Hardware</a> ·
-  <a href="https://gabriel-freitas-s.github.io/braco-robortico/software.html">Software</a> ·
+  <a href="https://gabriel-freitas-s.github.io/braco-robortico/guia_montagem/">Guia de montagem</a> ·
+  <a href="https://gabriel-freitas-s.github.io/braco-robortico/hardware/">Hardware</a> ·
+  <a href="https://gabriel-freitas-s.github.io/braco-robortico/software/">Software</a> ·
   <a href="impressao/pratos/fatiados/">Pratos fatiados</a>
 </p>
 
@@ -92,7 +92,7 @@ Perfil `0.20mm Standard @BBL A1`, PLA Basic Preto, bico de 0,4 mm, Textured PEI.
 4. **Cabeçote e garra** — 15, 19, 20, 21, 24, 27, 28, H1, H2. Servo 4 em 0° antes de montar a manivela.
 
 O passo a passo com fotos está no [manual](https://gabriel-freitas-s.github.io/braco-robortico/manual_braco_robotico.html). O
-[guia de montagem](https://gabriel-freitas-s.github.io/braco-robortico/guia_montagem.html) resume hardware, calibração e a
+[guia de montagem](https://gabriel-freitas-s.github.io/braco-robortico/guia_montagem/) resume hardware, calibração e a
 checagem de interferência do modelo.
 
 ## Requisitos
@@ -181,18 +181,33 @@ montagem.
 > **Energia:** fonte externa **5 V / 5 A** (3 A é o mínimo), GND comum ao
 > Arduino e capacitor de 1000 µF. Não alimente os quatro servos pelo USB.
 > O `#B` mostra `boots=N`; se o número mudar durante o movimento, a placa
-> reiniciou por brownout. Detalhes em [Hardware e eletrônica](https://gabriel-freitas-s.github.io/braco-robortico/hardware.html).
+> reiniciou por brownout. Detalhes em [Hardware e eletrônica](https://gabriel-freitas-s.github.io/braco-robortico/hardware/).
 
 ## Software
 
-![RoboControl aberto: dois pads, gravação e replay](docs/assets/site/app.webp)
+![RoboControl aberto: dois pads, gravação e replay](site/public/assets/site/app.webp)
 
 - [`app/`](app/) — RoboControl (Rust/egui): dois pads de toque, teclado, gravação, replay e log.
 - [Documentação do código (rustdoc)](https://gabriel-freitas-s.github.io/braco-robortico/rust/robocontrol/index.html) — API interna do app.
 - [`firmware/braco_4dof/`](firmware/braco_4dof/) — firmware Arduino (v1.3.4).
 - [`wokwi/`](wokwi/) — simulação do firmware no Wokwi.
-- [Hardware e eletrônica](https://gabriel-freitas-s.github.io/braco-robortico/hardware.html) — BOM, pinagem, energia e calibração.
-- [Software e protocolo](https://gabriel-freitas-s.github.io/braco-robortico/software.html) — app, firmware, comandos e problemas comuns.
+- [Hardware e eletrônica](https://gabriel-freitas-s.github.io/braco-robortico/hardware/) — BOM, pinagem, energia e calibração.
+- [Software e protocolo](https://gabriel-freitas-s.github.io/braco-robortico/software/) — app, firmware, comandos e problemas comuns.
+
+## Site
+
+O site é **Astro + Starlight + UnoCSS**, com a landing e as três páginas de
+referência no mesmo layout (header, busca e tema). O manual A4 e o rustdoc
+continuam estáticos em `site/public/`.
+
+```bash
+cd site
+npm install
+npm run dev      # http://localhost:4321/braco-robortico/
+npm run build
+```
+
+Mapa da estrutura e comandos de regeneração em [`site/README.md`](site/README.md).
 
 ## Estrutura
 
@@ -205,7 +220,7 @@ montagem.
 | `bambu-output/` | Reparos, orientação e previews de impressão |
 | `impressao/` | Peças, fatiados e os 2 pratos |
 | `montagens/` | Modelo montado/numerado e o gerador |
-| `docs/` | Site, manual, guia, rustdoc e imagens |
+| `site/` | Astro + Starlight: landing, docs, manual e rustdoc |
 | `ref/mdf/` | Modelo de referência em MDF |
 | `CHANGELOG.md` | Versões do firmware, do app e mudanças de geometria |
 
@@ -214,9 +229,9 @@ montagem.
 - **Código** (`app/`, `firmware/`, `wokwi/` e scripts de geração): [MIT](LICENSE).
 - **Modelos 3D e artefatos de impressão** (`cad-output/`, `bambu-output/`,
   `impressao/`, modelos em `montagens/`): [CC BY 4.0](LICENSE-CC-BY-4.0.txt).
-- **Site, manual e imagens** (`docs/index.html`, `docs/manual_*`,
-  `docs/assets/`, `docs/guia_montagem.md`): CC BY 4.0.
-- **Documentação rustdoc** (`docs/rust/`): acompanha o código (MIT).
+- **Site, manual e imagens** (`site/src/`, `site/public/manual_*`,
+  `site/public/assets/`): CC BY 4.0.
+- **Documentação rustdoc** (`site/public/rust/`): acompanha o código (MIT).
 - **Referência** (`ref/mdf/`): modelo original, CC BY 4.0, com o crédito abaixo.
 
 A atribuição exigida pela CC BY 4.0 está em [Créditos](#créditos).

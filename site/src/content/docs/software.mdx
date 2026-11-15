@@ -1,0 +1,177 @@
+---
+title: "Software, firmware e protocolo"
+description: "RoboControl, firmware Arduino 1.3.4, protocolo serial, gravação, replay e solução de problemas do braço robótico 4-DOF."
+---
+
+O app propõe alvos; a placa executa a rampa, os limites e o hold. Esta página
+explica o contrato entre os dois, como gravar o firmware e o que fazer quando
+algo não responde.
+
+import { Aside, Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+import Asset from '../../components/Asset.astro';
+
+## Arquitetura
+
+O firmware é a autoridade. O app envia alvos a 20 Hz e o firmware interpola cada
+junta com uma rampa fixa (cerca de 38°/s), respeita os limites e mantém a pose
+quando não chega comando novo. Se o USB falhar, o braço não dá tranco: o
+watchdog de 500 ms segura a posição e devolve o controle ao joystick.
+
+<CardGrid>
+  <Card title="Modo joystick">A placa lê os dois sticks e ignora o PC.</Card>
+  <Card title="Modo PC">O app assume no ângulo atual; o joystick físico fica travado.</Card>
+  <Card title="Devolver / STOP">`#J` devolve congelando; `#H` cancela o home e segura as juntas.</Card>
+  <Card title="Trava da garra">`#L1` mantém a pressão; `#L0` libera a abertura.</Card>
+</CardGrid>
+
+## RoboControl
+
+<figure class="app-shot">
+  <Asset src="assets/site/app.webp" alt="Janela do RoboControl: dois pads de toque, ângulos atuais, gravação, replay e log" width={1179} height={567} />
+  <figcaption>RoboControl aberto sem conexão · escolha a porta e clique em Conectar</figcaption>
+</figure>
+
+- **Pads:** esquerdo = base (X) e cotovelo (Y); direito = garra (X) e ombro (Y).
+  Soltar o dedo centraliza e segura a posição.
+- **Assumir controle (M):** adota os ângulos atuais e trava o joystick físico.
+- **Gravação:** captura a pose a 20 Hz, inclusive movendo no joystick; salva em
+  `~/.local/share/robocontrol/movimentos/`.
+- **Replay:** espera a pose inicial, reproduz com pausa, velocidade 0,5×/1×/2× e
+  loop; STOP cancela.
+- **Log:** último evento na barra; clique para expandir, copiar ou limpar.
+
+## Rodar o app
+
+```bash
+# Linux / macOS
+cd app
+cargo run --release
+
+# Linux: instalar no menu
+cd app && ./install.sh
+
+# Windows (PowerShell)
+cd app
+cargo run --release
+# ou: cargo build --release; .\target\release\robocontrol.exe
+```
+
+Escolha a porta → **Conectar** → **Assumir controle (PC)**. Portas típicas:
+Linux `/dev/ttyACM0` ou `/dev/ttyUSB0`; macOS `/dev/cu.usbmodem*`; Windows
+`COM3`. No Linux, o usuário precisa estar no grupo `dialout` (Arch: `uucp`).
+
+## Teclado
+
+Os atalhos valem com o app em foco e nenhum campo de texto ativo. O movimento
+exige o PC no controle (`M`).
+
+| Tecla | Ação |
+|---|---|
+| `A` / `D` | Base: girar à esquerda / direita |
+| `W` / `S` | Cotovelo: subir / descer |
+| `←` / `→` | Garra: fechar / abrir |
+| `↑` / `↓` | Ombro: subir / descer |
+| `Shift` + movimento | Modo fino (metade da velocidade) |
+| `M` / `J` | Assumir / devolver o controle |
+| `Espaço` | STOP |
+| `G` | Travar / liberar a garra |
+| `R` / `P` / `L` | Gravar / reproduzir / loop |
+| `1` / `2` / `3` | Velocidade 0,5× / 1× / 2× |
+| `H` / `F1` | Abrir / fechar a lista de atalhos |
+| `Esc` | Fechar a lista ou o modal de ângulo |
+
+## Gravação e replay
+
+**Gravar** captura a pose a 20 Hz, inclusive quando você está movendo no
+joystick físico — é o “ensinar fazendo”. **Parar e salvar** remove pausas paradas
+no início/fim e deixa o movimento carregado. Se o cabo cair ou a placa
+reiniciar, a gravação em andamento é encerrada e salva com sufixo `_2`, `_3`…
+
+O **replay** espera o braço alcançar a pose inicial antes de iniciar o
+cronômetro. Tocar num pad, usar STOP ou o botão de pausa cancela. Os arquivos
+ficam em `~/.local/share/robocontrol/movimentos/` (Windows:
+`%APPDATA%\robocontrol\movimentos`).
+
+## Firmware
+
+Sketch: `firmware/braco_4dof/braco_4dof.ino`, versão **1.3.4**. Usa apenas
+`Servo.h` e `EEPROM.h` do core AVR.
+
+```bash
+# Arduino IDE: abra o sketch, selecione Arduino Uno e a porta, Upload
+
+# ou arduino-cli
+arduino-cli core install arduino:avr
+arduino-cli compile --fqbn arduino:avr:uno firmware/braco_4dof
+arduino-cli upload -p /dev/ttyACM0 --fqbn arduino:avr:uno firmware/braco_4dof
+```
+
+A pinagem está em [Hardware → Pinagem](/braco-robortico/hardware/#pinagem). A
+simulação no Wokwi usa uma cópia idêntica do sketch; depois de mexer no
+firmware, sincronize com
+`cp firmware/braco_4dof/braco_4dof.ino wokwi/sketch/sketch.ino`.
+
+## Protocolo serial
+
+115200 baud, linha inteira terminada em newline. O firmware é a fonte da
+verdade; o app só propõe alvos.
+
+| Comando | Formato | O que faz |
+|---|---|---|
+| `#P` | `#P90;60;45;20` | Alvos absolutos em graus (base, ombro, cotovelo, garra); reenviar é o heartbeat |
+| `#V` | `#V-100;0;50;0` | Sticks virtuais de −100 a 100 (esq X/Y, dir X/Y) a 20 Hz |
+| `#M` | `#M` | Assume o controle e congela no ângulo atual |
+| `#J` | `#J` | Devolve ao joystick congelando a pose |
+| `#H` | `#H` | STOP: cancela o home e segura as juntas agora |
+| `#L0` / `#L1` | `#L1` | `#L1` trava a pressão da garra; `#L0` libera a abertura |
+| `#S` | `#S` | Status → `S<b>;<o>;<c>;<g>;<modo>;<trava>` |
+| `#B` | `#B` | Diagnóstico → versão, `boots=N` e limites salvos |
+
+## Diagnóstico
+
+- `boots=N` é o contador de resets. Se mudar durante o movimento, a placa
+  reiniciou: revise a fonte externa e o GND comum.
+- Log do app: erros em vermelho, STOP e gravação em destaque; o painel copia e
+  limpa.
+- STOP: para o movimento e desenergiza os servos em ~0,6 s.
+- Trava da garra: com `#L1`, nem o pad nem o replay abrem a pinça.
+- Sem app: `stty -F /dev/ttyACM0 115200 raw -echo` e
+  `printf '#B\n' > /dev/ttyACM0`; leia a resposta com `cat`.
+
+## Problemas comuns
+
+<details>
+<summary>A porta não aparece no app</summary>
+<p>Confira o cabo (alguns cabos só carregam), o driver CH340 em clones e o grupo <code>dialout</code> no Linux. Relogue após <code>sudo usermod -aG dialout "$USER"</code>. No Windows, veja o COM no Gerenciador de Dispositivos.</p>
+</details>
+
+<details>
+<summary>O braço reinicia ou “pula” no meio do movimento</summary>
+<p>É alimentação. Use fonte externa de 5 V / 5 A com GND comum e capacitor de 1000 µF; não alimente os servos pelo USB. O contador <code>boots=N</code> confirma o reset.</p>
+</details>
+
+<details>
+<summary>Um servo treme ou fica com posição errada</summary>
+<p>Verifique o canal (D11, D10, D9, D5), o GND comum e a calibração da Posição 0. Faixas no software não substituem o curso mecânico: ajuste os limites antes de forçar.</p>
+</details>
+
+<details>
+<summary>A garra não abre</summary>
+<p>A trava D4 (<code>#L1</code>) mantém a pressão e bloqueia a abertura. Clique D4 ou use <code>#L0</code> para liberar. Com a trava ativa, nem o replay abre a pinça.</p>
+</details>
+
+<details>
+<summary>O replay não começa</summary>
+<p>O replay espera a pose inicial. Se o braço estiver longe, ele move primeiro; use STOP para cancelar. Confira a velocidade e se o movimento foi salvo em <code>movimentos/</code>.</p>
+</details>
+
+<details>
+<summary>O app não assume o controle</summary>
+<p>Confirme o firmware 1.3.4 e o modo PC (<code>#M</code>). Se o joystick físico estiver ativo, o firmware ignora o PC até o app assumir. Devolver/STOP devolvem o comando à placa.</p>
+</details>
+
+<div class="doc-next">
+  <LinkCard title="Hardware e pinagem" href="/braco-robortico/hardware/" description="BOM, energia e calibração." />
+  <LinkCard title="Guia de montagem" href="/braco-robortico/guia_montagem/" description="Ordem dos subconjuntos e parafusos por etapa." />
+  <LinkCard title="Manual completo" href="/braco-robortico/manual_braco_robotico.html" description="17 páginas com fotos e passo a passo." />
+</div>

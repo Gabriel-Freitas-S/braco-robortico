@@ -1,0 +1,143 @@
+/* Tema das páginas de documentação (Starlight).
+   A landing tem CSS próprio em landing.css; aqui só o que as docs usam. */
+
+:root {
+  --sl-font: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --sl-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+:root[data-theme='dark'] {
+  --sl-color-accent-low: #1e3449;
+  --sl-color-accent: #7fb2e5;
+  --sl-color-accent-high: #cfe4f8;
+  --sl-color-bg: #14181d;
+  --sl-color-bg-nav: #14181d;
+  --sl-color-bg-sidebar: #171c22;
+  --sl-color-hairline: #222930;
+  --sl-color-text: #e8edf2;
+  --sl-color-text-accent: #a8cdf0;
+}
+
+/* Cards de componentes eletrônicos */
+.component-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin: 24px 0;
+}
+
+.component {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  background: var(--sl-color-bg-sidebar);
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.component img {
+  display: block;
+  width: 100%;
+  height: 220px;
+  object-fit: contain;
+  padding: 22px 24px;
+}
+
+.component figcaption {
+  flex: 1;
+  padding: 14px 16px 16px;
+}
+
+.component strong { display: block; font-size: 1rem; font-weight: 600; }
+.component span { display: block; margin-top: 3px; color: var(--sl-color-gray-3); font-size: 0.82rem; }
+.component small {
+  display: block;
+  margin-top: 8px;
+  font-family: var(--sl-font-mono);
+  font-size: 0.72rem;
+  color: var(--sl-color-gray-3);
+}
+
+/* Figuras do guia */
+.guide-figure {
+  margin: 20px 0;
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.guide-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 420px;
+  object-fit: contain;
+  padding: 14px;
+  background: #e7ebf0;
+}
+
+.guide-figure figcaption {
+  padding: 10px 14px;
+  background: var(--sl-color-bg-sidebar);
+  border-top: 1px solid var(--sl-color-hairline);
+  font-size: 0.82rem;
+  color: var(--sl-color-gray-3);
+}
+
+/* Tabelas largas rolam em vez de espremer colunas */
+.table-wrap { overflow-x: auto; margin: 18px 0; }
+.table-wrap table { min-width: 520px; }
+
+/* Listas de checagem e passos sem marcador extra */
+.plain { list-style: none; padding-left: 0; }
+.plain li {
+  padding: 7px 0;
+  border-bottom: 1px solid var(--sl-color-hairline);
+}
+.plain li:last-child { border-bottom: 0; }
+
+/* Ações no fim de cada página */
+.doc-next {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 40px;
+  padding-top: 22px;
+  border-top: 1px solid var(--sl-color-hairline);
+}
+
+@media (max-width: 900px) {
+  .component-grid { grid-template-columns: 1fr; }
+  .component img { height: 200px; }
+}
+
+/* Screenshot do app */
+.app-shot {
+  margin: 22px 0;
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #0d1116;
+}
+.app-shot img { width: 100%; height: auto; }
+.app-shot figcaption {
+  padding: 10px 14px;
+  border-top: 1px solid var(--sl-color-hairline);
+  font-size: 0.82rem;
+  color: var(--sl-color-gray-3);
+}
+
+/* FAQ recolhível */
+details {
+  margin: 0;
+  padding: 12px 0;
+  border-top: 1px solid var(--sl-color-hairline);
+}
+details summary {
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--sl-color-text);
+}
+details summary::marker { color: var(--sl-color-accent); }
+details p { margin: 8px 0 0; }

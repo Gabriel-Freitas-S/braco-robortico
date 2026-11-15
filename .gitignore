@@ -13,3 +13,8 @@ ref/mdf/extracted/
 
 # uv (skills)
 .agents/skills/*/uv.lock
+
+# Site Astro/Starlight
+site/node_modules/
+site/dist/
+site/.astro/

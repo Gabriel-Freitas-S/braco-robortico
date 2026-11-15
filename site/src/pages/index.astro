@@ -1,0 +1,429 @@
+---
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import { CardGrid, LinkCard } from '@astrojs/starlight/components';
+import '../styles/landing.css';
+
+const asset = (path: string) => {
+  const base = import.meta.env.BASE_URL.endsWith('/')
+    ? import.meta.env.BASE_URL
+    : `${import.meta.env.BASE_URL}/`;
+  return `${base}${path.replace(/^\/+/, '')}`;
+};
+
+const frontmatter = {
+  title: 'Braço Robótico 4-DOF — projeto, montagem e impressão',
+  description:
+    'Braço robótico de 4 eixos impresso em PLA na Bambu Lab A1, com firmware Arduino e app desktop em Rust para controle por toque e teclado, gravação e replay de movimentos. Projeto acadêmico de Sistemas Embarcados (Engenharia da Computação).',
+  template: 'splash',
+  lastUpdated: false,
+  editUrl: false,
+  pagination: false,
+};
+---
+
+
+<StarlightPage frontmatter={frontmatter} hasSidebar={false}>
+<section class="hero" aria-labelledby="titulo">
+  <div class="wrap">
+    <div>
+      <h1 id="titulo">Braço robótico<br><em>4-DOF</em></h1>
+      <p class="lede">Quatro eixos, dois joysticks, teclado e um app que <strong>grava e repete movimentos</strong>. Peças em PLA na Bambu Lab A1, firmware próprio e controle híbrido: o firmware continua dono do movimento, então um comando perdido no USB não vira tranco.</p>
+      <div class="cta">
+        <a class="btn btn-primary" href={asset('manual_braco_robotico.html')}>Abrir o manual
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <a class="btn btn-ghost" href={asset('hardware/')}>Hardware</a>
+        <a class="btn btn-ghost" href={asset('software/')}>Software</a>
+        <a class="btn btn-ghost" href={asset('guia_montagem/')}>Guia</a>
+      </div>
+      <ul class="hero-meta">
+        <li>Bambu Lab A1</li>
+        <li>PLA · 0,20 mm</li>
+        <li>4× SG90</li>
+        <li>29 peças</li>
+        <li>~4h13 · ~102 g</li>
+        <li>Sistemas Embarcados</li>
+      </ul>
+      <p class="revision">Revisão nov/2026 · firmware 1.3.4 · app 0.1.0 · manual Rev 2.3</p>
+    </div>
+    <figure class="hero-art">
+      <img src={asset('assets/site/braco-garra.webp')} alt="Braço robótico montado em vista lateral, com a garra estendida e o shield de joysticks ao lado" width="1200" height="1092" fetchpriority="high" decoding="async">
+      <figcaption>montagem · revisão nov/2026</figcaption>
+    </figure>
+  </div>
+</section>
+
+<hr class="rule">
+
+<section id="projeto" aria-labelledby="projeto-titulo">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 id="projeto-titulo">Um braço que obedece sem largar o controle</h2>
+      <p>O app propõe alvos; a placa executa com rampa, limites mecânicos e hold. No modo PC o joystick físico fica travado; Devolver/STOP devolvem o comando à placa.</p>
+    </div>
+    <div class="cols">
+      <div class="feature">
+        <span class="mono">4 eixos</span>
+        <h3>Base, ombro, cotovelo e garra</h3>
+        <p>Um SG90 por articulação, com paralelogramo duplo no braço para manter o punho nivelado.</p>
+      </div>
+      <div class="feature">
+        <span class="mono">controle híbrido</span>
+        <h3>PC e joystick no mesmo barramento</h3>
+        <p>Assumir o controle pelo app adota os ângulos atuais; o teclado usa o mesmo stick dos pads. Devolver/STOP (J/Espaço) soltam o comando; o joystick fica travado enquanto o PC controla.</p>
+      </div>
+      <div class="feature">
+        <span class="mono">gravação</span>
+        <h3>Movimentos salvos em disco</h3>
+        <p>Grave, nomeie e repita sequências. Os arquivos ficam em <span class="mono">~/.local/share/robocontrol/movimentos/</span></p>
+      </div>
+      <div class="feature">
+        <span class="mono">impressão</span>
+        <h3>Dois pratos, uma cor</h3>
+        <p>Projeto monocromático em PLA preto. Sem torre de purga e sem troca de filamento.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="rule">
+
+<section id="montagem" aria-labelledby="montagem-titulo">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 id="montagem-titulo">Como o braço fica montado</h2>
+      <p>Quatro subconjuntos, do chassi à garra. O <a href={asset('manual_braco_robotico.html')}>manual</a> traz as fotos e o passo a passo; o <a href={asset('guia_montagem/')}>guia</a> resume o hardware e as peças novas.</p>
+    </div>
+    <div class="shots">
+      <figure class="shot">
+        <img src={asset('assets/site/braco-frente.webp')} alt="Vista frontal do braço montado, com o braço recolhido" width="560" height="1200" loading="lazy" decoding="async">
+        <figcaption>frontal · braço recolhido</figcaption>
+      </figure>
+      <figure class="shot">
+        <img src={asset('assets/site/braco-lateral.webp')} alt="Vista em três quartos, com os joysticks à esquerda e a garra à direita" width="724" height="681" loading="lazy" decoding="async">
+        <figcaption>3/4 · joysticks à esquerda</figcaption>
+      </figure>
+      <figure class="shot">
+        <img src={asset('assets/site/braco-controle.webp')} alt="Vista traseira, com a placa e os dois joysticks em primeiro plano" width="596" height="1200" loading="lazy" decoding="async">
+        <figcaption>traseira · placa e joysticks</figcaption>
+      </figure>
+    </div>
+    <ol class="stages">
+      <li class="stage">
+        <span class="stage-num">ETAPA 1</span>
+        <h3><a href={asset('manual_braco_robotico.html#pag12')}>Chassi, base e Yaw</a> <span>01 · 17 · 18 · 25 · 16 · 12</span></h3>
+        <p>Porcas cativas, espaçadores M3×24 e o Servo 1 no berço. Calibre o servo em 90° antes de fechar a mesa.</p>
+      </li>
+      <li class="stage">
+        <span class="stage-num">ETAPA 2</span>
+        <h3><a href={asset('manual_braco_robotico.html#pag13')}>Torres centrais</a> <span>09 · 11 · 14 · 22 · 23</span></h3>
+        <p>Servos 2 e 3 espelhados nas torres, unidos pelo espaçador central com dois M3×30. Cabeamento passa por dentro.</p>
+      </li>
+      <li class="stage">
+        <span class="stage-num">ETAPA 3</span>
+        <h3><a href={asset('manual_braco_robotico.html#pag14')}>Braço e paralelogramo</a> <span>02 · 03 · 04 · 05 · 06 · 07 · 08 · 10 · 13</span></h3>
+        <p>Hastes mestras, antebraço e o balancim triangular que coordena o paralelismo. Nyloc sem prensar o PLA.</p>
+      </li>
+      <li class="stage">
+        <span class="stage-num">ETAPA 4</span>
+        <h3><a href={asset('manual_braco_robotico.html#pag15')}>Cabeçote e garra</a> <span>15 · 19 · 20 · 21 · 24 · 27 · 28 · H1 · H2</span></h3>
+        <p>Servo 4 no suporte, manivela <strong>H1</strong> no estriado e biela <strong>H2</strong> até o dedo móvel. A engrenagem 26 saiu do projeto.</p>
+      </li>
+    </ol>
+    <div class="note">
+      <strong>Garra nova:</strong> servo → <span class="mono">H1</span> (olhal) → <span class="mono">H2</span> (curta) → dedo.
+      Calibre o Servo 4 em 0° (pinça fechada) antes de encaixar a manivela. A peça 26 não é mais impressa nem montada.
+    </div>
+  </div>
+</section>
+
+<hr class="rule">
+
+<section id="hardware" aria-labelledby="hardware-titulo">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 id="hardware-titulo">Hardware e eletrônica</h2>
+      <p>Arduino Uno, shield de dois joysticks, quatro SG90 e uma fonte externa de 5 V / 5 A. A BOM, a pinagem e a calibração completa ficam na página de hardware.</p>
+    </div>
+    <div class="component-grid">
+      <figure class="component">
+        <img src={asset('assets/site/components/arduino-uno.webp')} alt="Placa Arduino Uno R3 vista de cima" width="528" height="381" loading="lazy" decoding="async">
+        <figcaption><strong>Arduino Uno R3</strong><span>1 un · ATmega328P · 16 MHz</span><small>Controle e PWM</small></figcaption>
+      </figure>
+      <figure class="component">
+        <img src={asset('assets/site/components/shield-joystick.webp')} alt="Shield joystick duplo com dois joysticks analógicos" width="404" height="397" loading="lazy" decoding="async">
+        <figcaption><strong>Shield joystick duplo</strong><span>1 un · 2 eixos + botões</span><small>Controle manual</small></figcaption>
+      </figure>
+      <figure class="component">
+        <img src={asset('assets/site/components/servo-sg90.webp')} alt="Micro servo SG90 azul com horn e cabo de três fios" width="658" height="511" loading="lazy" decoding="async">
+        <figcaption><strong>Servo SG90 / MG90S</strong><span>4 un · 1,8–2,2 kg·cm</span><small>Base, ombro, cotovelo e garra</small></figcaption>
+      </figure>
+    </div>
+    <div class="section-actions">
+      <a class="btn btn-ghost" href={asset('hardware/')}>BOM, pinagem e calibração</a>
+      <a class="btn btn-ghost" href={asset('manual_braco_robotico.html#pag16')}>Eletrônica no manual</a>
+    </div>
+  </div>
+</section>
+
+<hr class="rule">
+
+<section id="imprimir" aria-labelledby="imprimir-titulo">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 id="imprimir-titulo">Dois pratos, ~102 g</h2>
+      <p>3MF já fatiados para a A1, em Bambu PLA Basic Preto. Re-fatia se mudar a geometria de alguma peça.</p>
+    </div>
+    <div class="plates">
+      <figure class="plate">
+        <img src={asset('assets/site/prato1.webp')} alt="Vista superior do Prato 1: chassi, base e torres" width="800" height="800" loading="lazy" decoding="async">
+        <figcaption><span>Prato 1 · chassi e base</span><span>9 peças · 66,3 g</span></figcaption>
+      </figure>
+      <figure class="plate">
+        <img src={asset('assets/site/prato2.webp')} alt="Vista superior do Prato 2: braço, bielas e garra" width="800" height="800" loading="lazy" decoding="async">
+        <figcaption><span>Prato 2 · braço e garra</span><span>20 peças · 36,0 g</span></figcaption>
+      </figure>
+    </div>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr><th>Prato</th><th class="num">Peças</th><th class="num">Tempo</th><th class="num">Filamento</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>1 · Chassi</td><td class="num">9</td><td class="num">2h 10min</td><td class="num">66,3 g</td></tr>
+          <tr><td>2 · Braço e garra</td><td class="num">20</td><td class="num">2h 03min</td><td class="num">36,0 g</td></tr>
+          <tr class="total"><td>Total</td><td class="num">29</td><td class="num">4h 13min</td><td class="num">102,3 g</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<hr class="rule">
+
+<section id="pecas" aria-labelledby="pecas-titulo">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 id="pecas-titulo">As 29 peças</h2>
+      <p>Todo o conjunto impresso em PLA preto, do chassi à garra, com dimensões e peso de cada peça. A 04 e a 12 mudaram de geometria; H1 e H2 assumiram o acionamento da garra no lugar da engrenagem 26.</p>
+    </div>
+    <div class="parts">
+      <figure class="part">
+        <img src={asset('assets/parts/part_01_Base_Chassi_Inferior.webp')} alt="Peça 01 — Chassi inferior" loading="lazy" decoding="async" width="1024" height="1024">
+        <figcaption><strong>01</strong><span>Chassi inferior</span><small>95,0 × 145,0 × 3,0 mm · 25,1 g</small></figcaption>
+      </figure>
+      <figure class="part">
+        <img src={asset('assets/parts/part_02_Braco_Principal_Esquerdo.webp')} alt="Peça 02 — Braço principal esquerdo" loading="lazy" decoding="async" width="1024" height="1024">
+        <figcaption><strong>02</strong><span>Braço principal esquerdo</span><small>114,8 × 49,8 × 4,8 mm · 2,8 g</small></figcaption>
+      </figure>
+      <figure class="part">
+        <img src={asset('assets/parts/part_03_Tirante_Paralelogramo_Longo.webp')} alt="Peça 03 — Tirante do paralelogramo longo" loading="lazy" decoding="async" width="1024" height="1024">
+        <figcaption><strong>03</strong><span>Tirante do paralelogramo longo</span><small>103,0 × 15,6 × 3,5 mm · 3,1 g</small></figcaption>
+      </figure>
+      <figure class="part">
+        <img src={asset('assets/parts/part_04_Tirante_Paralelogramo_Medio.webp')} alt="Peça 04 — Tirante do paralelogramo médio" loading="lazy" decoding="async" width="800" height="800">
+        <figcaption><strong>04</strong><span>Tirante do paralelogramo médio</span><small>90,0 × 10,0 × 3,2 mm · 2,4 g</small></figcaption>
+      </figure>
+      <figure class="part">
+        <img src={asset('assets/parts/part_05_Haste_Acionamento_Servo_Braco.webp')} alt="Peça 05 — Haste de acionamento do braço" loading="lazy" decoding="async" width="1024" height="1024">
+        <figcaption><strong>05</strong><span>Haste de acionamento do braço</span><small>87,0 × 7,7 × 3,6 mm · 1,9 g</small></figcaption>
+      </figure>
+      <figure class="part">
+        <img src={asset('assets/parts/part_06_Antebraco_Esquerdo.webp')} alt="Peça 06 — Antebraço esquerdo" loading="lazy" decoding="async" width="1024" height="1024">
+        <figcaption><strong>06</strong><span>Antebraço esquerdo</span><small>85,8 × 21,4 × 3,2 mm · 1,9 g</small></figcaption>
+      </figure>
+      <figure class="part">
+        <img src={asset('assets/parts/part_07_Braco_Principal_Direito.webp')} alt="Peça 07 — Braço principal direito" loading="lazy" decoding="async" width="1024" height="1024">
+        <figcaption><strong>07</strong><span>Braço principal direito</span><small>84,4 × 39,1 × 3,2 mm · 2,1 g</small></figcaption>
+      </figure>
+      <figure class="part">
+        <img src={asset('assets/parts/part_08_Antebraco_Direito.webp')} alt="Peça 08 — Antebraço direito" loading="lazy" decoding="async" width="1024" height="1024">
+        <figcaption><strong>08</strong><span>Antebraço direito</span><small>81,6 × 36,4 × 3,1 mm · 1,9 g</small></figcaption>
+      </figure>
+      <figure class="part">
+        <img src={asset('assets/parts/part_09_Torre_Suporte_Servo_Direita.webp')} alt="Peça 09 — Torre do servo direita" loading="lazy" decoding="async" width="1024" height="1024">
+        <figcaption><strong>09</strong><span>Torre do servo direita</span><small>52,5 × 60,2 × 3,6 mm · 6,5 g</small></figcaption>
+      </figure>
+      <figure class="part">
+        <img src={asset('assets/parts/part_10_Balancim_Triangular_Articulador.webp')} alt="Peça 10 — Balancim triangular" loading="lazy" decoding="async" width="1024" height="1024">
+        <figcaption><strong>10</strong><span>Balancim triangular</span><small>25,4 × 60,1 × 3,1 mm · 3,0 g</small></figcaption>
+      </figure>
+      <figure class="part">
+        <img src={asset('assets/parts/part_11_Torre_Suporte_Servo_Esquerda.webp')} alt="Peça 11 — Torre do servo esquerda" loading="lazy" decoding="async" width="1024" height="1024">
+        <figcaption><strong>11</strong><span>Torre do servo esquerda</span><small>43,5 × 60,0 × 3,9 mm · 5,8 g</small></figcaption>
+      </figure>
+      <figure class="part">
+        <img src={asset('assets/parts/part_12_Mesa_Giratoria_Turntable.webp')} alt="Peça 12 — Mesa giratória" loading="lazy" decoding="async" width="800" height="800">
+        <figcaption><strong>12</strong><span>Mesa giratória</span><small>86,0 × 86,0 × 4,7 mm · 15,2 g</small></figcaption>
+      </figure>
+      <figure class="part">
+        <img src={asset('assets/parts/part_13_Tirante_Superior_Garra.webp')} alt="Peça 13 — Tirante superior da garra" loading="lazy" decoding="async" width="1024" height="1024">
+        <figcaption><strong>13</strong><span>Tirante superior da garra</span><small>56,1 × 12,0 × 3,2 mm · 1,2 g</small></figcaption>
+      </figure>
+      <figure class="part">
+        <img src={asset('assets/parts/part_14_Separador_Espacador_Central_Base.webp')} alt="Peça 14 — Espaçador central da base" loading="lazy" decoding="async" width="1024" height="1024">
+        <figcaption><strong>14</strong><span>Espaçador central da base</span><small>34,5 × 54,4 × 3,8 mm · 2,8 g</small></figcaption>
+      </figure>
+      <figure class="part">
+        <img src={asset('assets/parts/part_15_Suporte_Cabeca_Garra.webp')} alt="Peça 15 — Suporte do cabeçote" loading="lazy" decoding="async" width="1024" height="1024">
+        <figcaption><strong>15</strong><span>Suporte do cabeçote</span><small>27,0 × 53,5 × 3,0 mm · 1,8 g</small></figcaption>
+      </figure>
+      <figure class="part">
+        <img src={asset('assets/parts/part_16_Berco_Servo_Rotacao_Base.webp')} alt="Peça 16 — Berço do servo de rotação" loading="lazy" decoding="async" width="1024" height="1024">
+        <figcaption><strong>16</strong><span>Berço do servo de rotação</span><small>52,1 × 48,2 × 3,1 mm · 5,6 g</small></figcaption>
+      </figure>
+      <figure class="part">
+        <img src={asset('assets/parts/part_17_Travessa_Reforco_Base_Frontal.webp')} alt="Peça 17 — Travessa frontal da base" loading="lazy" decoding="async" width="1024" height="1024">
+        <figcaption><strong>17</strong><span>Travessa frontal da base</span><small>51,5 × 18,8 × 3,8 mm · 2,3 g</small></figcaption>
+      </figure>
+      <figure class="part">
+        <img src={asset('assets/parts/part_18_Travessa_Reforco_Base_Traseira.webp')} alt="Peça 18 — Travessa traseira da base" loading="lazy" decoding="async" width="1024" height="1024">
+        <figcaption><strong>18</strong><span>Travessa traseira da base</span><small>51,4 × 18,8 × 3,8 mm · 2,1 g</small></figcaption>
+      </figure>
+      <figure class="part">
+        <img src={asset('assets/parts/part_19_Garra_Base_Suporte_Fixo.webp')} alt="Peça 19 — Base fixa da garra" loading="lazy" decoding="async" width="1024" height="1024">
+        <figcaption><strong>19</strong><span>Base fixa da garra</span><small>25,1 × 50,7 × 3,2 mm · 2,2 g</small></figcaption>
+      </figure>
+      <figure class="part">
+        <img src={asset('assets/parts/part_20_Garra_Dedo_Movel_Direito.webp')} alt="Peça 20 — Dedo móvel direito" loading="lazy" decoding="async" width="1024" height="1024">
+        <figcaption><strong>20</strong><span>Dedo móvel direito</span><small>21,3 × 47,6 × 3,2 mm · 1,3 g</small></figcaption>
+      </figure>
+      <figure class="part">
+        <img src={asset('assets/parts/part_21_Garra_Dedo_Movel_Esquerdo.webp')} alt="Peça 21 — Dedo móvel esquerdo" loading="lazy" decoding="async" width="1024" height="1024">
+        <figcaption><strong>21</strong><span>Dedo móvel esquerdo</span><small>20,3 × 47,1 × 3,2 mm · 1,3 g</small></figcaption>
+      </figure>
+      <figure class="part">
+        <img src={asset('assets/parts/part_22_Biela_Conexao_Horn_Direito.webp')} alt="Peça 22 — Biela do horn direito" loading="lazy" decoding="async" width="1024" height="1024">
+        <figcaption><strong>22</strong><span>Biela do horn direito</span><small>25,6 × 39,5 × 3,6 mm · 2,0 g</small></figcaption>
+      </figure>
+      <figure class="part">
+        <img src={asset('assets/parts/part_23_Biela_Conexao_Horn_Esquerdo.webp')} alt="Peça 23 — Biela do horn esquerdo" loading="lazy" decoding="async" width="1024" height="1024">
+        <figcaption><strong>23</strong><span>Biela do horn esquerdo</span><small>25,5 × 39,4 × 3,6 mm · 2,0 g</small></figcaption>
+      </figure>
+      <figure class="part">
+        <img src={asset('assets/parts/part_24_Suporte_Encaixe_Servo_Garra.webp')} alt="Peça 24 — Suporte do servo da garra" loading="lazy" decoding="async" width="1024" height="1024">
+        <figcaption><strong>24</strong><span>Suporte do servo da garra</span><small>25,0 × 36,8 × 3,1 mm · 1,4 g</small></figcaption>
+      </figure>
+      <figure class="part">
+        <img src={asset('assets/parts/part_25_Trava_Horn_Servo_Base.webp')} alt="Peça 25 — Trava do horn da base" loading="lazy" decoding="async" width="1024" height="1024">
+        <figcaption><strong>25</strong><span>Trava do horn da base</span><small>24,3 × 31,6 × 3,0 mm · 1,3 g</small></figcaption>
+      </figure>
+      <figure class="part">
+        <img src={asset('assets/parts/part_27_Guia_Articulacao_Garra.webp')} alt="Peça 27 — Guia de articulação da garra" loading="lazy" decoding="async" width="1024" height="1024">
+        <figcaption><strong>27</strong><span>Guia de articulação da garra</span><small>24,8 × 25,6 × 3,0 mm · 0,8 g</small></figcaption>
+      </figure>
+      <figure class="part">
+        <img src={asset('assets/parts/part_28_Biela_Articulacao_Curta.webp')} alt="Peça 28 — Biela de articulação curta" loading="lazy" decoding="async" width="1024" height="1024">
+        <figcaption><strong>28</strong><span>Biela de articulação curta</span><small>8,1 × 23,7 × 3,3 mm · 0,4 g</small></figcaption>
+      </figure>
+      <figure class="part">
+        <img src={asset('assets/parts/part_H1_Haste_Olhal.webp')} alt="Peça H1 — Haste de olhal" loading="lazy" decoding="async" width="800" height="800">
+        <figcaption><strong>H1</strong><span>Haste de olhal</span><small>37,15 × 14,0 × 3,0 mm · 1,0 g</small></figcaption>
+      </figure>
+      <figure class="part">
+        <img src={asset('assets/parts/part_H2_Haste_Curta.webp')} alt="Peça H2 — Haste curta" loading="lazy" decoding="async" width="800" height="800">
+        <figcaption><strong>H2</strong><span>Haste curta</span><small>27,69 × 8,0 × 3,0 mm · 0,6 g</small></figcaption>
+      </figure>
+    </div>
+    <p class="section-foot"><a href={asset('manual_braco_robotico.html#pag4')}>Catálogo completo no manual</a> — as 29 peças com foto, dimensões, peso, tempo e função. · <a href="https://github.com/Gabriel-Freitas-S/braco-robortico/tree/main/impressao/pecas">Baixar STLs</a> · <a href="https://github.com/Gabriel-Freitas-S/braco-robortico/tree/main/cad-output">STEPs</a></p>
+  </div>
+</section>
+
+<hr class="rule">
+
+<section id="software" aria-labelledby="software-titulo">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 id="software-titulo">Software</h2>
+      <p>O RoboControl conversa com o firmware pela USB a 115200 baud. O app propõe alvos; a placa executa a rampa, os limites e o hold. Pads e teclado usam o mesmo stick virtual.</p>
+    </div>
+    <figure class="app-shot">
+      <img src={asset('assets/site/app.webp')} alt="Janela do RoboControl: dois pads de toque, ângulos atuais, gravação, replay e log" width="1179" height="567" loading="lazy" decoding="async">
+      <figcaption>RoboControl aberto sem conexão · escolha a porta e clique em Conectar</figcaption>
+    </figure>
+    <div class="software">
+      <div>
+        <h3>O que tem</h3>
+        <ul class="app-features">
+          <li><span>pads</span>Dois controles de toque: base/cotovelo à esquerda, garra/ombro à direita. Soltar o dedo centraliza e segura a posição.</li>
+          <li><span>teclado</span>WASD/setas movem pelo mesmo stick virtual dos pads; Shift deixa fino. M/J/Espaço/G/R/P/L/1/2/3 são atalhos; H/F1 abre a lista.</li>
+          <li><span>atalhos</span>Botão Atalhos ou H/F1 abre o popup; passar o mouse nos controles mostra a ação e a tecla.</li>
+          <li><span>assumir</span>Assume o controle partindo dos ângulos atuais (M). O joystick físico fica travado enquanto o PC controla; Devolver (J) ou STOP devolvem o comando.</li>
+          <li><span>travar garra</span>Mantém a pressão da pinça sem forçar o servo (G).</li>
+          <li><span>gravação</span>Nomeie, grave e salve o movimento em <code>~/.local/share/robocontrol/movimentos/</code> (R).</li>
+          <li><span>replay</span>Lista os movimentos salvos, repete com pausa, velocidade 0.5×/1×/2× e loop (P/1/2/3/L). Exclui com confirmação.</li>
+          <li><span>STOP</span>Para o movimento e desenergiza os servos em ~0,6 s (Espaço).</li>
+          <li><span>log</span>Mensagens de conexão e status; aberto, tem cores, copiar/limpar e linhas selecionáveis.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Rodar</h3>
+        <pre class="code" aria-label="Comandos para rodar o app"><code><span class="c"># rodar (Linux, macOS e Windows)</span>
+<span class="k">cd</span> app
+cargo run --release
+
+<span class="c"># Linux: instalar no menu</span>
+<span class="k">cd</span> app &amp;&amp; ./install.sh</code></pre>
+        <p><a href={asset('software/')}>Instalação, protocolo e atalhos do app</a> · <a href={asset('rust/robocontrol/index.html')}>documentação do código</a> · <a href="https://github.com/Gabriel-Freitas-S/braco-robortico/tree/main/firmware/braco_4dof">firmware/braco_4dof</a></p>
+      </div>
+    </div>
+
+    <div class="section-actions">
+      <a class="btn btn-ghost" href={asset('software/')}>Protocolo, diagnóstico e problemas comuns</a>
+      <a class="btn btn-ghost" href={asset('hardware/')}>Hardware e pinagem</a>
+    </div>
+  </div>
+</section>
+
+<hr class="rule">
+
+<section id="downloads" aria-labelledby="downloads-titulo">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 id="downloads-titulo">Downloads</h2>
+      <p>Arquivos prontos para imprimir, montar e gravar. Os 3MF já estão fatiados para a A1 em PLA; re-fatia se mudar a geometria.</p>
+    </div>
+    <ul class="file-list">
+      <li><a href="https://raw.githubusercontent.com/Gabriel-Freitas-S/braco-robortico/main/impressao/pratos/fatiados/Prato_1_Chassi_Estrutura_Bambu_A1_sliced.3mf"><span class="what">Prato 1 · chassi e base</span><span class="where">3MF · 3,0 MB</span></a></li>
+      <li><a href="https://raw.githubusercontent.com/Gabriel-Freitas-S/braco-robortico/main/impressao/pratos/fatiados/Prato_2_Mecanica_Garra_Bambu_A1_sliced.3mf"><span class="what">Prato 2 · braço e garra</span><span class="where">3MF · 1,5 MB</span></a></li>
+      <li><a href={asset('manual_braco_robotico_rev23.pdf')}><span class="what">Manual em PDF · Rev 2.3</span><span class="where">PDF · 3,0 MB</span></a></li>
+      <li><a href={asset('manual_braco_robotico.html')}><span class="what">Manual técnico e de montagem</span><span class="where">HTML</span></a></li>
+      <li><a href={asset('guia_montagem/')}><span class="what">Guia de montagem de bancada</span><span class="where">HTML</span></a></li>
+      <li><a href="https://github.com/Gabriel-Freitas-S/braco-robortico/tree/main/impressao/pecas"><span class="what">STL por peça</span><span class="where">29 arquivos</span></a></li>
+      <li><a href="https://github.com/Gabriel-Freitas-S/braco-robortico/tree/main/cad-output"><span class="what">CAD das peças alteradas</span><span class="where">STEP</span></a></li>
+      <li><a href="https://raw.githubusercontent.com/Gabriel-Freitas-S/braco-robortico/main/montagens/braco_montado_numerado.glb"><span class="what">Modelo montado e numerado</span><span class="where">GLB · 1,9 MB</span></a></li>
+      <li><a href="https://raw.githubusercontent.com/Gabriel-Freitas-S/braco-robortico/main/firmware/braco_4dof/braco_4dof.ino"><span class="what">Firmware Arduino v1.3.4</span><span class="where">.ino</span></a></li>
+      <li><a href="https://github.com/Gabriel-Freitas-S/braco-robortico/tree/main/app"><span class="what">App RoboControl</span><span class="where">Rust · fonte</span></a></li>
+      <li><a href={asset('rust/robocontrol/index.html')}><span class="what">Documentação do app</span><span class="where">rustdoc</span></a></li>
+      <li><a href="https://github.com/Gabriel-Freitas-S/braco-robortico"><span class="what">Código-fonte completo</span><span class="where">GitHub</span></a></li>
+    </ul>
+    <p class="req-note">O STEP cobre as peças que mudaram nesta revisão (01, 04, H1, H2) e o shield; as demais estão em STL. O manual traz a BOM, a pinagem e o passo a passo com fotos.</p>
+  </div>
+</section>
+
+<hr class="rule">
+
+<section id="documentacao" aria-labelledby="documentacao-titulo">
+  <div class="wrap">
+    <div class="section-head">
+      <h2 id="documentacao-titulo">Documentação</h2>
+      <p>As páginas de referência ficam na mesma navegação do site: BOM e pinagem, software e protocolo, e o guia de bancada.</p>
+    </div>
+    <CardGrid>
+      <LinkCard title="Hardware" href={asset('hardware/')} description="BOM, pinagem, energia, botões e calibração." />
+      <LinkCard title="Software" href={asset('software/')} description="RoboControl, firmware 1.3.4, protocolo e problemas comuns." />
+      <LinkCard title="Guia de montagem" href={asset('guia_montagem/')} description="Ordem dos subconjuntos e parafusos por etapa." />
+      <LinkCard title="Manual completo" href={asset('manual_braco_robotico.html')} description="17 páginas A4 com fotos e passo a passo." />
+    </CardGrid>
+  </div>
+</section>
+
+<section class="credits" aria-labelledby="creditos-titulo">
+  <div class="wrap">
+    <h2 id="creditos-titulo">Créditos</h2>
+    <p>As peças 3D deste projeto foram modeladas a partir do modelo de referência <a class="model" href="https://sketchfab.com/3d-models/aula-21-braco-robotico-03d7364f2f02487a9c4deec73801e46a">“Aula 21 - Braço Robótico”</a>, de <strong>Robótica Paraná</strong> (<a href="https://sketchfab.com/roboticaparana">@roboticaparana</a>), publicado no Sketchfab sob licença <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.</p>
+    <p>As peças foram remodeladas, dimensionadas para impressão 3D e adaptadas à Bambu Lab A1. Os arquivos de referência ficam em <span class="mono">ref/mdf/</span>, com o crédito acima. O modelo original não é de autoria deste projeto.</p>
+    <p>Projeto acadêmico desenvolvido para a disciplina de <strong>Sistemas Embarcados</strong> do curso de <strong>Engenharia da Computação</strong>. Código sob <a href="https://github.com/Gabriel-Freitas-S/braco-robortico/blob/main/LICENSE">MIT</a>; modelos 3D, imagens e documentação sob <a href="https://github.com/Gabriel-Freitas-S/braco-robortico/blob/main/LICENSE-CC-BY-4.0.txt">CC BY 4.0</a>.</p>
+  </div>
+</section>
+</StarlightPage>
