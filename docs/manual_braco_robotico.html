@@ -417,6 +417,13 @@
       color: #334155;
       line-height: 1.4;
     }
+
+    @media screen and (max-width: 1100px) {
+      .screen-nav { padding: 0 12px; }
+      .screen-nav-brand span:last-child { display: none; }
+      .screen-nav-links { overflow-x: auto; max-width: 100%; padding-bottom: 2px; }
+      .screen-nav-links a { white-space: nowrap; font-size: 9.5px; padding: 4px 7px; }
+    }
   </style>
 </head>
 <body>
@@ -428,6 +435,8 @@
       <span>Braço Robótico 4-DOF • Manual Técnico & Guia de Montagem</span>
     </div>
     <div class="screen-nav-links">
+      <a href="index.html">Site</a>
+      <a href="guia_montagem.html">Guia</a>
       <a href="#pag1">Capa</a>
       <a href="#pag2">1. Cinemática</a>
       <a href="#pag3">2. Lista de Materiais (BOM)</a>
@@ -437,7 +446,7 @@
       <a href="#pag13">6. Etapa 2 Torres</a>
       <a href="#pag14">7. Etapa 3 Braço</a>
       <a href="#pag15">8. Etapa 4 Garra</a>
-      <a href="#pag16">9. Eletrônica & Código</a>
+      <a href="#pag16">9. Eletrônica & Firmware</a>
     </div>
   </nav>
 
@@ -448,7 +457,7 @@
         <div style="background: #FF5E00; color: #fff; font-weight: 900; font-size: 14px; padding: 5px 12px; border-radius: 6px; letter-spacing: 1px;">BAMBU LAB A1</div>
         <div style="font-size: 12px; font-weight: 600; color: #94a3b8; letter-spacing: 0.5px;">PROJETO MECATRÔNICO OFICIAL</div>
       </div>
-      <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #64748b;">REV 2.2 • 2026</div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #64748b;">REV 2.3 • 2026</div>
     </div>
 
     <div style="text-align: center; margin: 15px 0;">
@@ -747,8 +756,8 @@
           <tr>
             <td style="padding: 2.5px 6px;"><b>Filamento PLA Monocromático Técnico</b></td>
               <td style="padding: 2.5px 6px;">Bambu PLA Basic Preto (#22262C) 1.75mm (1 carretel 1kg é suficiente para todas as 29 peças)</td>
-            <td style="text-align: center; font-weight: 700; padding: 2.5px 6px;">~92 g</td>
-            <td style="padding: 2.5px 6px;">29 peças em 2 pratos — estimativa real Bambu Studio 0.20mm</td>
+            <td style="text-align: center; font-weight: 700; padding: 2.5px 6px;">~102 g</td>
+            <td style="padding: 2.5px 6px;">29 peças em 2 pratos — ~102 g no total (Bambu Studio 0.20mm)</td>
           </tr>
           <tr>
             <td style="padding: 2.5px 6px;"><b>Filamento TPU 95A (Opcional)</b></td>
@@ -2485,7 +2494,7 @@
           </tr>
           <tr style="border-bottom: 1px solid #e2e8f0;">
             <td style="padding: 3px 0; color: #64748b;">Altura de Camada (Layer Height):</td>
-            <td style="padding: 3px 0; font-weight: 700; text-align: right;">0.16 mm (Garra) / 0.20 mm (Base)</td>
+            <td style="padding: 3px 0; font-weight: 700; text-align: right;">0.20 mm padrão (3MF atuais); 0.16 mm opcional para detalhes da garra</td>
           </tr>
           <tr style="border-bottom: 1px solid #e2e8f0;">
             <td style="padding: 3px 0; color: #64748b;">Paredes Perimetrais (Wall Loops):</td>
@@ -3014,7 +3023,7 @@
     </div>
   </div>
 
-  <!-- PÁGINA 16: CALIBRAÇÃO, ELETRÔNICA, CÓDIGO ARDUINO & CHECKLIST -->
+  <!-- PÁGINA 16: PINAGEM, ALIMENTAÇÃO, FIRMWARE E CHECKLIST -->
   <div class="page" id="pag16">
     <div class="page-header">
       <div class="brand">
@@ -3026,121 +3035,101 @@
 
     <div class="section-title">
       <span class="num-badge">9</span>
-      Calibração dos Servos, Esquema Elétrico & Código de Teste
+      Pinagem, Alimentação e Firmware 1.3.4
     </div>
     <div class="section-subtitle">
-      Todos os 4 servomotores conectam-se diretamente no Shield Joystick Duplo (meARM.WDT). Código C++ e checklist.
+      A pinagem abaixo é a do firmware atual. Confirme o canal no silk da shield antes de ligar; a fonte externa é obrigatória.
     </div>
 
-    <!-- Pinout Table -->
-    <div style="margin-bottom: 10px;">
+    <div style="margin-bottom: 8px;">
       <h4 style="font-size: 10.5px; font-weight: 800; color: #FF5E00; text-transform: uppercase; margin-bottom: 4px;">
-        Pinagem Oficial das Conexões — Todos os Servos Conectam Direto no Shield Joystick Duplo
+        Pinagem Oficial — Firmware 1.3.4
       </h4>
-      <table class="data-table" style="font-size: 8.5px;">
+      <table class="data-table" style="font-size: 8px;">
         <thead>
           <tr>
-            <th>Atuador / Sensor</th>
+            <th>Junta</th>
             <th>Pino Arduino</th>
-            <th>Alimentação (VCC / GND)</th>
-            <th>Posição Inicial de Neutro (90°)</th>
-            <th>Faixa Operacional</th>
+            <th>Posição 0 (EEPROM)</th>
+            <th>Faixa</th>
+            <th>Observação</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td><b>Servo 1: Giro Base (Yaw)</b></td>
-            <td><b>Pino Digital D9 (PWM)</b></td>
-            <td>Canal 3 do Shield (S=D9, 5V, GND)</td>
-            <td>90° (Apontando reto para frente)</td>
-            <td>0° a 180°</td>
+            <td><b>Servo 1: Base (Yaw)</b></td>
+            <td><b>D11 (PWM)</b></td>
+            <td>90°</td>
+            <td>12° a 168°</td>
+            <td>Limite lateral salvo com D4 (2 s)</td>
           </tr>
           <tr>
-            <td><b>Servo 2: Ombro (Shoulder)</b></td>
-            <td><b>Pino Digital D10 (PWM)</b></td>
-            <td>Canal 2 do Shield (S=D10, 5V, GND)</td>
-            <td>90° (Braço mestre a 45° elevação)</td>
-            <td>30° a 150°</td>
+            <td><b>Servo 2: Ombro</b></td>
+            <td><b>D10 (PWM)</b></td>
+            <td>60°</td>
+            <td>0° a 180°*</td>
+            <td>Ajuste ao curso mecânico</td>
           </tr>
           <tr>
-            <td><b>Servo 3: Cotovelo (Elbow)</b></td>
-            <td><b>Pino Digital D11 (PWM)</b></td>
-            <td>Canal 1 do Shield (S=D11, 5V, GND)</td>
-            <td>90° (Antebraço nivelado no horizonte)</td>
-            <td>20° a 160°</td>
+            <td><b>Servo 3: Cotovelo</b></td>
+            <td><b>D9 (PWM)</b></td>
+            <td>45°</td>
+            <td>0° a 180°*</td>
+            <td>Espelhado em D3/D7/D8/D12</td>
           </tr>
           <tr>
-            <td><b>Servo 4: Garra (Claw)</b></td>
-            <td><b>Pino Digital D6 (PWM)</b></td>
-            <td>Canal 4 do Shield (S=D6, 5V, GND)</td>
-            <td>0° (Pinça completamente fechada)</td>
-            <td>0° a 90° (Abertura 50mm)</td>
-          </tr>
-          <tr>
-            <td><b>Joystick Esquerdo Integrado</b></td>
-            <td><b>A0 (Eixo X) e A1 (Eixo Y)</b></td>
-            <td>Trilhas internas do Shield (sem fiação externa)</td>
-            <td>Leitura central analógica ~512</td>
-            <td>0 a 1023</td>
-          </tr>
-          <tr>
-            <td><b>Joystick Direito Integrado</b></td>
-            <td><b>A2 (Eixo X) e A3 (Eixo Y)</b></td>
-            <td>Trilhas internas do Shield (sem fiação externa)</td>
-            <td>Leitura central analógica ~512</td>
-            <td>0 a 1023</td>
+            <td><b>Servo 4: Garra</b></td>
+            <td><b>D5 (PWM)</b></td>
+            <td>35° (fechada)</td>
+            <td>0° a 90°</td>
+            <td>D6 não é mais usado</td>
           </tr>
         </tbody>
       </table>
+      <div style="font-size: 7.8px; color: #475569; margin-top: 3px;">* Faixa de software; o curso real depende da montagem. A montagem usa o servo em 90° (garra em 0°); a Posição 0 é a pose de repouso salva na EEPROM.</div>
     </div>
 
-    <!-- Arduino Source Code Snippet -->
-    <div style="margin-bottom: 10px;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 14px; margin-bottom: 8px; font-size: 8px; color: #334155;">
+      <div><b>Joystick esquerdo:</b> X A0 (base), Y A1 (cotovelo).</div>
+      <div><b>Joystick direito:</b> X A3 (garra), Y A2 (ombro).</div>
+      <div><b>Botão D2:</b> clique = Posição 0; 2 s = salvar Posição 0.</div>
+      <div><b>Botão D4:</b> clique = trava garra; 2 s = salvar limite da base.</div>
+      <div><b>LED de status:</b> D13.</div>
+      <div><b>Serial:</b> 115200 baud, linha com newline.</div>
+    </div>
+
+    <div style="background: #fef2f2; border: 1px solid #fecaca; border-left: 3px solid #dc2626; border-radius: 4px; padding: 5px 10px; font-size: 8px; color: #991b1b; margin-bottom: 8px;">
+      <b>ALIMENTAÇÃO:</b> use fonte externa <b>5 V / 5 A</b> (3 A é o mínimo), com GND comum ao Arduino e capacitor de 1000 µF / 16 V. Não alimente os 4 servos pelo USB: o Uno reinicia por brownout.
+    </div>
+
+    <div style="margin-bottom: 8px;">
       <h4 style="font-size: 10.5px; font-weight: 800; color: #0f172a; text-transform: uppercase; margin-bottom: 4px;">
-        Código-Fonte Arduino C++ (Sketch de Centralização e Teste com Suavização)
+        Firmware Oficial — v1.3.4
       </h4>
-      <div style="background: #0f172a; color: #f8fafc; font-family: 'JetBrains Mono', monospace; font-size: 7.5px; padding: 8px 10px; border-radius: 6px; line-height: 1.35; overflow: hidden;">
-        <span style="color: #64748b;">// Braço Robótico 4-DOF • Sketch de Teste & Calibração (Bambu Lab A1 Edition)</span><br>
-        #include &lt;Servo.h&gt;<br>
-        Servo sBase, sOmbro, sCotovelo, sGarra;<br>
-        float angBase = 90, angOmbro = 90, angCotovelo = 90, angGarra = 0;<br>
-        void setup() {<br>
-        &nbsp;&nbsp;sBase.attach(9); sOmbro.attach(10); sCotovelo.attach(11); sGarra.attach(6);<br>
-        &nbsp;&nbsp;sBase.write(90); sOmbro.write(90); sCotovelo.write(90); sGarra.write(0); <span style="color: #64748b;">// Posição de repouso segura</span><br>
-        &nbsp;&nbsp;Serial.begin(115200);<br>
-        }<br>
-        void loop() {<br>
-        &nbsp;&nbsp;int joy1X = analogRead(A0); int joy1Y = analogRead(A1);<br>
-        &nbsp;&nbsp;int joy2X = analogRead(A2); int joy2Y = analogRead(A3);<br>
-        &nbsp;&nbsp;<span style="color: #64748b;">// Filtro de zona morta (deadzone) e incremento com rampa suave</span><br>
-        &nbsp;&nbsp;if (abs(joy1X - 512) > 60) angBase += (joy1X - 512) * 0.003;<br>
-        &nbsp;&nbsp;if (abs(joy1Y - 512) > 60) angOmbro += (joy1Y - 512) * 0.003;<br>
-        &nbsp;&nbsp;if (abs(joy2Y - 512) > 60) angCotovelo += (joy2Y - 512) * 0.003;<br>
-        &nbsp;&nbsp;if (abs(joy2X - 512) > 60) angGarra += (joy2X - 512) * 0.004;<br>
-        &nbsp;&nbsp;<span style="color: #64748b;">// Limites de segurança mecânica</span><br>
-        &nbsp;&nbsp;angBase = constrain(angBase, 5, 175); angOmbro = constrain(angOmbro, 35, 145);<br>
-        &nbsp;&nbsp;angCotovelo = constrain(angCotovelo, 25, 155); angGarra = constrain(angGarra, 0, 85);<br>
-        &nbsp;&nbsp;sBase.write((int)angBase); sOmbro.write((int)angOmbro);<br>
-        &nbsp;&nbsp;sCotovelo.write((int)angCotovelo); sGarra.write((int)angGarra);<br>
-        &nbsp;&nbsp;delay(15); <span style="color: #64748b;">// Frequência de atualização estável (~66 Hz)</span><br>
-        }
+      <div style="background: #0f172a; color: #f8fafc; font-family: 'JetBrains Mono', monospace; font-size: 7.5px; padding: 8px 10px; border-radius: 6px; line-height: 1.45;">
+        #define FW_VER "1.3.4"<br>
+        const uint8_t PIN_SERVO_BASE = 11;<br>
+        const uint8_t PIN_SERVO_OMBRO = 10;<br>
+        const uint8_t PIN_SERVO_COTOVEL = 9; <span style="color: #64748b;">// + D3/D7/D8/D12</span><br>
+        const uint8_t PIN_SERVO_GARRA = 5;<br>
+        <span style="color: #64748b;">// Posição 0 (EEPROM): 90 / 60 / 45 / 35</span>
       </div>
+      <div style="font-size: 7.8px; color: #475569; margin-top: 3px;">O sketch completo está em <b>firmware/braco_4dof/braco_4dof.ino</b>. Gravação: Arduino IDE (Arduino Uno) ou <b>arduino-cli</b>. O sketch de teste antigo foi removido deste manual.</div>
     </div>
 
-    <!-- Commissioning Checklist -->
     <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 8px 12px; margin-bottom: 8px;">
       <h4 style="font-size: 10px; font-weight: 800; color: #0f172a; text-transform: uppercase; margin-bottom: 4px;">
-        Checklist de Validação & Comissionamento Mecânico
+        Checklist de Comissionamento
       </h4>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; font-size: 8px; color: #334155;">
-        <div>☑ <b>Giro Livre:</b> Articulações giram sem emperramento mecânico.</div>
-        <div>☑ <b>Conexão dos Servos:</b> Todos os 4 cabos (S, 5V, GND) plugados direto no barramento do Shield.</div>
-        <div>☑ <b>Arruelas de Nylon:</b> Todas as 14 juntas contêm arruelas de baixo atrito.</div>
-        <div>☑ <b>Fonte Externa:</b> Alimentação 5V 5A conectada no borne com capacitor 1000 µF / 16V.</div>
-        <div>☑ <b>Porcas Nyloc:</b> Nenhuma porca excessivamente apertada.</div>
-        <div>☑ <b>Organização de Cabos:</b> Fios agrupados com abraçadeiras sem puxar.</div>
-        <div>☑ <b>Sincronismo da Garra:</b> Dedos fecham perfeitamente no centro.</div>
-        <div>☑ <b>Fixação na Bancada:</b> Pés em TPU ou parafusos instalados no chassi.</div>
+        <div>☑ <b>Servos:</b> D11 (base), D10 (ombro), D9 (cotovelo), D5 (garra).</div>
+        <div>☑ <b>Fonte:</b> 5 V / 5 A no borne, GND comum e capacitor de 1000 µF.</div>
+        <div>☑ <b>Montagem:</b> Servo 1/2/3 em 90°, Servo 4 em 0°.</div>
+        <div>☑ <b>Garra:</b> H1/H2 montados e pinça fechada; peça 26 removida.</div>
+        <div>☑ <b>Nyloc:</b> nenhuma porca prensando o PLA; juntas giram à mão.</div>
+        <div>☑ <b>Cabos:</b> passando por dentro da 14, sem prender no Yaw.</div>
+        <div>☑ <b>Energia:</b> <code>boots=N</code> estável durante o movimento.</div>
+        <div>☑ <b>Software:</b> firmware 1.3.4 e app com o protocolo atual.</div>
       </div>
     </div>
 

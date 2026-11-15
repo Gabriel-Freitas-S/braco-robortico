@@ -54,7 +54,7 @@
  *  2 A, e o regulador de 5 V da placa Arduino NÃO fornece isso: ele
  *  aguenta ~500 mA. Se alimentar os servos pelo Arduino, ele reinicia
  *  sozinho (brownout) no meio do movimento.
- *  Solução: use uma fonte 5 V / 3 A separada para os servos e ligue o GND
+ *  Solução: use uma fonte 5 V / 5 A separada para os servos (3 A é o mínimo) e ligue o GND
  *  dela junto com o GND do Arduino (fio comum obrigatório).
  *
  *
@@ -1372,5 +1372,5 @@ void setup() {
 //  5. JOY_DEADZONE — se o braço tremer parado, aumente. Se estiver "preso"
 //     e não responder a comandos pequenos, diminua.
 //
-//  LEMBRE-SE: com 4 SG90, alimente os servos por fonte 5 V / 3 A separada
+//  LEMBRE-SE: com 4 SG90, alimente os servos por fonte 5 V / 5 A separada
 //  com GND comum ao Arduino. O regulador da placa não dá conta.

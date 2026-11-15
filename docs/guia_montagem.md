@@ -1,5 +1,7 @@
 # Guia de montagem — braço 4-DOF (revisão nov/2026)
 
+> Versão web: [guia_montagem.html](guia_montagem.html). O manual agora segue o firmware 1.3.4; a pinagem antiga foi removida.
+
 Ordem dos subconjuntos e o que mudou nesta revisão. As fotos e o passo a passo
 detalhado continuam no manual (`docs/manual_braco_robotico.html`, Etapas 1 a 4);
 este guia é a versão curta para bancada.
@@ -99,4 +101,4 @@ Medido no GLB desta revisão, com booleanas:
 - [ ] Cabos passando por dentro da **14**, sem prender no Yaw.
 - [ ] Fonte externa 5 V / 5 A no shield (não alimente 4 servos pelo USB).
 - [ ] Firmware e app: `firmware/braco_4dof/` e `app/`; pinos e protocolo valem
-      os do firmware atual (o sketch do manual é antigo).
+      os do firmware 1.3.4.

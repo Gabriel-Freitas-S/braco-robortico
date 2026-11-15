@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="docs/assets/site/hero.png" alt="Braço robótico 4-DOF montado, com cada peça em uma cor e o número acima dela" width="340">
+  <img src="docs/assets/site/braco-garra.png" alt="Braço robótico 4-DOF montado, com a garra estendida e o shield de joysticks ao lado" width="420">
 </div>
 
 <h1 align="center">Braço Robótico 4-DOF</h1>
@@ -9,8 +9,10 @@ Peças em PLA na Bambu Lab A1, firmware Arduino e controle híbrido.</p>
 
 <p align="center">
   <a href="https://gabriel-freitas-s.github.io/braco-robortico/">Página do projeto</a> ·
-  <a href="docs/manual_braco_robotico.html">Manual</a> ·
-  <a href="docs/guia_montagem.md">Guia de montagem</a> ·
+  <a href="https://gabriel-freitas-s.github.io/braco-robortico/manual_braco_robotico.html">Manual</a> ·
+  <a href="https://gabriel-freitas-s.github.io/braco-robortico/guia_montagem.html">Guia de montagem</a> ·
+  <a href="https://gabriel-freitas-s.github.io/braco-robortico/hardware.html">Hardware</a> ·
+  <a href="https://gabriel-freitas-s.github.io/braco-robortico/software.html">Software</a> ·
   <a href="impressao/pratos/fatiados/">Pratos fatiados</a>
 </p>
 
@@ -70,8 +72,8 @@ Perfil `0.20mm Standard @BBL A1`, PLA Basic Preto, bico de 0,4 mm, Textured PEI.
 3. **Braço e paralelogramo** — 02, 03, 04, 05, 06, 07, 08, 10, 13. Nyloc sem prensar o PLA.
 4. **Cabeçote e garra** — 15, 19, 20, 21, 24, 27, 28, H1, H2. Servo 4 em 0° antes de montar a manivela.
 
-O passo a passo com fotos está no [manual](docs/manual_braco_robotico.html). O
-[guia de montagem](docs/guia_montagem.md) resume hardware, calibração e a
+O passo a passo com fotos está no [manual](https://gabriel-freitas-s.github.io/braco-robortico/manual_braco_robotico.html). O
+[guia de montagem](https://gabriel-freitas-s.github.io/braco-robortico/guia_montagem.html) resume hardware, calibração e a
 checagem de interferência do modelo.
 
 ## Requisitos
@@ -151,6 +153,8 @@ No Windows troque `/dev/ttyACM0` por `COM3`; no macOS, por `/dev/cu.usbmodem...`
 - [Documentação do código (rustdoc)](https://gabriel-freitas-s.github.io/braco-robortico/rust/robocontrol/index.html) — API interna do app.
 - [`firmware/braco_4dof/`](firmware/braco_4dof/) — firmware Arduino (v1.3.4).
 - [`wokwi/`](wokwi/) — simulação do firmware no Wokwi.
+- [Hardware e eletrônica](https://gabriel-freitas-s.github.io/braco-robortico/hardware.html) — BOM, pinagem, energia e calibração.
+- [Software e protocolo](https://gabriel-freitas-s.github.io/braco-robortico/software.html) — app, firmware, comandos e problemas comuns.
 
 ## Estrutura
 
@@ -159,11 +163,11 @@ No Windows troque `/dev/ttyACM0` por `COM3`; no macOS, por `/dev/cu.usbmodem...`
 | `app/` | App desktop de controle |
 | `firmware/braco_4dof/` | Firmware Arduino (fonte única) |
 | `wokwi/` | Simulação do firmware |
-| `cad-output/` | Fonte CAD: STEP + STL por peça |
+| `cad-output/` | STEP das peças alteradas + STL/GLB de referência |
 | `bambu-output/` | Reparos, orientação e previews de impressão |
 | `impressao/` | Peças, fatiados e os 2 pratos |
 | `montagens/` | Modelo montado/numerado e o gerador |
-| `docs/` | Manual, guia e imagens |
+| `docs/` | Site, manual, guia, rustdoc e imagens |
 | `ref/mdf/` | Modelo de referência em MDF |
 
 ## Licença
