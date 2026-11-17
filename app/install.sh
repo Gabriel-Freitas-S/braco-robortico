@@ -23,19 +23,10 @@ echo "== instalando ícone"
 install -m 644 robocontrol.svg "$ICONES/robocontrol.svg"
 
 echo "== criando entrada de menu"
-cat > "$APPS/robocontrol.desktop" <<EOF
-[Desktop Entry]
-Type=Application
-Name=RoboControl
-GenericName=Controle de braço robótico
-Comment=Controle por toque e gravação de movimentos do braço 4-DOF (Arduino USB)
-Exec=$BIN/robocontrol
-Icon=robocontrol
-Terminal=false
-Categories=Utility;Engineering;
-Keywords=robo;braco;arduino;servo;robotic;
-StartupWMClass=robocontrol
-EOF
+# O .desktop do repositório é a fonte única (o mesmo que vai no AppImage);
+# aqui só trocamos o Exec para o caminho absoluto da instalação.
+install -m 644 robocontrol.desktop "$APPS/robocontrol.desktop"
+sed -i "s|^Exec=.*|Exec=$BIN/robocontrol|" "$APPS/robocontrol.desktop"
 chmod 644 "$APPS/robocontrol.desktop"
 
 command -v update-desktop-database >/dev/null && update-desktop-database "$APPS" || true

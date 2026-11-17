@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=RoboControl
+GenericName=Controle de braço robótico
+Comment=Controle por toque e gravação de movimentos do braço 4-DOF (Arduino USB)
+Exec=robocontrol
+Icon=robocontrol
+Terminal=false
+Categories=Utility;Engineering;
+Keywords=robo;braco;arduino;servo;robotic;
+StartupWMClass=robocontrol

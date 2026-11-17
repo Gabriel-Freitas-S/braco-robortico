@@ -1,0 +1,326 @@
+name: Release do app
+
+# Publica em GitHub Releases (nunca no crates.io): AppImage, tar.gz, zip do
+# Windows e .app universal do macOS, mais o firmware compilado.
+on:
+  push:
+    tags: ['app-v*']
+  workflow_dispatch:
+
+# Builds são read-only; só o job de release escreve.
+permissions:
+  contents: read
+
+concurrency:
+  group: app-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  linux:
+    name: Linux AppImage
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Dependências de build
+        # 22.04 = glibc 2.35: o AppImage roda em Ubuntu 22.04+, Debian 12+,
+        # Fedora 36+. libudev-dev é a única lib de sistema que o binário usa.
+        run: sudo apt-get update && sudo apt-get install -y libudev-dev
+
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
+        with:
+          workspaces: app
+
+      - name: Versão do Cargo.toml
+        id: versao
+        run: |
+          echo "valor=$(sed -n 's/^version = "\(.*\)"/\1/p' app/Cargo.toml | head -1)" \
+            >> "$GITHUB_OUTPUT"
+
+      - name: Testes
+        working-directory: app
+        run: cargo test --release --locked
+
+      - name: Build
+        working-directory: app
+        run: cargo build --release --locked
+
+      - name: Conferir bibliotecas dinâmicas
+        run: |
+          # Só glibc/libgcc/libudev entram no AppDir; X11, Wayland e GL são
+          # dlopen do driver do sistema. Uma lib nova aqui tem que ser embutida.
+          permitidas='libudev|libgcc_s|libm\.so|libc\.so|ld-linux|linux-vdso|libpthread|libdl|librt'
+          extra=$(ldd app/target/release/robocontrol | grep -vE "$permitidas" || true)
+          if [ -n "$extra" ]; then
+            echo "Dependência inesperada — embuta no AppDir ou atualize a lista:" >&2
+            echo "$extra" >&2
+            exit 1
+          fi
+
+      - name: Montar AppDir
+        run: |
+          set -euo pipefail
+          dir=AppDir
+          rm -rf "$dir"
+          mkdir -p "$dir/usr/bin" "$dir/usr/lib" \
+                   "$dir/usr/share/applications" \
+                   "$dir/usr/share/icons/hicolor/1024x1024/apps"
+          install -m755 app/target/release/robocontrol "$dir/usr/bin/robocontrol"
+          install -m644 app/robocontrol.desktop "$dir/robocontrol.desktop"
+          install -m644 app/robocontrol.desktop \
+            "$dir/usr/share/applications/robocontrol.desktop"
+          install -m644 app/robocontrol.png "$dir/robocontrol.png"
+          cp "$dir/robocontrol.png" "$dir/.DirIcon"
+          install -m644 app/robocontrol.png \
+            "$dir/usr/share/icons/hicolor/1024x1024/apps/robocontrol.png"
+          #  Única lib não-glibc do binário (serialport). O caminho varia com a
+          #  distro, então o cache do loader é a fonte da verdade.
+          libudev=$(ldconfig -p | awk '/libudev\.so\.1 /{print $NF; exit}')
+          cp -L "$libudev" "$dir/usr/lib/libudev.so.1"
+          cat > "$dir/AppRun" <<'EOF'
+          #!/bin/sh
+          export LD_LIBRARY_PATH="$APPDIR/usr/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+          exec "$APPDIR/usr/bin/robocontrol" "$@"
+          EOF
+          chmod +x "$dir/AppRun"
+
+      - name: appimagetool 1.9.1
+        run: |
+          set -euo pipefail
+          curl -fsSL -o /tmp/appimagetool \
+            https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-x86_64.AppImage
+          echo "ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0  /tmp/appimagetool" \
+            | sha256sum -c -
+          chmod +x /tmp/appimagetool
+
+      - name: Gerar AppImage
+        env:
+          VER: ${{ steps.versao.outputs.valor }}
+        run: |
+          set -euo pipefail
+          #  O runtime extrai para um diretório temporário e roda dali: com
+          #  --appimage-extract-and-run, caminho relativo não vale.
+          ARCH=x86_64 /tmp/appimagetool --appimage-extract-and-run \
+            "$PWD/AppDir" "$PWD/RoboControl-${VER}-x86_64.AppImage"
+
+      - name: Pacote tar.gz (para quem não tem FUSE)
+        env:
+          VER: ${{ steps.versao.outputs.valor }}
+        run: |
+          set -euo pipefail
+          pkg="RoboControl-${VER}-linux-x86_64"
+          mkdir -p "$pkg/firmware/braco_4dof"
+          install -m755 app/target/release/robocontrol "$pkg/robocontrol"
+          install -m644 app/robocontrol.png "$pkg/robocontrol.png"
+          install -m644 app/robocontrol.desktop "$pkg/robocontrol.desktop"
+          install -m644 firmware/braco_4dof/braco_4dof.ino "$pkg/firmware/braco_4dof/"
+          cp LICENSE "$pkg/"
+          tar -czf "$pkg.tar.gz" "$pkg"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: |
+            RoboControl-*.AppImage
+            RoboControl-*-linux-x86_64.tar.gz
+          if-no-files-found: error
+
+  windows:
+    name: Windows x86_64
+    runs-on: windows-latest
+    env:
+      # CRT estática: sem vcruntime140.dll nem VC++ Redistributable.
+      RUSTFLAGS: -C target-feature=+crt-static
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
+        with:
+          workspaces: app
+
+      - name: Build
+        working-directory: app
+        run: cargo build --release --locked --target x86_64-pc-windows-msvc
+
+      - name: Empacotar
+        shell: pwsh
+        run: |
+          $ver = (Select-String -Path app/Cargo.toml -Pattern '^version = "(.*)"').Matches[0].Groups[1].Value
+          $dir = "dist/RoboControl"
+          New-Item -ItemType Directory -Force "$dir/firmware/braco_4dof" | Out-Null
+          Copy-Item app/target/x86_64-pc-windows-msvc/release/robocontrol.exe $dir/
+          Copy-Item firmware/braco_4dof/braco_4dof.ino "$dir/firmware/braco_4dof/"
+          Copy-Item LICENSE $dir/
+          Compress-Archive -Path $dir -DestinationPath "RoboControl-$ver-windows-x86_64.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: RoboControl-*-windows-x86_64.zip
+          if-no-files-found: error
+
+  macos:
+    name: macOS universal
+    runs-on: macos-latest
+    env:
+      MACOSX_DEPLOYMENT_TARGET: '11.0'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Alvos (Apple Silicon + Intel)
+        run: rustup target add aarch64-apple-darwin x86_64-apple-darwin
+
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
+        with:
+          workspaces: app
+
+      - name: Build dos dois alvos
+        working-directory: app
+        run: |
+          cargo build --release --locked --target aarch64-apple-darwin
+          cargo build --release --locked --target x86_64-apple-darwin
+
+      - name: Montar o .app universal
+        run: |
+          set -euo pipefail
+          ver=$(sed -n 's/^version = "\(.*\)"/\1/p' app/Cargo.toml | head -1)
+          app=RoboControl.app
+          rm -rf "$app"
+          mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
+          lipo -create \
+            app/target/aarch64-apple-darwin/release/robocontrol \
+            app/target/x86_64-apple-darwin/release/robocontrol \
+            -output "$app/Contents/MacOS/robocontrol"
+          lipo -info "$app/Contents/MacOS/robocontrol" | grep -q arm64
+          lipo -info "$app/Contents/MacOS/robocontrol" | grep -q x86_64
+          install -m644 firmware/braco_4dof/braco_4dof.ino \
+            "$app/Contents/Resources/braco_4dof.ino"
+
+          iconset="$(mktemp -d)/robocontrol.iconset"
+          mkdir -p "$iconset"
+          for s in 16 32 128 256 512; do
+            sips -z $s $s app/robocontrol.png --out "$iconset/icon_${s}x${s}.png" >/dev/null
+            sips -z $((s * 2)) $((s * 2)) app/robocontrol.png \
+              --out "$iconset/icon_${s}x${s}@2x.png" >/dev/null
+          done
+          iconutil -c icns "$iconset" -o "$app/Contents/Resources/robocontrol.icns"
+
+          cat > "$app/Contents/Info.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>CFBundleExecutable</key><string>robocontrol</string>
+            <key>CFBundleIdentifier</key><string>io.github.gabriel-freitas-s.robocontrol</string>
+            <key>CFBundleName</key><string>RoboControl</string>
+            <key>CFBundleDisplayName</key><string>RoboControl</string>
+            <key>CFBundlePackageType</key><string>APPL</string>
+            <key>CFBundleShortVersionString</key><string>$ver</string>
+            <key>CFBundleVersion</key><string>$ver</string>
+            <key>CFBundleIconFile</key><string>robocontrol</string>
+            <key>LSMinimumSystemVersion</key><string>11.0</string>
+            <key>NSHighResolutionCapable</key><true/>
+          </dict>
+          </plist>
+          EOF
+
+          # Assinatura ad-hoc: obrigatória em arm64 e não exige certificado.
+          codesign --force --sign - --timestamp=none "$app"
+          codesign --verify --deep --strict "$app"
+          ditto -c -k --keepParent "$app" "RoboControl-$ver-macos-universal.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: RoboControl-*-macos-universal.zip
+          if-no-files-found: error
+
+  firmware:
+    name: Firmware (arduino-cli)
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: arduino-cli 1.6.0
+        run: |
+          set -euo pipefail
+          curl -fsSL -o /tmp/arduino-cli.tar.gz \
+            https://github.com/arduino/arduino-cli/releases/download/v1.6.0/arduino-cli_1.6.0_Linux_64bit.tar.gz
+          echo "321ee249f44c78053234fec0f36101092bc6021bf24939e15e0cc2449c5ed250  /tmp/arduino-cli.tar.gz" \
+            | sha256sum -c -
+          tar -xzf /tmp/arduino-cli.tar.gz -C /tmp arduino-cli
+
+      - name: Compilar o sketch
+        run: |
+          set -euo pipefail
+          /tmp/arduino-cli core update-index
+          /tmp/arduino-cli core install arduino:avr@1.8.8
+          /tmp/arduino-cli compile --fqbn arduino:avr:uno \
+            --output-dir dist-fw firmware/braco_4dof
+
+      - name: Anexar sketch e .hex
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          cp dist-fw/braco_4dof.ino.hex out/
+          cp firmware/braco_4dof/braco_4dof.ino out/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: firmware
+          path: out/*
+          if-no-files-found: error
+
+  release:
+    name: Publicar no GitHub
+    if: startsWith(github.ref, 'refs/tags/app-v')
+    needs: [linux, windows, macos, firmware]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Tag confere com o Cargo.toml
+        run: |
+          ver=$(sed -n 's/^version = "\(.*\)"/\1/p' app/Cargo.toml | head -1)
+          if [ "app-v$ver" != "$GITHUB_REF_NAME" ]; then
+            echo "tag $GITHUB_REF_NAME != app-v$ver" >&2
+            exit 1
+          fi
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Checksums
+        run: cd dist && sha256sum * > SHA256SUMS.txt && cat SHA256SUMS.txt
+
+      - name: Atestar proveniência
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: 'dist/*'
+
+      - name: Publicar release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 \
+            || gh release create "$GITHUB_REF_NAME" \
+                 --title "RoboControl ${GITHUB_REF_NAME#app-v}" \
+                 --notes-file .github/release-notes-app.md
+          gh release upload "$GITHUB_REF_NAME" dist/* --clobber

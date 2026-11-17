@@ -13,6 +13,8 @@
 //! | [`protocol`] | gramática serial, unidades e parsing |
 //! | [`link`] | porta serial + thread de leitura |
 //! | [`motion`] | gravação, interpolação e arquivos JSON |
+//! | [`firmware`] | sketch embutido, versão e gravação para upload |
+//! | [`update`] | checagem das versões publicadas (app e firmware) |
 //! | [`icons`] | desenho vetorial dos ícones e botões |
 //!
 //! # Máquina de estados
@@ -48,6 +50,15 @@
 //! Aberto, permite copiar tudo, limpar e selecionar linhas. Ver
 //! [`App::log_panel`].
 //!
+//! # Firmware e atualizações
+//!
+//! O sketch do firmware vai embutido no binário ([`firmware`]); o modal
+//! **Firmware e atualizações** mostra a versão embutida, a que a placa reporta
+//! em `#B` e a publicada no repositório. A checagem roda uma vez no boot em
+//! thread separada ([`update`]) e nunca bloqueia nem impede o uso offline.
+//! Baixar o firmware só grava o `.ino` na pasta do usuário; gravar na placa
+//! continua sendo do Arduino IDE/arduino-cli. O app não se auto-atualiza.
+//!
 //! # Ritmo
 //!
 //! [`TICK`] = 50 ms: a cada tick drenamos a serial, gravamos uma amostra e, se o
@@ -70,35 +81,42 @@
 //! CC BY 4.0 (ver `LICENSE-CC-BY-4.0.txt`). Projeto acadêmico da disciplina de
 //! Sistemas Embarcados do curso de Engenharia da Computação.
 
+mod firmware;
 mod icons;
 mod link;
 mod motion;
 mod protocol;
+mod update;
 
 use icons::{botao, botao_quadrado, Icone};
 use link::{Event, Link};
 use motion::{PlayState, Recording, VELOCIDADES_REPLAY};
 use protocol::Msg;
+use std::cmp::Ordering;
 use std::path::PathBuf;
+use std::sync::mpsc::TryRecvError;
 use std::time::{Duration, Instant};
 
-/// Movimentos ficam no diretório de dados do usuário (não no diretório atual):
-/// pelo menu do sistema o app abre com cwd = $HOME.
+/// Diretório de dados do usuário (movimentos e firmware).
 ///
 /// Linux/macOS: respeita `XDG_DATA_HOME`; sem ele, usa `$HOME/.local/share`.
-/// Windows: `%APPDATA%\robocontrol\movimentos`.
-fn dir_movimentos() -> std::path::PathBuf {
+/// Windows: `%APPDATA%\robocontrol`.
+fn dir_dados() -> PathBuf {
     if let Ok(xdg) = std::env::var("XDG_DATA_HOME") {
-        return std::path::PathBuf::from(xdg).join("robocontrol/movimentos");
+        return PathBuf::from(xdg).join("robocontrol");
     }
     #[cfg(target_os = "windows")]
     let base = std::env::var("APPDATA")
-        .map(std::path::PathBuf::from)
-        .unwrap_or_else(|_| std::path::PathBuf::from("."));
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| PathBuf::from("."));
     #[cfg(not(target_os = "windows"))]
-    let base = std::path::PathBuf::from(std::env::var("HOME").unwrap_or_default())
-        .join(".local/share");
-    base.join("robocontrol/movimentos")
+    let base = PathBuf::from(std::env::var("HOME").unwrap_or_default()).join(".local/share");
+    base.join("robocontrol")
+}
+
+/// Pasta dos movimentos gravados.
+fn dir_movimentos() -> PathBuf {
+    dir_dados().join("movimentos")
 }
 
 /// Período do laço de controle: 50 ms = 20 Hz, a mesma taxa do status do
@@ -254,11 +272,14 @@ fn stick_digital(negativo: bool, positivo: bool, fino: bool) -> f32 {
     if fino { v * 0.5 } else { v }
 }
 
-/// Abre a janela e instala o tema.
+/// Abre a janela, instala o tema e dispara a checagem de versões.
 ///
 /// O tamanho inicial é fixo (1180×560) e `persist_window` fica desligado de
 /// propósito: se o egui lembrasse a última sessão, o app abriria maximizado
 /// sozinho depois de um fechamento em tela cheia.
+///
+/// A checagem de versões começa aqui, e não em [`App::new`], para os testes
+/// continuarem sem rede.
 fn main() -> eframe::Result {
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
@@ -278,7 +299,9 @@ fn main() -> eframe::Result {
         options,
         Box::new(|cc| {
             aplica_tema(&cc.egui_ctx);
-            Ok(Box::new(App::new()))
+            let mut app = App::new();
+            app.inicia_check();
+            Ok(Box::new(app))
         }),
     )
 }
@@ -376,6 +399,14 @@ struct App {
     focar_angulo: bool,
     /// Popup com a lista de atalhos do teclado.
     atalhos_abertos: bool,
+    /// Popup "Firmware e atualizações".
+    firmware_aberto: bool,
+    /// Último resultado da checagem de versões; `None` antes da primeira.
+    novidades: Option<update::Novidades>,
+    /// Checagem em voo (a thread entrega uma mensagem e termina).
+    checando: Option<std::sync::mpsc::Receiver<update::Novidades>>,
+    /// Caminho do último sketch salvo, mostrado no modal.
+    sketch_salvo: Option<PathBuf>,
 }
 
 impl App {
@@ -421,6 +452,10 @@ impl App {
             editando_texto: String::new(),
             focar_angulo: false,
             atalhos_abertos: false,
+            firmware_aberto: false,
+            novidades: None,
+            checando: None,
+            sketch_salvo: None,
         };
         app.refresh_ports();
         app.refresh_files();
@@ -479,6 +514,83 @@ impl App {
         let s = s.into();
         self.loga(s.clone());
         self.erro = Some(s);
+    }
+
+    /// Dispara a checagem de versões; uma por vez, sem bloquear a UI.
+    fn inicia_check(&mut self) {
+        if self.checando.is_some() {
+            return;
+        }
+        self.loga("verificando versões publicadas…");
+        self.checando = Some(update::checar());
+    }
+
+    /// Guarda o resultado da checagem e registra no log.
+    ///
+    /// Nunca usa [`Self::falha`]: ficar sem rede é o caso normal, não pode
+    /// virar banner vermelho nem atrapalhar quem está com o braço na mão.
+    fn aplica_novidades(&mut self, n: update::Novidades) {
+        if let Some(app) = n.app.as_deref() {
+            if firmware::compara(app, update::versao_app()) == Some(Ordering::Greater) {
+                self.loga(format!("app {app} disponível — abra Firmware"));
+            } else {
+                self.loga(format!("app {} é o mais recente", update::versao_app()));
+            }
+        }
+        if let Some(fw) = n.firmware.as_deref() {
+            if firmware::compara(fw, firmware::versao()) == Some(Ordering::Greater) {
+                self.loga(format!(
+                    "firmware {fw} disponível (embutido {})",
+                    firmware::versao()
+                ));
+            } else {
+                self.loga(format!(
+                    "firmware embutido é o mais recente ({})",
+                    firmware::versao()
+                ));
+            }
+        }
+        if let Some(e) = n.erro.as_deref() {
+            self.loga(format!("verificação de versões: {e}"));
+        }
+        self.novidades = Some(n);
+    }
+
+    /// `true` quando há app ou firmware mais novo que o embutido.
+    fn tem_novidade(&self) -> bool {
+        let Some(n) = &self.novidades else { return false };
+        let mais_novo = |disponivel: Option<&str>, atual: &str| {
+            disponivel.and_then(|v| firmware::compara(v, atual)) == Some(Ordering::Greater)
+        };
+        mais_novo(n.app.as_deref(), update::versao_app())
+            || mais_novo(n.firmware.as_deref(), firmware::versao())
+    }
+
+    /// Grava o sketch mais novo disponível (baixado ou embutido) na pasta do
+    /// usuário, pronto para abrir no Arduino IDE.
+    fn salvar_sketch(&mut self) {
+        let baixado = self.novidades.as_ref().and_then(|n| {
+            let versao = n.firmware.as_deref()?;
+            let sketch = n.sketch.as_ref()?;
+            (firmware::compara(versao, firmware::versao()) == Some(Ordering::Greater))
+                .then(|| (sketch.clone(), versao.to_string()))
+        });
+        let (texto, versao) = match baixado {
+            Some((texto, versao)) => (texto, versao),
+            None => (firmware::SKETCH.to_string(), firmware::versao().to_string()),
+        };
+        //  O texto pode ter vindo da rede: valida de novo antes de gravar.
+        if firmware::validar(&texto).is_none() {
+            self.falha("sketch inválido — nada foi salvo");
+            return;
+        }
+        match firmware::salvar(&dir_dados().join("firmware"), &texto) {
+            Ok(p) => {
+                self.loga(format!("firmware {versao} salvo em {}", p.display()));
+                self.sketch_salvo = Some(p);
+            }
+            Err(e) => self.falha(format!("Não foi possível salvar o firmware: {e}")),
+        }
     }
 
     /// Encerra a gravação em andamento, corta o silêncio das pontas e salva.
@@ -661,7 +773,7 @@ impl App {
     /// Só age sem campo de texto (ou combo) focado: digitar um nome de movimento
     /// não pode assumir o controle nem mover o braço. Espaço (STOP) continua
     /// valendo com a lista de atalhos aberta; os demais atalhos ficam desligados
-    /// enquanto ela ou o modal de ângulo estiverem na frente.
+    /// enquanto ela, o modal de firmware ou o de ângulo estiverem na frente.
     fn processa_teclado(&mut self, ctx: &egui::Context) {
         //  `wants_keyboard_input` fica verdadeiro para qualquer widget focado
         //  (inclusive o combo de portas), então o bloqueio de texto é explícito:
@@ -669,8 +781,9 @@ impl App {
         let digitando = self.nome_em_foco || self.editando_junta.is_some();
         let popup = ctx.is_popup_open();
 
-        //  H/F1 alterna a lista. Com campo de texto focado, H é uma letra.
-        if !digitando && !popup
+        //  H/F1 alterna a lista. Com campo de texto focado, H é uma letra; com
+        //  o modal de firmware aberto, quem fecha é o Esc/× do próprio modal.
+        if !digitando && !popup && !self.firmware_aberto
             && (tecla_pressionada(ctx, egui::Key::H)
                 || tecla_pressionada(ctx, egui::Key::F1))
         {
@@ -683,7 +796,7 @@ impl App {
             self.stop();
         }
 
-        if self.atalhos_abertos || digitando || popup {
+        if self.atalhos_abertos || self.firmware_aberto || digitando || popup {
             self.tecla_l = egui::Vec2::ZERO;
             self.tecla_r = egui::Vec2::ZERO;
             return;
@@ -767,6 +880,17 @@ impl App {
     fn tick(&mut self, now: Instant) {
         let dt_ms = (now.saturating_duration_since(self.last_tick).as_secs_f32() * 1000.0).min(250.0);
         self.last_tick = now;
+
+        //  Resultado da checagem de versões: uma mensagem e a thread termina.
+        if let Some(rx) = self.checando.take() {
+            match rx.try_recv() {
+                Ok(n) => self.aplica_novidades(n),
+                Err(TryRecvError::Empty) => self.checando = Some(rx),
+                Err(TryRecvError::Disconnected) => {
+                    self.loga("verificação de versões não concluiu")
+                }
+            }
+        }
 
         let mut events = Vec::new();
         if let Some(l) = self.link.as_ref() {
@@ -1202,6 +1326,13 @@ impl App {
                 {
                     self.atalhos_abertos = !self.atalhos_abertos;
                 }
+                let rotulo = if self.tem_novidade() { "Firmware •" } else { "Firmware" };
+                if icons::botao_texto(ui, rotulo, self.firmware_aberto, 104.0)
+                    .on_hover_text("firmware embutido, versão da placa e atualizações")
+                    .clicked()
+                {
+                    self.firmware_aberto = !self.firmware_aberto;
+                }
                 if self.pc && (self.tecla_l != egui::Vec2::ZERO || self.tecla_r != egui::Vec2::ZERO)
                 {
                     pill(ui, "teclado ativo", COR_ACENTO, cor(0x1b, 0x2a, 0x3a));
@@ -1228,10 +1359,13 @@ impl App {
         }
 
         let conectado = self.link.is_some();
-        //  Com a lista de atalhos ou o modal de ângulo na frente, os pads
-        //  ficam desligados: a tecla/modal é a única entrada de movimento.
-        let habilitado =
-            conectado && self.pc && !self.atalhos_abertos && self.editando_junta.is_none();
+        //  Com a lista de atalhos, o modal de firmware ou o de ângulo na frente,
+        //  os pads ficam desligados: a tecla/modal é a única entrada de movimento.
+        let habilitado = conectado
+            && self.pc
+            && !self.atalhos_abertos
+            && !self.firmware_aberto
+            && self.editando_junta.is_none();
         let live = self.live;
         let esquerdo = [
             ("Base", 0, conectado.then_some(live[0])),
@@ -1946,6 +2080,187 @@ impl App {
         }
     }
 
+    /// Popup "Firmware e atualizações".
+    ///
+    /// Reúne as três versões (embutida, a que a placa reporta em `#B` e a
+    /// publicada no repositório), o botão que grava o sketch na pasta do
+    /// usuário e o link da release. O app não grava firmware na placa: o
+    /// upload continua sendo do Arduino IDE/arduino-cli.
+    ///
+    /// Tudo que vem de `self` é copiado antes da janela para não manter
+    /// empréstimo enquanto os botões chamam `&mut self`.
+    fn firmware_modal(&mut self, ctx: &egui::Context) {
+        if !self.firmware_aberto {
+            return;
+        }
+        let embutida = firmware::versao().to_string();
+        let app_atual = update::versao_app().to_string();
+        let placa = self.version.clone();
+        let conectado = self.link.is_some();
+        let checando = self.checando.is_some();
+        let disponivel = self.novidades.as_ref().and_then(|n| n.firmware.clone());
+        let app_novo = self.novidades.as_ref().and_then(|n| n.app.clone());
+        let erro = self.novidades.as_ref().and_then(|n| n.erro.clone());
+        let salvo = self.sketch_salvo.clone();
+
+        let tela = ctx.content_rect();
+        //  Cabe na janela mínima (760×320): 20 de margem e corpo rolável.
+        let largura = (tela.width() - 40.0).clamp(420.0, 660.0);
+        let altura = (tela.height() - 40.0).clamp(280.0, 560.0);
+        let mut aberto = true;
+        let mut fechar = false;
+
+        egui::Window::new("Firmware e atualizações")
+            .collapsible(false)
+            .resizable(false)
+            .anchor(egui::Align2::CENTER_CENTER, egui::Vec2::ZERO)
+            .fixed_size(egui::vec2(largura, altura))
+            .open(&mut aberto)
+            .show(ctx, |ui| {
+                let novo_fw = disponivel.as_deref().and_then(|v| firmware::compara(v, &embutida))
+                    == Some(Ordering::Greater);
+                let novo_app = app_novo.as_deref().and_then(|v| firmware::compara(v, &app_atual))
+                    == Some(Ordering::Greater);
+
+                //  Todo o corpo rola; só o Fechar fica fixo. Sem isso o
+                //  conteúdo empurra a janela para fora em telas baixas.
+                let altura_scroll = (altura - 96.0).max(120.0);
+                egui::ScrollArea::vertical()
+                    .auto_shrink([false, false])
+                    .max_height(altura_scroll)
+                    .show(ui, |ui| {
+                        egui::Grid::new("fw_versoes")
+                            .num_columns(2)
+                            .spacing([18.0, 6.0])
+                            .show(ui, |ui| {
+                                ui.label("Embutido no app");
+                                ui.label(egui::RichText::new(&embutida).strong());
+                                ui.end_row();
+
+                                ui.label("Na placa");
+                                ui.label(if conectado {
+                                    placa.clone()
+                                } else {
+                                    "— (desconectado)".to_string()
+                                });
+                                ui.end_row();
+
+                                ui.label("No repositório");
+                                ui.label(match &disponivel {
+                                    Some(v) if novo_fw => format!("{v} (mais novo)"),
+                                    Some(v) => v.clone(),
+                                    None => "—".to_string(),
+                                });
+                                ui.end_row();
+
+                                ui.label("App");
+                                ui.label(match &app_novo {
+                                    Some(v) if novo_app => format!("{app_atual} → {v} disponível"),
+                                    _ => app_atual.clone(),
+                                });
+                                ui.end_row();
+                            });
+
+                        ui.add_space(8.0);
+                        ui.horizontal_wrapped(|ui| {
+                            if checando {
+                                ui.label(
+                                    egui::RichText::new("verificando…").small().color(COR_MUTED),
+                                );
+                            } else if icons::botao_texto(ui, "Verificar agora", false, 148.0)
+                                .clicked()
+                            {
+                                self.inicia_check();
+                            }
+                            if icons::botao_texto(ui, "Salvar sketch (.ino)", false, 184.0)
+                                .on_hover_text("grava o firmware na pasta do usuário para upload")
+                                .clicked()
+                            {
+                                self.salvar_sketch();
+                            }
+                            if novo_app {
+                                if let Some(url) = app_novo.as_deref().and_then(update::url_release) {
+                                    if icons::botao_texto(ui, "Abrir release", false, 132.0)
+                                        .clicked()
+                                    {
+                                        ui.ctx().open_url(egui::OpenUrl::new_tab(url));
+                                    }
+                                }
+                            }
+                        });
+
+                        if let Some(p) = &salvo {
+                            ui.add_space(6.0);
+                            ui.add(
+                                egui::Label::new(
+                                    egui::RichText::new(format!("salvo em {}", p.display()))
+                                        .small()
+                                        .color(COR_OK),
+                                )
+                                .selectable(true),
+                            );
+                        }
+                        if let Some(e) = &erro {
+                            ui.add_space(4.0);
+                            ui.label(
+                                egui::RichText::new(format!("não foi possível verificar: {e}"))
+                                    .small()
+                                    .color(COR_WARN),
+                            );
+                        }
+
+                        ui.add_space(8.0);
+                        ui.separator();
+                        ui.add_space(6.0);
+                        ui.label(
+                            egui::RichText::new(
+                                "Para gravar na placa, abra o arquivo salvo no Arduino IDE \
+                                 (Arduino Uno + a porta) e faça Upload; ou use o arduino-cli \
+                                 com o mesmo sketch.",
+                            )
+                            .small(),
+                        );
+                        ui.add_space(6.0);
+                        ui.label(
+                            egui::RichText::new(
+                                "Gravar reinicia a placa: os servos ficam sem torque durante o \
+                                 upload, então escore o braço antes. A Posição 0 e os limites \
+                                 ficam na EEPROM e sobrevivem à regravação.\n\
+                                 Clones com CH340 podem precisar do driver do fabricante no \
+                                 Windows (e em algumas versões do macOS); o Uno R3 original não.",
+                            )
+                            .small()
+                            .color(COR_MUTED),
+                        );
+                        ui.add_space(6.0);
+                        let pasta = dir_dados().join("firmware");
+                        ui.add(
+                            egui::Label::new(
+                                egui::RichText::new(format!("pasta: {}", pasta.display()))
+                                    .small()
+                                    .color(COR_MUTED),
+                            )
+                            .selectable(true),
+                        );
+                    });
+
+                ui.add_space(8.0);
+                if icons::botao_texto(ui, "Fechar", false, ui.available_width()).clicked() {
+                    fechar = true;
+                }
+            });
+
+        if ctx.input(|i| i.key_pressed(egui::Key::Escape)) {
+            fechar = true;
+        }
+        if !aberto {
+            fechar = true;
+        }
+        if fechar {
+            self.firmware_aberto = false;
+        }
+    }
+
     /// Modal para digitar o ângulo de uma junta.
     ///
     /// Valida a cada frame com [`avaliar_alvo`] para mostrar o motivo do erro
@@ -2161,6 +2476,7 @@ impl eframe::App for App {
 
         self.editor_angulo_modal(ctx);
         self.atalhos_modal(ctx);
+        self.firmware_modal(ctx);
         ctx.request_repaint_after(Duration::from_millis(20));
     }
 }

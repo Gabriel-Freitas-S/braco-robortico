@@ -112,6 +112,13 @@ atalho no menu **só no Linux**; nos outros, use `cargo run --release`.
 
 ## Rodar o app
 
+Executáveis prontos para Linux (AppImage e tar.gz), Windows (`.zip` portable) e
+macOS (`.app` universal) ficam na
+[página de releases](https://github.com/Gabriel-Freitas-S/braco-robortico/releases).
+O sketch do firmware vai **embutido no app**: o botão **Firmware** salva o
+`.ino` para upload — ver
+[`app/README.md`](app/README.md#firmware-e-atualizações).
+
 ### Linux
 
 ```bash
@@ -151,7 +158,8 @@ Teclado: **WASD**/setas movem os pads, **Shift** deixa fino; **M**/`J` assumem/d
 ## Firmware
 
 Arduino Uno, sketch `firmware/braco_4dof/braco_4dof.ino` (usa só `Servo.h` e
-`EEPROM.h`, ambas do core AVR).
+`EEPROM.h`, ambas do core AVR). O app leva uma cópia embutida deste sketch e
+avisa no botão **Firmware** quando há versão mais nova no repositório.
 
 - **Arduino IDE:** abra o sketch, selecione *Arduino Uno* e a porta, clique em Upload.
 - **arduino-cli:**

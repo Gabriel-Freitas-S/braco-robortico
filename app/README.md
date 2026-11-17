@@ -9,12 +9,31 @@ vira tranco.
 
 | | |
 |---|---|
-| **Todos** | Rust stable + `cargo`; Arduino Uno + cabo USB |
-| **Linux** | usuário no grupo `dialout` (Arch: `uucp`) + libs de build |
-| **Windows** | Rust MSVC + *Desktop development with C++*; driver CH340 em clones |
-| **macOS** | Xcode Command Line Tools |
+| **Todos** | Arduino Uno + cabo USB |
+| **Para compilar** | Rust stable + `cargo` (Linux: `libudev-dev`; Windows: Rust MSVC + *Desktop development with C++*; macOS: Xcode CLT) |
+| **Linux** | usuário no grupo `dialout` (Arch: `uucp`) |
+| **Windows** | driver CH340 em clones |
+| **macOS** | — |
 
-O `install.sh` é só Linux; nos outros sistemas use `cargo run --release`.
+Para só usar o app, baixe o executável pronto — não precisa de Rust. O
+`install.sh` é só Linux; nos outros sistemas use o pacote ou `cargo run --release`.
+
+## Baixar pronto
+
+Os executáveis saem do GitHub Actions a cada tag `app-v*` e ficam em
+<https://github.com/Gabriel-Freitas-S/braco-robortico/releases>:
+
+| Sistema | Arquivo | Nota |
+|---|---|---|
+| Linux | `RoboControl-*-x86_64.AppImage` | precisa de FUSE 2 (`libfuse2`/`libfuse2t64`); sem FUSE: `--appimage-extract-and-run` |
+| Linux (alternativa) | `RoboControl-*-linux-x86_64.tar.gz` | sem FUSE; extraia e rode `./robocontrol` |
+| Windows | `RoboControl-*-windows-x86_64.zip` | portable, sem instalador |
+| macOS | `RoboControl-*-macos-universal.zip` | Intel + Apple Silicon, assinatura ad-hoc |
+
+Linux exige glibc ≥ 2.35 (Ubuntu 22.04+, Debian 12+, Fedora 36+). Os binários
+não têm certificado pago: no Windows use **Mais informações → Executar assim
+mesmo**; no macOS, botão direito → **Abrir**. `SHA256SUMS.txt` acompanha o
+release e a proveniência é atestada pelo Actions.
 
 ## Rodar
 
@@ -49,6 +68,25 @@ Movimentos em `%APPDATA%\robocontrol\movimentos`.
 
 Depois: escolher a porta (Linux `/dev/ttyACM0`; macOS `/dev/cu.usbmodem*`;
 Windows `COM3`) → **Conectar** → **Assumir controle (PC)**.
+
+## Firmware e atualizações
+
+O sketch vai **embutido no binário** (o mesmo `.ino` do repositório), então o
+app abre e funciona sem rede. No boot ele consulta o repositório uma vez, em
+thread separada; o botão **Firmware** mostra:
+
+- a versão embutida, a que a placa reporta em `#B` e a publicada em `main`;
+- **Salvar sketch (.ino)** — grava em
+  `~/.local/share/robocontrol/firmware/braco_4dof/` (Windows:
+  `%APPDATA%\robocontrol\firmware\...`), pronto para abrir no Arduino IDE;
+- **Abrir release** quando há versão nova do app. O app **não se
+  auto-atualiza**: baixar e executar binário sem assinatura seria pior que o
+  aviso.
+
+Gravar na placa continua no Arduino IDE/arduino-cli (ver a seção **Firmware**
+no [README do projeto](../README.md#firmware)). Gravar reinicia a placa e os
+servos ficam sem torque durante o upload — escore o braço. A Posição 0 e os
+limites ficam na EEPROM e sobrevivem à regravação.
 
 A tela mostra **dois pads de toque**, no mesmo layout da bancada:
 
@@ -152,6 +190,8 @@ O aviso aparece em vermelho na barra superior.
 - `src/protocol.rs` — codificação/decodificação das linhas (testado)
 - `src/link.rs` — porta serial: leitura em thread, escrita síncrona
 - `src/motion.rs` — gravação, interpolação do replay, JSON (testado)
+- `src/firmware.rs` — sketch embutido, versão e gravação do `.ino` (testado)
+- `src/update.rs` — checagem de versões publicadas, HTTPS (testado)
 - `src/main.rs` — UI egui (pads de toque, teclado, atalhos, log, gravação, replay)
 
 ## Documentação

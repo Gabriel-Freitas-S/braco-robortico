@@ -1,5 +1,12 @@
 # Changelog
 
+## App 0.1.0 — executáveis e firmware embutido — 2026-11-17
+
+- **Executáveis:** novo workflow `app-release.yml` publica, a cada tag `app-v*`, AppImage (com `libudev` embutida; glibc ≥ 2.35), tar.gz sem FUSE, zip portable do Windows (CRT estática) e `.app` universal do macOS (arm64 + Intel, assinatura ad-hoc) — só em GitHub Releases, nunca no crates.io.
+- **Firmware embutido:** o `.ino` do repositório vai compilado no binário (`include_str!`); o modal **Firmware e atualizações** mostra a versão embutida, a da placa (`#B`) e a publicada, e salva o sketch em `~/.local/share/robocontrol/firmware/` (Windows: `%APPDATA%`).
+- **Checagem no boot:** uma requisição HTTPS em thread separada (rustls/ring, sem OpenSSL) para as releases e para o sketch em `main`; offline degrada para o embutido, sem popup. Nada é executado automaticamente — não há auto-update.
+- **Empacotamento:** ícone PNG 1024² para AppImage/`.app`, `robocontrol.desktop` como fonte única do atalho (usado também pelo `install.sh`), `SHA256SUMS.txt` e atestado de proveniência em cada release, com o `.hex` do firmware compilado anexado.
+
 ## Firmware 1.3.7 — 2026-11-17
 
 - **Botões travados no modo PC:** D2 (Posição 0) e D4 (garra/limite da Base) ficam inertes enquanto o app controla. Antes, segurar o joystick podia salvar a Posição 0 ou mover a Base para o limite, furando o travamento e bloqueando o loop por ~0,5 s.

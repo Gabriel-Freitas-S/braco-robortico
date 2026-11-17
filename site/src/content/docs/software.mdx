@@ -42,6 +42,11 @@ watchdog de 500 ms segura a posição e devolve o controle ao joystick.
 
 ## Rodar o app
 
+Executáveis prontos para Linux (AppImage e tar.gz), Windows (`.zip` portable) e
+macOS (`.app` universal) ficam nos
+[releases do repositório](https://github.com/Gabriel-Freitas-S/braco-robortico/releases).
+Para compilar:
+
 ```bash
 # Linux / macOS
 cd app
@@ -96,6 +101,11 @@ ficam em `~/.local/share/robocontrol/movimentos/` (Windows:
 
 Sketch: `firmware/braco_4dof/braco_4dof.ino`, versão **1.3.7**. Usa apenas
 `Servo.h` e `EEPROM.h` do core AVR.
+
+O app leva uma cópia embutida deste sketch: o botão **Firmware** mostra a versão
+da placa (via `#B`) e a publicada no repositório, e salva o `.ino` em
+`~/.local/share/robocontrol/firmware/` (Windows: `%APPDATA%\robocontrol\firmware\`)
+para upload. O app não grava firmware nem se auto-atualiza.
 
 ```bash
 # Arduino IDE: abra o sketch, selecione Arduino Uno e a porta, Upload
