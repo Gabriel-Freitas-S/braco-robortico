@@ -1,6 +1,6 @@
 ---
 title: "Software, firmware e protocolo"
-description: "RoboControl, firmware Arduino 1.3.6, protocolo serial, gravação, replay e solução de problemas do braço robótico 4-DOF."
+description: "RoboControl, firmware Arduino 1.3.7, protocolo serial, gravação, replay e solução de problemas do braço robótico 4-DOF."
 ---
 
 O app propõe alvos; a placa executa a rampa, os limites e o hold. Esta página
@@ -94,7 +94,7 @@ ficam em `~/.local/share/robocontrol/movimentos/` (Windows:
 
 ## Firmware
 
-Sketch: `firmware/braco_4dof/braco_4dof.ino`, versão **1.3.6**. Usa apenas
+Sketch: `firmware/braco_4dof/braco_4dof.ino`, versão **1.3.7**. Usa apenas
 `Servo.h` e `EEPROM.h` do core AVR.
 
 ```bash
@@ -167,7 +167,7 @@ verdade; o app só propõe alvos.
 
 <details>
 <summary>O app não assume o controle</summary>
-<p>Confirme o firmware 1.3.6 e o modo PC (<code>#M</code>). Se o joystick físico estiver ativo, o firmware ignora o PC até o app assumir. Devolver/STOP devolvem o comando à placa.</p>
+<p>Confirme o firmware 1.3.7 e o modo PC (<code>#M</code>). Se o joystick físico estiver ativo, o firmware ignora o PC até o app assumir. Devolver/STOP devolvem o comando à placa.</p>
 </details>
 
 <div class="doc-next">

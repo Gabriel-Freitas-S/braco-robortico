@@ -1,5 +1,10 @@
 # Changelog
 
+## Firmware 1.3.7 — 2026-11-17
+
+- **Botões travados no modo PC:** D2 (Posição 0) e D4 (garra/limite da Base) ficam inertes enquanto o app controla. Antes, segurar o joystick podia salvar a Posição 0 ou mover a Base para o limite, furando o travamento e bloqueando o loop por ~0,5 s.
+- **Diagnóstico:** o firmware avisa no log quando o heartbeat do app para e o joystick assume (`PC: sem heartbeat...`).
+
 ## Firmware 1.3.6 — 2026-11-17
 
 - **Posição exata:** a rampa agora chega no alvo (170° fica 170°, não 169°); antes ela parava a 0,005° e o status truncava para o inteiro anterior.

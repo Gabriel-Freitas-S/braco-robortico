@@ -102,7 +102,7 @@
  * ============================================================================
  */
 
-#define FW_VER "1.3.6"
+#define FW_VER "1.3.7"
 
 #include <Servo.h>
 #include <EEPROM.h>
@@ -1105,6 +1105,7 @@ void loop() {
   if (modoPC && (agora - ultimoComandoPcMs > PC_TIMEOUT_MS)) {
     modoPC = false;
     seguraJuntas();
+    Serial.println(F("PC: sem heartbeat, joystick assumiu o controle"));
   }
 
   int joy1X = leEixoSuave(PIN_JOY1_X);
@@ -1116,7 +1117,13 @@ void loop() {
   //      * Segurar por ~2s (1800 ms) = Salva localização atual na EEPROM
   //      * Clique rápido             = Vai suavemente para a localização salva
   bool btn1Agora = (digitalRead(PIN_BTN_JOY1) == LOW);
-  if (btn1Agora && !btn1Pressionado) {
+  if (modoPC) {
+    //  PC no controle: o botão físico fica travado junto com os eixos. Sem
+    //  isso, segurar o joystick salva a Posição 0 e bloqueia o loop por ~0,5 s
+    //  (EEPROM + LED), derrubando o heartbeat do app.
+    btn1Pressionado = false;
+    btn1SalvouNoHold = false;
+  } else if (btn1Agora && !btn1Pressionado) {
     btn1Pressionado = true;
     btn1SalvouNoHold = false;
     inicioPressaoBtn1Ms = agora;
@@ -1139,7 +1146,13 @@ void loop() {
   //      * Segurar por ~2s  = Salva o limite lateral da Base antes do parafuso (com recuo de 1.5°
   //                           para nunca forçar), ou restaura limites se a Base estiver no centro
   bool btn2Agora = (digitalRead(PIN_BTN_JOY2) == LOW);
-  if (btn2Agora && !btn2Pressionado) {
+  if (modoPC) {
+    //  PC no controle: botão travado. O clique da garra e o limite da Base
+    //  continuam disponíveis pelo app (#L1/#L0); o limite da Base move o alvo
+    //  e era o que "furava" o travamento do joystick.
+    btn2Pressionado = false;
+    btn2SalvouNoHold = false;
+  } else if (btn2Agora && !btn2Pressionado) {
     btn2Pressionado = true;
     btn2SalvouNoHold = false;
     inicioPressaoBtn2Ms = agora;

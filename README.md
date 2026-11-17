@@ -8,7 +8,7 @@
 Peças em PLA na Bambu Lab A1, firmware Arduino e controle híbrido.</p>
 
 <p align="center">
-  <img alt="firmware 1.3.6" src="https://img.shields.io/badge/firmware-1.3.6-7fb2e5?style=flat-square">
+  <img alt="firmware 1.3.7" src="https://img.shields.io/badge/firmware-1.3.7-7fb2e5?style=flat-square">
   <img alt="app 0.1.0" src="https://img.shields.io/badge/app-0.1.0-7fb2e5?style=flat-square">
   <img alt="manual Rev 2.3" src="https://img.shields.io/badge/manual-Rev%202.3-7fb2e5?style=flat-square">
   <img alt="código MIT" src="https://img.shields.io/badge/c%C3%B3digo-MIT-8fd6a2?style=flat-square">
@@ -164,7 +164,7 @@ arduino-cli upload -p /dev/ttyACM0 --fqbn arduino:avr:uno firmware/braco_4dof
 
 No Windows troque `/dev/ttyACM0` por `COM3`; no macOS, por `/dev/cu.usbmodem...`.
 
-### Pinagem (v1.3.6)
+### Pinagem (v1.3.7)
 
 | Junta | Pino | Posição 0 | Faixa |
 |---|---|---|---|
@@ -189,7 +189,7 @@ montagem.
 
 - [`app/`](app/) — RoboControl (Rust/egui): dois pads de toque, teclado, gravação, replay e log.
 - [Documentação do código (rustdoc)](https://gabriel-freitas-s.github.io/braco-robortico/rust/robocontrol/index.html) — API interna do app.
-- [`firmware/braco_4dof/`](firmware/braco_4dof/) — firmware Arduino (v1.3.6).
+- [`firmware/braco_4dof/`](firmware/braco_4dof/) — firmware Arduino (v1.3.7).
 - [`wokwi/`](wokwi/) — simulação do firmware no Wokwi.
 - [Hardware e eletrônica](https://gabriel-freitas-s.github.io/braco-robortico/hardware/) — BOM, pinagem, energia e calibração.
 - [Software e protocolo](https://gabriel-freitas-s.github.io/braco-robortico/software/) — app, firmware, comandos e problemas comuns.
