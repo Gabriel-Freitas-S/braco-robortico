@@ -263,6 +263,9 @@ jobs:
           set -euo pipefail
           /tmp/arduino-cli core update-index
           /tmp/arduino-cli core install arduino:avr@1.8.8
+          #  Servo.h não faz parte do core AVR: no IDE ela vem embutida, no
+          #  arduino-cli é uma biblioteca à parte.
+          /tmp/arduino-cli lib install "Servo@1.3.0"
           /tmp/arduino-cli compile --fqbn arduino:avr:uno \
             --output-dir dist-fw firmware/braco_4dof
 
