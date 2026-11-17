@@ -1,5 +1,12 @@
 # Changelog
 
+## Firmware 1.3.6 — 2026-11-17
+
+- **Posição exata:** a rampa agora chega no alvo (170° fica 170°, não 169°); antes ela parava a 0,005° e o status truncava para o inteiro anterior.
+- **Calibração de 1°:** `OFFSET_BASE`, `OFFSET_OMBRO` e `OFFSET_COTOVELO` somam 1° só no pulso do servo (alvo 170° → pulso de 171°), compensando a folga/recuo sem mudar o status nem os limites. A garra fica em 0 por padrão.
+- **Servos soltos:** Base, Ombro e Cotovelo voltam a ser desenergizados após 240/600 ms sem movimento. O status fica no alvo exato; o recuo físico é compensado pelo offset.
+- **STOP:** volta a desenergizar os servos em ~0,6 s.
+
 ## Migração para Astro + Starlight — 2026-11-15
 
 - **Stack:** site migrado para Astro 7 + Starlight + UnoCSS (ícones Lucide); landing e páginas de referência no mesmo header, busca e tema.

@@ -102,7 +102,7 @@
  * ============================================================================
  */
 
-#define FW_VER "1.3.4"
+#define FW_VER "1.3.6"
 
 #include <Servo.h>
 #include <EEPROM.h>
@@ -344,15 +344,30 @@ float constrainAngle(float v, float lo, float hi) {
 //  Depois travamos o resultado entre US_MIN e US_MAX, para que uma falha
 //  de cálculo nunca envie um pulso fora da faixa segura do servo.
 
-int anguloParaUs(float ang) {
-  float us = US_MIN + (ang / 180.0) * (US_MAX - US_MIN);
+//  Calibração fina por junta, em graus. Compensa o servo que fica ~1° atrás
+//  do ângulo pedido (folga das engrenagens e curso do pulso). O valor entra SÓ
+//  no pulso: status, app, limites e Posição 0 continuam em graus reais.
+//  Ex.: OFFSET_OMBRO = 1.0 manda 171° quando o alvo é 170°, e assenta em ~170°.
+const float OFFSET_BASE     = 1.0;
+const float OFFSET_OMBRO    = 1.0;
+const float OFFSET_COTOVELO = 1.0;
+const float OFFSET_GARRA    = 0.0;
+
+int anguloParaUs(float ang, float offset = 0.0) {
+  float us = US_MIN + ((ang + offset) / 180.0) * (US_MAX - US_MIN);
   if (us < US_MIN) us = US_MIN;
   if (us > US_MAX) us = US_MAX;
   return (int)us;
 }
 
+//  A Base passa pelo limite salvo antes do offset: o +1° não pode comer a
+//  margem de 1.5° que protege o parafuso.
+int pulsoBase(float ang) {
+  return anguloParaUs(constrainAngle(ang + OFFSET_BASE, limBaseMin, limBaseMax));
+}
+
 int anguloParaUsGarra(float ang) {
-  float us = US_MIN_GARRA + (ang / 180.0) * (US_MAX - US_MIN_GARRA);
+  float us = US_MIN_GARRA + ((ang + OFFSET_GARRA) / 180.0) * (US_MAX - US_MIN_GARRA);
   if (us < US_MIN_GARRA) us = US_MIN_GARRA;
   if (us > US_MAX)       us = US_MAX;
   return (int)us;
@@ -361,14 +376,16 @@ int anguloParaUsGarra(float ang) {
 //  --- Um passo de suavização com LIMITE DE VELOCIDADE
 //
 //  Anda na direção do alvo no máximo "passoMax" graus nesta volta do loop
-//  (passoMax = velocidade da junta × tempo decorrido em ms). Se o que
-//  falta é menor que isso, chega direto ao alvo e descansa — sem a
-//  condição de parada a junta "tremularia" os últimos milésimos de grau
-//  para sempre, gastando CPU.
+//  (passoMax = velocidade da junta × tempo decorrido em ms). Se o que falta
+//  cabe no passo deste ciclo, chega EXATO ao alvo e descansa — sem essa
+//  condição a junta "tremularia" os últimos milésimos de grau para sempre.
 
 float suaviza(float atual, float alvo, float passoMax) {
   float erro = alvo - atual;
-  if (erro > -0.005 && erro < 0.005) return alvo;
+  //  O passo deste ciclo cobre o que falta: chega EXATO no alvo.
+  //  Com a condição antiga (erro < 0.005) a junta parava a 169,99° quando o
+  //  alvo era 170°: o servo recebia ~170°, mas o status truncava para 169.
+  if (erro <= passoMax && erro >= -passoMax) return alvo;
   float d = erro * FATOR_SUAVIZACAO;
   if (d > passoMax) d = passoMax;
   if (d < -passoMax) d = -passoMax;
@@ -416,7 +433,8 @@ unsigned long ativoCotoveloMs = 0;
 unsigned long ativoGarraMs    = 0;
 //  Quanto tempo cada servo continua energizado depois do último movimento.
 //  Detach economiza e evita aquecimento, mas solta a junta: tempo curto demais
-//  deixa o braço ceder com o próprio peso.
+//  deixa o braço ceder com o próprio peso. O status continua no alvo exato
+//  (a rampa encosta nele); o recuo físico de ~1° ao soltar é esperado.
 const unsigned long TEMPO_HOLD_MS = 240;
 //  A base sustenta o braco inteiro: solta o motor mais devagar para nao despencar
 //  quando voce para de empurrar por um instante no meio do giro.
@@ -555,8 +573,8 @@ void sequenceInicial() {
     ativoCotoveloMs = agora;
     ativoGarraMs    = agora;
     servoOmbro.attach(PIN_SERVO_OMBRO);
-    servoOmbro.writeMicroseconds(anguloParaUs(angOmbro));
-    escreveCotovelo(anguloParaUs(angCotovelo));
+    servoOmbro.writeMicroseconds(anguloParaUs(angOmbro, OFFSET_OMBRO));
+    escreveCotovelo(anguloParaUs(angCotovelo, OFFSET_COTOVELO));
     if (garraTravada) {
       servoGarra.attach(PIN_SERVO_GARRA);
       servoGarra.writeMicroseconds(anguloParaUsGarra(angGarra));
@@ -584,7 +602,7 @@ void sequenceInicial() {
   servoGarra.detach();
 
   // Posiciona a Base no centro inicial (um servo por vez para não exigir corrente alta)
-  escreveBase(anguloParaUs(angBase));
+  escreveBase(pulsoBase(angBase));
   delay(300);
   desligaBase();
 
@@ -1083,7 +1101,7 @@ void loop() {
   }
   ultimoCicloMs = agora;
 
-  //  --- ETAPA B0: heartbeat do app (500 ms sem #P = solta e segura) -----
+  //  --- ETAPA B0: heartbeat do app (500 ms sem #P = solta o controle e segura a pose) -----
   if (modoPC && (agora - ultimoComandoPcMs > PC_TIMEOUT_MS)) {
     modoPC = false;
     seguraJuntas();
@@ -1245,7 +1263,10 @@ void loop() {
 
   float passoMax = VEL_SUAVE * (float)INTERVALO_CONTROLE_MS;
 
-  if (abs(alvoBase - angBase) > 0.005) {
+  //  Qualquer diferença chama a rampa, mesmo 0,004°: é ela que decide se já
+  //  pode encostar no alvo. Com a folga de 0,005° a junta parava em 169,99°
+  //  e o status truncava para 169 quando o alvo era 170.
+  if (abs(alvoBase - angBase) > 0.0) {
     angBase = suaviza(angBase, alvoBase, passoMax);
     ativoBaseMs = agora;
   }
@@ -1253,33 +1274,33 @@ void loop() {
   unsigned long holdBase = noLimiteBase ? 120 : TEMPO_HOLD_BASE_MS;
   bool baseAtiva = (ativoBaseMs != 0 && (agora - ativoBaseMs <= holdBase));
   if (baseAtiva) {
-    escreveBase(anguloParaUs(angBase));
+    escreveBase(pulsoBase(angBase));
   } else {
     desligaBase();
   }
 
-  if (abs(alvoOmbro - angOmbro) > 0.005) {
+  if (abs(alvoOmbro - angOmbro) > 0.0) {
     angOmbro = suaviza(angOmbro, alvoOmbro, passoMax);
     ativoOmbroMs = agora;
   }
   if (ativoOmbroMs != 0 && (agora - ativoOmbroMs <= TEMPO_HOLD_MS)) {
     if (!servoOmbro.attached()) servoOmbro.attach(PIN_SERVO_OMBRO);
-    servoOmbro.writeMicroseconds(anguloParaUs(angOmbro));
+    servoOmbro.writeMicroseconds(anguloParaUs(angOmbro, OFFSET_OMBRO));
   } else if (servoOmbro.attached()) {
     servoOmbro.detach();
   }
 
-  if (abs(alvoCotovelo - angCotovelo) > 0.005) {
+  if (abs(alvoCotovelo - angCotovelo) > 0.0) {
     angCotovelo = suaviza(angCotovelo, alvoCotovelo, passoMax);
     ativoCotoveloMs = agora;
   }
   if (ativoCotoveloMs != 0 && (agora - ativoCotoveloMs <= TEMPO_HOLD_MS)) {
-    escreveCotovelo(anguloParaUs(angCotovelo));
+    escreveCotovelo(anguloParaUs(angCotovelo, OFFSET_COTOVELO));
   } else {
     desligaCotovelo();
   }
 
-  if (abs(alvoGarra - angGarra) > 0.005) {
+  if (abs(alvoGarra - angGarra) > 0.0) {
     angGarra = suaviza(angGarra, alvoGarra, passoMax * 1.5);
     ativoGarraMs = agora;
   }
