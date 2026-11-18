@@ -225,7 +225,6 @@
     padding: 18px 22px;
     background: var(--bg-raised);
     border: 1px solid var(--line);
-    border-radius: 10px;
     color: #c6d0da;
     font-size: .94rem;
   }
@@ -237,7 +236,6 @@
   .plate {
     margin: 0;
     border: 1px solid var(--line);
-    border-radius: 12px;
     overflow: hidden;
     background: #1d2229;
   }
@@ -267,7 +265,6 @@
   .part {
     margin: 0;
     border: 1px solid var(--line);
-    border-radius: 12px;
     overflow: hidden;
     background: var(--panel);
     transition: border-color .18s ease-out, transform .18s ease-out;
@@ -287,7 +284,6 @@
   .shot {
     margin: 0;
     border: 1px solid var(--line);
-    border-radius: 12px;
     overflow: hidden;
     background: var(--panel);
   }
@@ -307,7 +303,6 @@
   .app-shot {
     margin: 0 0 36px;
     border: 1px solid var(--line);
-    border-radius: 12px;
     overflow: hidden;
     background: #0d1116;
   }
@@ -375,7 +370,6 @@
     padding: 18px 20px;
     background: #0d1116;
     border: 1px solid var(--line);
-    border-radius: 10px;
     overflow-x: auto;
     font-family: var(--mono);
     font-size: .82rem;
@@ -386,6 +380,62 @@
   .code .c { color: #6b7a89; }
   .code .k { color: var(--accent); }
   @media (max-width: 820px) { .software { grid-template-columns: 1fr; gap: 28px; } }
+
+  /* App desktop: binários prontos por plataforma */
+  .app-download {
+    margin-bottom: 26px;
+    padding: 22px 24px;
+    border: 1px solid var(--line);
+    background: var(--bg-raised);
+  }
+  .app-download .mono {
+    display: block;
+    margin-bottom: 8px;
+    font-family: var(--mono);
+    font-size: .72rem;
+    letter-spacing: .06em;
+    color: var(--accent);
+  }
+  .app-download h3 { margin: 0 0 6px; font-size: 1.2rem; }
+  .app-download-copy { margin: 0; color: var(--muted); font-size: .95rem; max-width: 62ch; }
+  .app-download-links {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 18px;
+  }
+  .app-download-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid #2a3542;
+    background: #121820;
+    color: var(--text);
+    text-decoration: none;
+    transition: border-color .18s ease-out, background-color .18s ease-out;
+    clip-path: var(--hud-clip-sm);
+  }
+  .app-download-option:hover { border-color: #3d4855; background: #1d2229; }
+  .app-download-option:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
+  .app-download-option svg { width: 26px; height: 26px; flex: none; color: var(--accent); }
+  .app-download-option span { display: grid; gap: 2px; min-width: 0; }
+  .app-download-option strong { font-size: .98rem; font-weight: 600; }
+  .app-download-option small {
+    font-family: var(--mono);
+    font-size: .72rem;
+    letter-spacing: .02em;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  @media (max-width: 640px) { .app-download-links { grid-template-columns: 1fr; } }
+  .app-download-foot {
+    margin: 16px 0 0;
+    padding-top: 12px;
+    border-top: 1px solid var(--line-soft);
+    font-size: .82rem;
+    color: var(--muted);
+  }
 
   /* downloads: grade estática, sem transição nem hover animado */
   .file-grid {
@@ -451,7 +501,6 @@
     margin: 0;
     background: var(--bg-raised);
     border: 1px solid var(--line);
-    border-radius: 10px;
     overflow: hidden;
   }
   .component img {
@@ -520,7 +569,6 @@
     padding: 18px 20px;
     border: 1px solid var(--line);
     border-left: 3px solid var(--accent);
-    border-radius: 8px;
     background: var(--bg-raised);
     color: #c6d0da;
     font-size: .93rem;
@@ -543,16 +591,22 @@
   /* A home não tem paginação "Próximo/Anterior". */
   main .pagination-links { display: none; }
 
-  /* Corte HUD: dois cantos a 45°, o mesmo corte dos cartões e botões do app. */
-  .btn,
+  /* Corte HUD: dois cantos a 45°, o mesmo corte dos cartões do app.
+     Toda superfície nova da landing entra nesta lista. */
   .note,
+  .code,
   .plate,
   .part,
   .shot,
   .app-shot,
   .component,
   .callout,
+  .app-download,
   .hero-art {
     border-radius: 0;
     clip-path: var(--hud-clip);
   }
+
+  /* Controles pequenos usam o corte menor, como no app e no manual. */
+  .btn { clip-path: var(--hud-clip-sm); }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }

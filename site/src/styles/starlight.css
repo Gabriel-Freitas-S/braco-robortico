@@ -1,5 +1,5 @@
-/* Tema das páginas de documentação (Starlight).
-   A landing tem CSS próprio em landing.css; aqui só o que as docs usam. */
+/* Tema global do site (Starlight): tokens, forma HUD e chrome.
+   O layout específico da landing fica em landing.css. */
 
 /* As mesmas fontes do app (SIL OFL 1.1, ver app/assets/OFL-*.txt): Rajdhani
    SemiBold no display e Space Grotesk Regular no corpo. O mono fica na pilha
@@ -23,8 +23,10 @@
 :root {
   --sl-font: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --sl-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  /* Corte de 45° em dois cantos opostos, o mesmo dos cartões do app. */
-  --hud-cut: 12px;
+  /* Corte de 45° em dois cantos opostos, o mesmo do app e do manual:
+     10 px em cartões/painéis e 6 px em controles. */
+  --hud-cut: 10px;
+  --hud-cut-sm: 6px;
   --hud-clip: polygon(
     0 0,
     calc(100% - var(--hud-cut)) 0,
@@ -32,6 +34,14 @@
     100% 100%,
     var(--hud-cut) 100%,
     0 calc(100% - var(--hud-cut))
+  );
+  --hud-clip-sm: polygon(
+    0 0,
+    calc(100% - var(--hud-cut-sm)) 0,
+    100% var(--hud-cut-sm),
+    100% 100%,
+    var(--hud-cut-sm) 100%,
+    0 calc(100% - var(--hud-cut-sm))
   );
 }
 
@@ -45,6 +55,21 @@
   --sl-color-hairline: #242d37;
   --sl-color-text: #e8edf2;
   --sl-color-text-accent: #a8cdf0;
+  /* O Starlight tem paleta própria; estes cinco alinham texto e superfícies
+     com a landing (--text/--muted/--line/--bg-raised/--bg). */
+  --sl-color-white: #e8edf2;
+  --sl-color-gray-3: #9aa7b4;
+  --sl-color-gray-5: #242d37;
+  --sl-color-gray-6: #1a2027;
+  --sl-color-black: #121820;
+}
+
+/* Títulos das docs no display da landing e do app. */
+h1#_top,
+.sl-markdown-content h2 {
+  font-family: 'Rajdhani', 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  letter-spacing: .005em;
 }
 
 
@@ -62,7 +87,6 @@
   margin: 0;
   background: var(--sl-color-bg-sidebar);
   border: 1px solid var(--sl-color-hairline);
-  border-radius: 10px;
   overflow: hidden;
 }
 
@@ -93,7 +117,6 @@
 .guide-figure {
   margin: 20px 0;
   border: 1px solid var(--sl-color-hairline);
-  border-radius: 10px;
   overflow: hidden;
 }
 
@@ -146,7 +169,6 @@
 .app-shot {
   margin: 22px 0;
   border: 1px solid var(--sl-color-hairline);
-  border-radius: 10px;
   overflow: hidden;
   background: #0d1116;
 }
@@ -156,6 +178,55 @@
   border-top: 1px solid var(--sl-color-hairline);
   font-size: 0.82rem;
   color: var(--sl-color-gray-3);
+}
+
+/* Cards de link do Starlight (landing e docs): superfície HUD, sem sombra. */
+.sl-link-card {
+  border-color: var(--sl-color-hairline);
+  background: var(--sl-color-black);
+  box-shadow: none;
+  transition: border-color .18s ease-out, background-color .18s ease-out;
+}
+.sl-link-card:hover {
+  border-color: #3d4855;
+  background: var(--sl-color-gray-6);
+}
+.sl-link-card:hover .icon { color: var(--sl-color-accent); }
+
+/* Starlight traz raio, sombra e pill próprios; o HUD é reto e plano.
+   O customCss é unlayered e vence os @layer starlight.core/components. */
+.pagination-links a,
+.sidebar-content a,
+site-search button,
+site-search dialog,
+site-search kbd,
+.sl-menu-button,
+mobile-starlight-toc .toggle,
+.sl-badge,
+.sl-link-button {
+  border-radius: 0;
+}
+.pagination-links a,
+site-search dialog,
+mobile-starlight-toc .dropdown,
+.sl-menu-button {
+  box-shadow: none;
+}
+#starlight__search {
+  --pagefind-ui-border-radius: 0;
+  --pagefind-ui-image-border-radius: 0;
+  --sl-search-corners: 0;
+}
+site-search input:focus-visible {
+  outline: 2px solid var(--sl-color-accent);
+  outline-offset: -3px;
+}
+
+/* Controles pequenos usam o corte de 6 px. */
+site-search button[data-open-modal],
+.sl-menu-button,
+mobile-starlight-toc .toggle {
+  clip-path: var(--hud-clip-sm);
 }
 
 /* FAQ recolhível */
@@ -179,7 +250,10 @@ starlight-theme-select { display: none; }
 .component,
 .guide-figure,
 .app-shot,
-.card {
+.card,
+.sl-link-card,
+.pagination-links a,
+site-search dialog {
   border-radius: 0;
   clip-path: var(--hud-clip);
 }

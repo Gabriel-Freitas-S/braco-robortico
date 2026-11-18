@@ -37,7 +37,7 @@ export default defineConfig({
   },
   shortcuts: {
     'btn-base':
-      'inline-flex items-center gap-2 px-5 py-3 rounded-lg font-600 text-sm no-underline transition-colors',
+      'inline-flex items-center gap-2 px-5 py-3 font-600 text-sm no-underline transition-colors',
     'btn-primary': 'btn-base bg-accent text-[#0c1116] hover:bg-accent-strong',
     'btn-ghost':
       'btn-base border border-line text-fg hover:bg-raised hover:border-[#3d4855]',
