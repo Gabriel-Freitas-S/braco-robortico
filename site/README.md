@@ -24,7 +24,8 @@ npm run preview  # serve o dist com o base do Pages
 | `src/content/docs/software.mdx` | RoboControl, firmware 1.3.7, protocolo e problemas |
 | `src/content/docs/guia_montagem.mdx` | Guia de bancada e checagem de interferência |
 | `src/styles/landing.css` | Seções e cards da landing |
-| `src/styles/starlight.css` | Tema e componentes das páginas de docs |
+| `src/styles/starlight.css` | Tema, fontes e componentes das páginas de docs |
+| `src/assets/fonts/` | Rajdhani e Space Grotesk em WOFF2 (SIL OFL, as mesmas do app) |
 | `public/assets/` | Fotos, peças e renders (WebP) |
 | `public/manual_braco_robotico.html` | Manual A4 (fonte do PDF) |
 | `public/manual_braco_robotico_rev23.pdf` | Manual para impressão |
@@ -36,7 +37,7 @@ npm run preview  # serve o dist com o base do Pages
 - **Pinagem, Posição 0, limites e protocolo:** `firmware/braco_4dof/braco_4dof.ino`.
 - **BOM e montagem:** `hardware.mdx` + manual Rev 2.3.
 - **App e comandos:** `software.mdx` + `app/README.md`; o rustdoc cobre a API interna.
-- **Versões:** firmware 1.3.7, app 0.1.0, manual Rev 2.3. Atualize o `CHANGELOG.md` ao mudar qualquer um.
+- **Versões:** firmware 1.3.7, app 0.2.0, manual Rev 2.3. Atualize o `CHANGELOG.md` ao mudar qualquer um.
 
 ## Regenerar o manual PDF
 

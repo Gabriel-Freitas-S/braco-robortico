@@ -1,5 +1,23 @@
 # Changelog
 
+## App 0.2.0 — interface HUD — 2026-11-17
+
+- **Versão:** 0.1.0 → 0.2.0. Mudou só a interface; protocolo, comandos e arquivos de movimento continuam iguais.
+- **Identidade:** grade de 24 px no fundo da área central, pads sem moldura, dock em painel único e cartões com dois cantos cortados a 45°; janela inicial 1280×720.
+- **Tipografia:** Rajdhani SemiBold no display e Space Grotesk Regular no corpo (SIL OFL 1.1, embutidas); o Hack do egui continua nos números, teclas e log.
+- **Ícones:** 18 conceitos do pack **Ionicons Sharp Interface Icons** (SVG Repo, MIT) rasterizados num atlas 5×4 branco, tintado pelo tema. Procedência, autor e licença em `app/assets/svgrepo-icons.json` e `app/assets/SVGRepo-MIT.txt`.
+- **Status:** readout `LINK`/`OFFLINE` na altura do STOP; **Atalhos** e **Firmware** viram botões HUD com ícone.
+
+## Site — identidade HUD e screenshot novo — 2026-11-17
+
+- **Fontes:** a landing e as docs passam a usar Rajdhani + Space Grotesk em WOFF2, as mesmas do app. Antes o CSS pedia Outfit e JetBrains Mono, que nunca eram carregadas e caíam na fonte do sistema.
+- **Estilo:** grade de 24 px no fundo da landing, corte de 45° em botões, cards, figuras e avisos, tick de acento nos títulos de seção e paleta alinhada ao app.
+- **Screenshot:** foto do RoboControl atualizada para a interface HUD (1280×646) na landing e na página de software.
+- **Downloads:** a lista virou grade de cards estática. A lista antiga usava a classe `.where`, que o UnoCSS interpretava como utilitário e animava com um contorno pulsante rosa/azul.
+- **Manual:** o HTML do manual ganhou a rail lateral das docs, fundo escuro, o mesmo azul do app e os cantos cortados só nas superfícies grandes (cards, passos, figuras) para não perder legibilidade; o PDF Rev 2.3 foi regerado (17 páginas).
+- **Limpeza:** removidos `public/assets/site/site.css` e `docs.css`, CSS da versão anterior do site; o UnoCSS não varre mais `public/`.
+- **Docs:** rustdoc regenerado a partir dos comentários revistos; caminho do rustdoc corrigido no README do app (`site/public/rust/`).
+
 ## App 0.1.0 — executáveis e firmware embutido — 2026-11-17
 
 - **Executáveis:** novo workflow `app-release.yml` publica, a cada tag `app-v*`, AppImage (com `libudev` embutida; glibc ≥ 2.35), tar.gz sem FUSE, zip portable do Windows (CRT estática) e `.app` universal do macOS (arm64 + Intel, assinatura ad-hoc) — só em GitHub Releases, nunca no crates.io.

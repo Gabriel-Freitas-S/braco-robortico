@@ -27,9 +27,14 @@ watchdog de 500 ms segura a posição e devolve o controle ao joystick.
 ## RoboControl
 
 <figure class="app-shot">
-  <Asset src="assets/site/app.webp" alt="Janela do RoboControl: dois pads de toque, ângulos atuais, gravação, replay e log" width={1179} height={567} />
+  <Asset src="assets/site/app.webp" alt="Janela do RoboControl em HUD escuro: grade de fundo, dois pads de toque, ângulos atuais, painel de gravação e replay e log" width={1280} height={646} />
   <figcaption>RoboControl aberto sem conexão · escolha a porta e clique em Conectar</figcaption>
 </figure>
+
+A janela é um HUD escuro com grade de 24 px, pads sem moldura e cartões de canto
+cortado. O readout `LINK`/`OFFLINE` fica ao lado do STOP e o painel de
+gravação/replay vira dock à direita em janelas largas. Todos os controles têm
+alvo de toque de 48 pt; **Atalhos** e **Firmware** abrem seus modais ali mesmo.
 
 - **Pads:** esquerdo = base (X) e cotovelo (Y); direito = garra (X) e ombro (Y).
   Soltar o dedo centraliza e segura a posição.

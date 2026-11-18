@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>Manual Técnico & Guia de Montagem • Braço Robótico 4-DOF</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
     @page {
       size: A4 portrait;
@@ -23,6 +23,7 @@
     @media screen {
       body {
         padding-top: 54px;
+        padding-left: 212px;
       }
       .screen-nav {
         position: fixed;
@@ -30,7 +31,7 @@
         left: 0;
         right: 0;
         height: 52px;
-        background: rgba(15, 23, 42, 0.94);
+        background: rgba(14, 18, 23, 0.94);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
         z-index: 99999;
@@ -38,13 +39,14 @@
         align-items: center;
         justify-content: space-between;
         padding: 0 24px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+        box-shadow: none;
         border-bottom: 1px solid rgba(255,255,255,0.12);
       }
       .screen-nav-brand {
         display: flex;
         align-items: center;
         gap: 10px;
+        white-space: nowrap;
         color: #ffffff;
         font-weight: 800;
         font-size: 13px;
@@ -53,32 +55,75 @@
       .screen-nav-links {
         display: flex;
         gap: 6px;
+        min-width: 0;
+        overflow-x: auto;
+        scrollbar-width: none;
       }
+      .screen-nav-links::-webkit-scrollbar { display: none; }
       .screen-nav-links a {
         color: #94a3b8;
         text-decoration: none;
+        white-space: nowrap;
         font-size: 10.5px;
         font-weight: 600;
         padding: 5px 10px;
-        border-radius: 5px;
-        transition: all 0.2s ease;
+        border-radius: 0;
       }
       .screen-nav-links a:hover {
         color: #ffffff;
         background: rgba(255,255,255,0.12);
       }
       .screen-nav-links a.active {
-        color: #FF5E00;
-        background: rgba(255,94,0,0.15);
+        color: #2b5f8f;
+        background: rgba(127,178,229,0.18);
       }
       .page {
         margin: 20px auto;
-        box-shadow: 0 12px 36px rgba(0,0,0,0.12);
-        border-radius: 6px;
+        border: 1px solid #242d37;
+        box-shadow: 0 18px 50px rgba(0,0,0,0.55);
+        border-radius: 0;
+      }
+
+      /* Rail lateral com a mesma navegação das docs do site. */
+      .side-rail {
+        position: fixed;
+        top: 52px;
+        bottom: 0;
+        left: 0;
+        width: 212px;
+        padding: 16px 12px 24px;
+        background: #121820;
+        border-right: 1px solid #242d37;
+        overflow-y: auto;
+        scrollbar-width: thin;
+      }
+      .side-rail a {
+        display: block;
+        padding: 7px 10px;
+        color: #9aa7b4;
+        text-decoration: none;
+        font-size: 11.5px;
+        font-weight: 500;
+      }
+      .side-rail a:hover { color: #e8edf2; background: #1a2027; }
+      .side-rail a[aria-current='page'] {
+        background: #1e3449;
+        color: #a8cdf0;
+        box-shadow: inset 2px 0 0 #7fb2e5;
+      }
+      .side-rail .rail-back { color: #e8edf2; font-weight: 600; margin-bottom: 4px; }
+      .side-rail .rail-title {
+        margin: 18px 10px 6px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 9.5px;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: #6e7d8d;
       }
     }
     @media print {
-      .screen-nav {
+      .screen-nav,
+      .side-rail {
         display: none !important;
       }
       body {
@@ -92,11 +137,31 @@
       }
     }
 
+    /* Corte HUD: dois cantos a 45°, o mesmo dos cartões do app. */
+    .hud, .hud-sm {
+      border-radius: 0 !important;
+      clip-path: polygon(
+        0 0,
+        calc(100% - var(--hud-cut, 10px)) 0,
+        100% var(--hud-cut, 10px),
+        100% 100%,
+        var(--hud-cut, 10px) 100%,
+        0 calc(100% - var(--hud-cut, 10px))
+      );
+    }
+    .hud { --hud-cut: 10px; }
+    .hud-sm { --hud-cut: 6px; }
+
     body {
-      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #f1f5f9;
+      font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0e1217;
       color: #0f172a;
       line-height: 1.45;
+    }
+
+    h1, h2, h3, .section-title, .page-header .brand, .screen-nav-brand {
+      font-family: 'Rajdhani', 'Space Grotesk', sans-serif;
+      letter-spacing: 0.01em;
     }
 
     .page {
@@ -135,11 +200,11 @@
     }
 
     .page-header .brand .tag {
-      background: #FF5E00;
+      background: #2b5f8f;
       color: #ffffff;
       font-size: 9px;
       padding: 2px 7px;
-      border-radius: 4px;
+      border-radius: 0;
       font-weight: 800;
       letter-spacing: 0.5px;
     }
@@ -185,7 +250,8 @@
       color: #ffffff;
       width: 22px;
       height: 22px;
-      border-radius: 5px;
+      border-radius: 0;
+      clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 4px 100%, 0 calc(100% - 4px));
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -241,7 +307,8 @@
 
     .part-card {
       border: 1.5px solid #e2e8f0;
-      border-radius: 10px;
+      border-radius: 0;
+      clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
       background: #ffffff;
       padding: 8px 10px;
       display: flex;
@@ -286,12 +353,12 @@
     .part-cat {
       font-size: 7.5px;
       padding: 1.5px 5px;
-      border-radius: 3px;
+      border-radius: 0;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.3px;
-      background: #fff7ed;
-      color: #c2410c;
+      background: #eef5fc;
+      color: #2b5f8f;
       white-space: nowrap;
       flex-shrink: 0;
     }
@@ -310,7 +377,8 @@
       height: 95px;
       background: transparent;
       border: 1px solid #e2e8f0;
-      border-radius: 8px;
+      border-radius: 0;
+      clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
       display: flex;
       align-items: center;
       justify-content: center;
@@ -335,7 +403,7 @@
     .spec-item {
       background: #f8fafc;
       border: 1px solid #f1f5f9;
-      border-radius: 4px;
+      border-radius: 0;
       padding: 2.5px 5px;
       min-width: 0;
       overflow: hidden;
@@ -367,8 +435,9 @@
       line-height: 1.3;
       background: #f8fafc;
       padding: 5px 7px;
-      border-radius: 6px;
-      border-left: 3px solid #FF5E00;
+      border-radius: 0;
+      clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
+      border-left: 3px solid #2b5f8f;
       margin-top: auto;
       min-width: 0;
     }
@@ -388,7 +457,8 @@
     .step-box {
       background: #ffffff;
       border: 1.5px solid #e2e8f0;
-      border-radius: 8px;
+      border-radius: 0;
+      clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
       padding: 9px 12px;
       margin-bottom: 8px;
     }
@@ -404,12 +474,12 @@
     }
 
     .step-badge {
-      background: #ff5e00;
+      background: #2b5f8f;
       color: #ffffff;
       font-size: 9px;
       font-weight: 800;
       padding: 2px 7px;
-      border-radius: 4px;
+      border-radius: 0;
     }
 
     .step-text {
@@ -418,7 +488,14 @@
       line-height: 1.4;
     }
 
+    @media screen and (min-width: 1101px) {
+      /* A rail já lista os capítulos; o topo fica só com a marca. */
+      .screen-nav-links { display: none; }
+    }
+
     @media screen and (max-width: 1100px) {
+      body { padding-left: 0; }
+      .side-rail { display: none; }
       .screen-nav { padding: 0 12px; }
       .screen-nav-brand span:last-child { display: none; }
       .screen-nav-links { overflow-x: auto; max-width: 100%; padding-bottom: 2px; }
@@ -430,10 +507,10 @@
 
   <!-- Interactive Navigation Bar (Screen Only) -->
   <nav class="screen-nav">
-    <div class="screen-nav-brand">
-      <span style="background: #FF5E00; color: #fff; padding: 2.5px 8px; border-radius: 4px; font-size: 10px; font-weight: 900;">BAMBU A1</span>
+    <a class="screen-nav-brand" href="index.html" style="text-decoration:none">
+      <span class="hud-sm" style="background: #2b5f8f; color: #fff; padding: 2.5px 8px; border-radius: 0; font-size: 10px; font-weight: 900;">BAMBU A1</span>
       <span>Braço Robótico 4-DOF • Manual Técnico & Guia de Montagem</span>
-    </div>
+    </a>
     <div class="screen-nav-links">
       <a href="index.html">Site</a>
       <a href="guia_montagem.html">Guia</a>
@@ -450,21 +527,40 @@
     </div>
   </nav>
 
+  <aside class="side-rail">
+    <a class="rail-back" href="index.html">← Voltar ao site</a>
+    <a href="hardware/">Hardware</a>
+    <a href="software/">Software</a>
+    <a href="guia_montagem/">Guia de montagem</a>
+    <a href="manual_braco_robotico.html" aria-current="page">Manual completo</a>
+    <p class="rail-title">Capítulos</p>
+    <a href="#pag1">Capa</a>
+    <a href="#pag2">1. Cinemática</a>
+    <a href="#pag3">2. Lista de materiais (BOM)</a>
+    <a href="#pag4">3. Catálogo 3D (29 peças)</a>
+    <a href="#pag11">4. Fatiamento Bambu A1</a>
+    <a href="#pag12">5. Etapa 1 · Base</a>
+    <a href="#pag13">6. Etapa 2 · Torres</a>
+    <a href="#pag14">7. Etapa 3 · Braço</a>
+    <a href="#pag15">8. Etapa 4 · Garra</a>
+    <a href="#pag16">9. Eletrônica & firmware</a>
+  </aside>
+
   <!-- PÁGINA 1: CAPA EXECUTIVA -->
   <div class="page" id="pag1" style="background: linear-gradient(135deg, #090d16 0%, #111827 50%, #1e293b 100%); color: #ffffff; justify-content: space-between; padding: 22mm 20mm;">
     <div style="display: flex; justify-content: space-between; align-items: center;">
       <div style="display: flex; align-items: center; gap: 10px;">
-        <div style="background: #FF5E00; color: #fff; font-weight: 900; font-size: 14px; padding: 5px 12px; border-radius: 6px; letter-spacing: 1px;">BAMBU LAB A1</div>
+        <div class="hud-sm" style="background: #2b5f8f; color: #fff; font-weight: 900; font-size: 14px; padding: 5px 12px; border-radius: 0; letter-spacing: 1px;">BAMBU LAB A1</div>
         <div style="font-size: 12px; font-weight: 600; color: #94a3b8; letter-spacing: 0.5px;">PROJETO MECATRÔNICO OFICIAL</div>
       </div>
       <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #64748b;">REV 2.3 • 2026</div>
     </div>
 
     <div style="text-align: center; margin: 15px 0;">
-      <div style="font-size: 11px; font-weight: 700; color: #FF5E00; letter-spacing: 2.5px; text-transform: uppercase; margin-bottom: 6px;">
+      <div style="font-size: 11px; font-weight: 700; color: #2b5f8f; letter-spacing: 2.5px; text-transform: uppercase; margin-bottom: 6px;">
         Manual Técnico de Engenharia & Fabricação 3D
       </div>
-      <h1 style="font-size: 32px; font-weight: 900; letter-spacing: -0.8px; line-height: 1.1; margin-bottom: 12px; background: linear-gradient(to right, #ffffff, #f97316); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+      <h1 style="font-size: 32px; font-weight: 900; letter-spacing: -0.8px; line-height: 1.1; margin-bottom: 12px; background: linear-gradient(to right, #ffffff, #7fb2e5); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
         BRAÇO ROBÓTICO 4-DOF
       </h1>
       <p style="font-size: 12px; color: #94a3b8; max-width: 520px; margin: 0 auto; line-height: 1.5;">
@@ -472,7 +568,7 @@
       </p>
 
       <div style="margin-top: 18px; display: flex; justify-content: center;">
-        <div style="width: 440px; height: 330px; background: radial-gradient(circle, rgba(255,94,0,0.16) 0%, rgba(15,23,42,0) 70%); display: flex; align-items: center; justify-content: center;">
+        <div style="width: 440px; height: 330px; background: radial-gradient(circle, rgba(127,178,229,0.18) 0%, rgba(15,23,42,0) 70%); display: flex; align-items: center; justify-content: center;">
           <img src="assets/renders/braco_completo_com_componentes_side.webp" style="max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 15px 25px rgba(0,0,0,0.6));" alt="Braço Robótico Completo Montado — Vista Lateral">
         </div>
       </div>
@@ -526,7 +622,7 @@
 
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
       <!-- Isometric Realistic CAD View -->
-      <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; align-items: center;">
+      <div class="hud" style="background: #f8fafc; border: 1.5px solid #cbd5e1; padding: 10px; display: flex; flex-direction: column; align-items: center;">
         <div style="font-size: 10px; font-weight: 800; color: #0f172a; text-transform: uppercase; margin-bottom: 4px; align-self: flex-start;">
           FIGURA 1.1 — Conjunto Completo Montado (Perspectiva Isométrica Realista)
         </div>
@@ -539,7 +635,7 @@
       </div>
 
       <!-- Exploded View -->
-      <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; align-items: center;">
+      <div class="hud" style="background: #f8fafc; border: 1.5px solid #cbd5e1; padding: 10px; display: flex; flex-direction: column; align-items: center;">
         <div style="font-size: 10px; font-weight: 800; color: #0f172a; text-transform: uppercase; margin-bottom: 4px; align-self: flex-start;">
           FIGURA 1.2 — Vista Explodida Estrutural dos Componentes
         </div>
@@ -558,17 +654,17 @@
         Projeções Ortogonais de Engenharia (Escala 1:2.5)
       </div>
       <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
-        <div style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px; background: #ffffff; text-align: center;">
+        <div class="hud" style="border: 1px solid #e2e8f0; padding: 8px; background: #ffffff; text-align: center;">
           <img src="assets/renders/braco_completo_com_componentes_front.webp" style="width: 100%; height: 110px; object-fit: contain;" alt="Vista Frontal Completa">
           <div style="font-size: 9px; font-weight: 700; color: #334155; margin-top: 4px;">VISTA FRONTAL</div>
           <div style="font-size: 8px; color: #64748b;">Altura máxima: 215 mm</div>
         </div>
-        <div style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px; background: #ffffff; text-align: center;">
+        <div class="hud" style="border: 1px solid #e2e8f0; padding: 8px; background: #ffffff; text-align: center;">
           <img src="assets/renders/braco_completo_com_componentes_side.webp" style="width: 100%; height: 110px; object-fit: contain;" alt="Vista Lateral Completa">
           <div style="font-size: 9px; font-weight: 700; color: #334155; margin-top: 4px;">VISTA LATERAL</div>
           <div style="font-size: 8px; color: #64748b;">Alcance horizontal: 185 mm</div>
         </div>
-        <div style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px; background: #ffffff; text-align: center;">
+        <div class="hud" style="border: 1px solid #e2e8f0; padding: 8px; background: #ffffff; text-align: center;">
           <img src="assets/renders/braco_completo_com_componentes_top.webp" style="width: 100%; height: 110px; object-fit: contain;" alt="Vista Superior Completa">
           <div style="font-size: 9px; font-weight: 700; color: #334155; margin-top: 4px;">VISTA SUPERIOR</div>
           <div style="font-size: 8px; color: #64748b;">Base: 95 × 145 mm</div>
@@ -577,7 +673,7 @@
     </div>
 
     <!-- Kinematics Specifications Table -->
-    <div style="background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 12px; margin-bottom: 10px;">
+    <div class="hud" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 12px; margin-bottom: 10px;">
       <div style="font-size: 9.5px; font-weight: 800; color: #0f172a; text-transform: uppercase; margin-bottom: 4px;">
         Arquitetura Cinemática: Paralelogramo Duplo Articulado
       </div>
@@ -612,7 +708,7 @@
 
     <!-- BOM Table 1: Electronic Hardware -->
     <div style="margin-bottom: 8px;">
-      <h4 style="font-size: 9.5px; font-weight: 800; color: #FF5E00; text-transform: uppercase; margin-bottom: 3px;">
+      <h4 style="font-size: 9.5px; font-weight: 800; color: #2b5f8f; text-transform: uppercase; margin-bottom: 3px;">
         1. Componentes Eletrônicos & Atuadores
       </h4>
       <table class="data-table" style="font-size: 7.8px; margin-bottom: 4px;">
@@ -661,7 +757,7 @@
 
     <!-- BOM Table 2: Fasteners & Fastening Hardware -->
     <div style="margin-bottom: 8px;">
-      <h4 style="font-size: 9.5px; font-weight: 800; color: #FF5E00; text-transform: uppercase; margin-bottom: 3px;">
+      <h4 style="font-size: 9.5px; font-weight: 800; color: #2b5f8f; text-transform: uppercase; margin-bottom: 3px;">
         2. Elementos de Fixação Mecânica (Fixadores M3 em Aço Inox A2)
       </h4>
       <table class="data-table" style="font-size: 7.8px; margin-bottom: 4px;">
@@ -740,7 +836,7 @@
 
     <!-- BOM Table 3: 3D Printing Filament & Supplies -->
     <div>
-      <h4 style="font-size: 9.5px; font-weight: 800; color: #FF5E00; text-transform: uppercase; margin-bottom: 3px;">
+      <h4 style="font-size: 9.5px; font-weight: 800; color: #2b5f8f; text-transform: uppercase; margin-bottom: 3px;">
         3. Insumos de Manufatura Aditiva & Ferramentas
       </h4>
       <table class="data-table" style="font-size: 7.8px; margin-bottom: 4px;">
@@ -809,7 +905,7 @@
       <div class="part-card">
         <div class="part-card-header">
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; letter-spacing: 0.5px;">PRETO</span>
             <div class="part-name">01_Base_Chassi_Inferior.stl</div>
           </div>
           <div class="part-cat">Base & Chassi</div>
@@ -857,7 +953,7 @@
       <div class="part-card">
         <div class="part-card-header">
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; letter-spacing: 0.5px;">PRETO</span>
             <div class="part-name">02_Braco_Principal_Esquerdo.stl</div>
           </div>
           <div class="part-cat">Estrutura do Braço</div>
@@ -905,7 +1001,7 @@
       <div class="part-card">
         <div class="part-card-header">
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; letter-spacing: 0.5px;">PRETO</span>
             <div class="part-name">03_Tirante_Paralelogramo_Longo.stl</div>
           </div>
           <div class="part-cat">Articulações & Bielas</div>
@@ -953,7 +1049,7 @@
       <div class="part-card">
         <div class="part-card-header">
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; letter-spacing: 0.5px;">PRETO</span>
             <div class="part-name">04_Tirante_Paralelogramo_Medio.stl</div>
           </div>
           <div class="part-cat">Articulações & Bielas</div>
@@ -1029,7 +1125,7 @@
       <div class="part-card">
         <div class="part-card-header">
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; letter-spacing: 0.5px;">PRETO</span>
             <div class="part-name">05_Haste_Acionamento_Servo_Braco.stl</div>
           </div>
           <div class="part-cat">Articulações & Bielas</div>
@@ -1077,7 +1173,7 @@
       <div class="part-card">
         <div class="part-card-header">
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; letter-spacing: 0.5px;">PRETO</span>
             <div class="part-name">06_Antebraco_Esquerdo.stl</div>
           </div>
           <div class="part-cat">Estrutura do Braço</div>
@@ -1125,7 +1221,7 @@
       <div class="part-card">
         <div class="part-card-header">
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; letter-spacing: 0.5px;">PRETO</span>
             <div class="part-name">07_Braco_Principal_Direito.stl</div>
           </div>
           <div class="part-cat">Estrutura do Braço</div>
@@ -1173,7 +1269,7 @@
       <div class="part-card">
         <div class="part-card-header">
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; letter-spacing: 0.5px;">PRETO</span>
             <div class="part-name">08_Antebraco_Direito.stl</div>
           </div>
           <div class="part-cat">Estrutura do Braço</div>
@@ -1249,7 +1345,7 @@
       <div class="part-card">
         <div class="part-card-header">
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; letter-spacing: 0.5px;">PRETO</span>
             <div class="part-name">09_Torre_Suporte_Servo_Direita.stl</div>
           </div>
           <div class="part-cat">Base Giratória</div>
@@ -1297,7 +1393,7 @@
       <div class="part-card">
         <div class="part-card-header">
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; letter-spacing: 0.5px;">PRETO</span>
             <div class="part-name">10_Balancim_Triangular_Articulador.stl</div>
           </div>
           <div class="part-cat">Articulações & Bielas</div>
@@ -1345,7 +1441,7 @@
       <div class="part-card">
         <div class="part-card-header">
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; letter-spacing: 0.5px;">PRETO</span>
             <div class="part-name">11_Torre_Suporte_Servo_Esquerda.stl</div>
           </div>
           <div class="part-cat">Base Giratória</div>
@@ -1393,7 +1489,7 @@
       <div class="part-card">
         <div class="part-card-header">
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; letter-spacing: 0.5px;">PRETO</span>
             <div class="part-name">12_Mesa_Giratoria_Turntable.stl</div>
           </div>
           <div class="part-cat">Base Giratória</div>
@@ -1469,7 +1565,7 @@
       <div class="part-card">
         <div class="part-card-header">
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; letter-spacing: 0.5px;">PRETO</span>
             <div class="part-name">13_Tirante_Superior_Garra.stl</div>
           </div>
           <div class="part-cat">Articulações & Bielas</div>
@@ -1517,7 +1613,7 @@
       <div class="part-card">
         <div class="part-card-header">
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; letter-spacing: 0.5px;">PRETO</span>
             <div class="part-name">14_Separador_Espacador_Central_Base.stl</div>
           </div>
           <div class="part-cat">Base Giratória</div>
@@ -1565,7 +1661,7 @@
       <div class="part-card">
         <div class="part-card-header">
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; letter-spacing: 0.5px;">PRETO</span>
             <div class="part-name">15_Suporte_Cabeca_Garra.stl</div>
           </div>
           <div class="part-cat">Garra Robótica</div>
@@ -1613,7 +1709,7 @@
       <div class="part-card">
         <div class="part-card-header">
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; letter-spacing: 0.5px;">PRETO</span>
             <div class="part-name">16_Berco_Servo_Rotacao_Base.stl</div>
           </div>
           <div class="part-cat">Base & Chassi</div>
@@ -1689,7 +1785,7 @@
       <div class="part-card">
         <div class="part-card-header">
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; letter-spacing: 0.5px;">PRETO</span>
             <div class="part-name">17_Travessa_Reforco_Base_Frontal.stl</div>
           </div>
           <div class="part-cat">Base & Chassi</div>
@@ -1737,7 +1833,7 @@
       <div class="part-card">
         <div class="part-card-header">
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; letter-spacing: 0.5px;">PRETO</span>
             <div class="part-name">18_Travessa_Reforco_Base_Traseira.stl</div>
           </div>
           <div class="part-cat">Base & Chassi</div>
@@ -1785,7 +1881,7 @@
       <div class="part-card">
         <div class="part-card-header">
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; letter-spacing: 0.5px;">PRETO</span>
             <div class="part-name">19_Garra_Base_Suporte_Fixo.stl</div>
           </div>
           <div class="part-cat">Garra Robótica</div>
@@ -1833,7 +1929,7 @@
       <div class="part-card">
         <div class="part-card-header">
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; letter-spacing: 0.5px;">PRETO</span>
             <div class="part-name">20_Garra_Dedo_Movel_Direito.stl</div>
           </div>
           <div class="part-cat">Garra Robótica</div>
@@ -1909,7 +2005,7 @@
       <div class="part-card">
         <div class="part-card-header">
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; letter-spacing: 0.5px;">PRETO</span>
             <div class="part-name">21_Garra_Dedo_Movel_Esquerdo.stl</div>
           </div>
           <div class="part-cat">Garra Robótica</div>
@@ -1957,7 +2053,7 @@
       <div class="part-card">
         <div class="part-card-header">
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; letter-spacing: 0.5px;">PRETO</span>
             <div class="part-name">22_Biela_Conexao_Horn_Direito.stl</div>
           </div>
           <div class="part-cat">Articulações & Bielas</div>
@@ -2005,7 +2101,7 @@
       <div class="part-card">
         <div class="part-card-header">
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; letter-spacing: 0.5px;">PRETO</span>
             <div class="part-name">23_Biela_Conexao_Horn_Esquerdo.stl</div>
           </div>
           <div class="part-cat">Articulações & Bielas</div>
@@ -2053,7 +2149,7 @@
       <div class="part-card">
         <div class="part-card-header">
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; letter-spacing: 0.5px;">PRETO</span>
             <div class="part-name">24_Suporte_Encaixe_Servo_Garra.stl</div>
           </div>
           <div class="part-cat">Garra Robótica</div>
@@ -2129,7 +2225,7 @@
       <div class="part-card">
         <div class="part-card-header">
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; letter-spacing: 0.5px;">PRETO</span>
             <div class="part-name">25_Trava_Horn_Servo_Base.stl</div>
           </div>
           <div class="part-cat">Base Giratória</div>
@@ -2187,7 +2283,7 @@
       <div class="part-card">
         <div class="part-card-header">
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; letter-spacing: 0.5px;">PRETO</span>
             <div class="part-name">27_Guia_Articulacao_Garra.stl</div>
           </div>
           <div class="part-cat">Garra Robótica</div>
@@ -2235,7 +2331,7 @@
       <div class="part-card">
         <div class="part-card-header">
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; letter-spacing: 0.5px;">PRETO</span>
             <div class="part-name">28_Biela_Articulacao_Curta.stl</div>
           </div>
           <div class="part-cat">Articulações & Bielas</div>
@@ -2311,7 +2407,7 @@
       <div class="part-card">
         <div class="part-card-header">
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; letter-spacing: 0.5px;">PRETO</span>
             <div class="part-name">haste_articulacao_olhal_v4.stl</div>
           </div>
           <div class="part-cat">Articulações & Bielas</div>
@@ -2359,7 +2455,7 @@
       <div class="part-card">
         <div class="part-card-header">
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.5px;">PRETO</span>
+            <span style="background: #22262C; color: #ffffff; font-size: 7.5px; font-weight: 800; padding: 1.5px 6px; letter-spacing: 0.5px;">PRETO</span>
             <div class="part-name">haste_articulacao_curta.stl</div>
           </div>
           <div class="part-cat">Articulações & Bielas</div>
@@ -2407,15 +2503,15 @@
     </div>
 
     <div style="display: grid; grid-template-columns: 1.1fr .9fr; gap: 12px; margin-top: 10px;">
-      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px;">
+      <div class="hud" style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px 12px;">
         <div style="font-size: 9px; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: .3px; margin-bottom: 4px;">Como o link funciona</div>
         <svg viewBox="0 0 520 200" width="100%" style="display: block;" role="img" aria-label="Esquema do acionamento: servo, manivela H1, biela H2 e dedo móvel">
           <circle cx="70" cy="140" r="20" fill="#ffffff" stroke="#0f172a" stroke-width="3"/>
           <circle cx="70" cy="140" r="5" fill="#0f172a"/>
           <text x="70" y="182" text-anchor="middle" font-family="Outfit, sans-serif" font-size="11" fill="#475569">Servo 4</text>
-          <line x1="70" y1="140" x2="180" y2="70" stroke="#c2410c" stroke-width="9" stroke-linecap="round"/>
-          <circle cx="180" cy="70" r="8" fill="#ffffff" stroke="#c2410c" stroke-width="4"/>
-          <text x="166" y="54" font-family="Outfit, sans-serif" font-size="12" font-weight="700" fill="#c2410c">H1</text>
+          <line x1="70" y1="140" x2="180" y2="70" stroke="#2b5f8f" stroke-width="9" stroke-linecap="round"/>
+          <circle cx="180" cy="70" r="8" fill="#ffffff" stroke="#2b5f8f" stroke-width="4"/>
+          <text x="166" y="54" font-family="Outfit, sans-serif" font-size="12" font-weight="700" fill="#2b5f8f">H1</text>
           <line x1="180" y1="70" x2="340" y2="120" stroke="#0f172a" stroke-width="7" stroke-linecap="round"/>
           <circle cx="340" cy="120" r="8" fill="#ffffff" stroke="#0f172a" stroke-width="4"/>
           <text x="258" y="88" font-family="Outfit, sans-serif" font-size="12" font-weight="700" fill="#0f172a">H2</text>
@@ -2425,7 +2521,7 @@
         </svg>
         <div style="font-size: 7px; color: #94a3b8; text-align: right;">esquema fora de escala</div>
       </div>
-      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; font-size: 9px; color: #475569; line-height: 1.6;">
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px 12px; font-size: 9px; color: #475569; line-height: 1.6;">
         <b style="color: #0f172a;">Ordem de montagem</b>
         <ol style="margin: 4px 0 0 14px; padding: 0;">
           <li>Servo 4 em 0° (pinça fechada).</li>
@@ -2437,7 +2533,7 @@
       </div>
     </div>
 
-    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; font-size: 9px; color: #475569; line-height: 1.5;">
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px 12px; font-size: 9px; color: #475569; line-height: 1.5;">
       <b style="color: #0f172a;">Mecanismo da garra:</b> Servo 4 → <b>H1</b> (manivela) → <b>H2</b> (biela) → dedo móvel 20. A peça 26 não é mais impressa; a 27 e a 28 continuam no conjunto.
     </div>
 
@@ -2466,25 +2562,25 @@
     </div>
 
     <!-- FIGURA 4.1 Panorama Widescreen -->
-    <div style="background: #0f172a; border: 1.5px solid #334155; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+    <div class="hud" style="background: #0f172a; border: 1.5px solid #334155; padding: 12px; margin-bottom: 12px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
         <div style="font-size: 11px; font-weight: 800; color: #ffffff; text-transform: uppercase;">
           FIGURA 4.1 — Arranjo Completo de Impressão na Mesa PEI Bambu Lab A1 (256×256 mm)
         </div>
-        <div style="background: #FF5E00; color: #ffffff; font-size: 8.5px; font-weight: 800; padding: 2px 8px; border-radius: 4px;">
+        <div style="background: #2b5f8f; color: #ffffff; font-size: 8.5px; font-weight: 800; padding: 2px 8px;">
           2 PRATOS • DIVISÃO OTIMIZADA
         </div>
       </div>
-      <div style="background: #1e242d; border: 1px solid #334155; border-radius: 6px; padding: 6px; display: flex; align-items: center; justify-content: center;">
-        <img src="assets/renders/manual_pratos.webp" style="width: 100%; height: auto; border-radius: 4px;" alt="Arranjo dos dois pratos na mesa da Bambu Lab A1">
+      <div class="hud" style="background: #1e242d; border: 1px solid #334155; padding: 6px; display: flex; align-items: center; justify-content: center;">
+        <img class="hud-sm" src="assets/renders/manual_pratos.webp" style="width: 100%; height: auto;" alt="Arranjo dos dois pratos na mesa da Bambu Lab A1">
       </div>
     </div>
 
     <!-- 2 Column Breakdown -->
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
       <!-- Slicer Specs -->
-      <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 10px;">
-        <h4 style="font-size: 10.5px; font-weight: 800; color: #FF5E00; text-transform: uppercase; margin-bottom: 6px;">
+      <div class="hud" style="background: #f8fafc; border: 1.5px solid #cbd5e1; padding: 10px;">
+        <h4 style="font-size: 10.5px; font-weight: 800; color: #2b5f8f; text-transform: uppercase; margin-bottom: 6px;">
           Configurações Recomendadas no Bambu Studio
         </h4>
         <table style="width: 100%; font-size: 9px; border-collapse: collapse;">
@@ -2506,7 +2602,7 @@
           </tr>
           <tr style="border-bottom: 1px solid #e2e8f0;">
             <td style="padding: 3px 0; color: #64748b;">Orientação das Torres (09 e 11):</td>
-            <td style="padding: 3px 0; font-weight: 700; text-align: right; color: #FF5E00;">Deitadas no plano XY + Tree Slim (0.6mm gap)</td>
+            <td style="padding: 3px 0; font-weight: 700; text-align: right; color: #2b5f8f;">Deitadas no plano XY + Tree Slim (0.6mm gap)</td>
           </tr>
           <tr style="border-bottom: 1px solid #e2e8f0;">
             <td style="padding: 3px 0; color: #64748b;">Compensação de Furo (X-Y Hole):</td>
@@ -2520,12 +2616,12 @@
       </div>
 
       <!-- Plates Comparison Table -->
-      <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 10px;">
-        <h4 style="font-size: 10.5px; font-weight: 800; color: #FF5E00; text-transform: uppercase; margin-bottom: 6px;">
+      <div class="hud" style="background: #f8fafc; border: 1.5px solid #cbd5e1; padding: 10px;">
+        <h4 style="font-size: 10.5px; font-weight: 800; color: #2b5f8f; text-transform: uppercase; margin-bottom: 6px;">
           Divisão Operacional de Fabricação
         </h4>
         <div style="display: flex; flex-direction: column; gap: 8px; font-size: 9px;">
-          <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-left: 3px solid #22262C; border-radius: 6px; padding: 6px 8px;">
+          <div class="hud" style="background: #ffffff; border: 1.5px solid #e2e8f0; border-left: 3px solid #22262C; padding: 6px 8px;">
             <div style="font-weight: 800; color: #0f172a; display: flex; justify-content: space-between;">
               <span>PRATO 1: CHASSI, BASE & TORRES</span>
               <span style="color: #0f172a;">9 PEÇAS (100% Bambu PLA Basic Preto)</span>
@@ -2538,7 +2634,7 @@
             </div>
           </div>
 
-          <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-left: 3px solid #22262C; border-radius: 6px; padding: 6px 8px;">
+          <div class="hud" style="background: #ffffff; border: 1.5px solid #e2e8f0; border-left: 3px solid #22262C; padding: 6px 8px;">
             <div style="font-weight: 800; color: #0f172a; display: flex; justify-content: space-between;">
               <span>PRATO 2: BRAÇO, BIELAS & GARRA</span>
               <span style="color: #22262C;">20 PEÇAS (100% Bambu PLA Basic Preto)</span>
@@ -2551,7 +2647,7 @@
             </div>
           </div>
 
-          <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-left: 3px solid #64748b; border-radius: 6px; padding: 6px 8px;">
+          <div class="hud" style="background: #ffffff; border: 1.5px solid #e2e8f0; border-left: 3px solid #64748b; padding: 6px 8px;">
             <div style="font-weight: 800; color: #0f172a; display: flex; justify-content: space-between;">
               <span>IMPRESSÃO INDIVIDUAL (29 ARQUIVOS .3MF)</span>
               <span style="color: #64748b;">PASTA impressao/pecas_fatiadas/</span>
@@ -2568,7 +2664,7 @@
     </div>
 
     <!-- Bambu A1 Calibration Notes -->
-    <div style="background: #fffbeb; border: 1px solid #fef3c7; border-left: 3px solid #f59e0b; border-radius: 6px; padding: 8px 12px; font-size: 8.5px; color: #92400e;">
+    <div style="background: #fffbeb; border: 1px solid #fef3c7; border-left: 3px solid #f59e0b; padding: 8px 12px; font-size: 8.5px; color: #92400e;">
       <b>RECOMENDAÇÃO DE QUALIDADE BAMBU LAB A1:</b> Habilite a Calibração Dinâmica de Fluxo (Flow Dynamics Calibration / Pressure Advance) antes de iniciar o Prato 2. As tolerâncias finas das engrenagens da garra (peças 20, 21 e 27) dependem de uma extrusão uniforme sem sobre-extrusão nos cantos vivos.
     </div>
 
@@ -2597,11 +2693,11 @@
     </div>
 
     <div style="display: grid; grid-template-columns: 140px 1fr; gap: 14px; margin-bottom: 12px; align-items: center;">
-      <div style="background: transparent; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 6px; height: 140px; display: flex; align-items: center; justify-content: center;">
+      <div class="hud" style="background: transparent; border: 1.5px solid #cbd5e1; padding: 6px; height: 140px; display: flex; align-items: center; justify-content: center;">
         <img src="assets/renders/braco_completo_com_componentes_base.webp" style="max-width: 100%; max-height: 100%; object-fit: contain;" alt="Subconjunto 1 - Base e Espaçadores">
       </div>
-      <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; font-size: 9px;">
-        <div style="font-weight: 800; color: #FF5E00; margin-bottom: 4px; text-transform: uppercase;">
+      <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; padding: 8px 12px; font-size: 9px;">
+        <div style="font-weight: 800; color: #2b5f8f; margin-bottom: 4px; text-transform: uppercase;">
           Componentes & Hardware desta Etapa
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px;">
@@ -2666,13 +2762,13 @@
           <div style="flex: 1;">
             <b>ATENÇÃO CRÍTICA:</b> Antes de encaixar a mesa, conecte o Servo 1 ao Arduino e envie o pulso de neutro (90° / 1500 µs). Com o servo travado em 90°, encaixe a Mesa Giratória (12) perfeitamente alinhada para a frente (eixo X). Insira o parafuso central M2×4mm pelo orifício superior da mesa e aperte até fixar no estriado.
           </div>
-          <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; text-align: center; width: 120px;">
+          <div class="hud-sm" style="background: #ffffff; border: 1px solid #cbd5e1; padding: 4px 8px; text-align: center; width: 120px;">
             <svg width="100" height="42" viewBox="0 0 100 42">
               <rect x="35" y="10" width="30" height="25" rx="3" fill="#1873E6" />
               <circle cx="50" cy="20" r="8" fill="#e2e8f0" stroke="#0f172a" stroke-width="1.5" />
-              <line x1="50" y1="20" x2="50" y2="2" stroke="#FF5E00" stroke-width="2.5" stroke-linecap="round" />
+              <line x1="50" y1="20" x2="50" y2="2" stroke="#2b5f8f" stroke-width="2.5" stroke-linecap="round" />
               <line x1="20" y1="20" x2="80" y2="20" stroke="#94a3b8" stroke-width="1" stroke-dasharray="2,2" />
-              <text x="54" y="9" font-size="7" font-weight="bold" fill="#FF5E00">90° Neutro</text>
+              <text x="54" y="9" font-size="7" font-weight="bold" fill="#2b5f8f">90° Neutro</text>
             </svg>
             <div style="font-size: 7.5px; color: #64748b; font-weight: 700;">Servo 1 (Yaw)</div>
           </div>
@@ -2680,7 +2776,7 @@
       </div>
     </div>
 
-    <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 6px 10px; font-size: 8.5px; color: #1e40af; margin-top: auto;">
+    <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 6px 10px; font-size: 8.5px; color: #1e40af; margin-top: auto;">
       <b>DICA DE AJUSTE:</b> Teste o giro manual da mesa giratória (com o servo desenergizado). O conjunto deve rotacionar suavemente 90° para a esquerda e 90° para a direita (180° de curso total) sem atrito excessivo com o chassi.
     </div>
 
@@ -2709,11 +2805,11 @@
     </div>
 
     <div style="display: grid; grid-template-columns: 140px 1fr; gap: 14px; margin-bottom: 12px; align-items: center;">
-      <div style="background: transparent; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 6px; height: 140px; display: flex; align-items: center; justify-content: center;">
+      <div class="hud" style="background: transparent; border: 1.5px solid #cbd5e1; padding: 6px; height: 140px; display: flex; align-items: center; justify-content: center;">
         <img src="assets/renders/subconjunto_2_torres.webp" style="max-width: 100%; max-height: 100%; object-fit: contain;" alt="Subconjunto 2">
       </div>
-      <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; font-size: 9px;">
-        <div style="font-weight: 800; color: #FF5E00; margin-bottom: 4px; text-transform: uppercase;">
+      <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; padding: 8px 12px; font-size: 9px;">
+        <div style="font-weight: 800; color: #2b5f8f; margin-bottom: 4px; text-transform: uppercase;">
           Componentes & Hardware desta Etapa
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px;">
@@ -2780,14 +2876,14 @@
             <br>• <b>Servo 2 (Ombro/Direito):</b> Horn alinhado a 90° (perpendicular), acoplado à biela 22 para curso de 35° a 145°.
             <br>• <b>Servo 3 (Cotovelo/Esquerdo):</b> Horn alinhado verticalmente a 90°, acoplado à biela 23 para curso de 25° a 150°.
           </div>
-          <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; text-align: center; width: 140px;">
+          <div class="hud-sm" style="background: #ffffff; border: 1px solid #cbd5e1; padding: 4px 8px; text-align: center; width: 140px;">
             <svg width="120" height="42" viewBox="0 0 120 42">
               <circle cx="35" cy="24" r="7" fill="#e2e8f0" stroke="#0f172a" stroke-width="1.5" />
               <line x1="35" y1="24" x2="16" y2="10" stroke="#0077D4" stroke-width="2.5" stroke-linecap="round" />
               <text x="12" y="36" font-size="7" font-weight="bold" fill="#0077D4">S2: 90°/Biela</text>
               <circle cx="85" cy="24" r="7" fill="#e2e8f0" stroke="#0f172a" stroke-width="1.5" />
-              <line x1="85" y1="24" x2="85" y2="4" stroke="#FF5E00" stroke-width="2.5" stroke-linecap="round" />
-              <text x="68" y="36" font-size="7" font-weight="bold" fill="#FF5E00">S3: 90° Vertical</text>
+              <line x1="85" y1="24" x2="85" y2="4" stroke="#2b5f8f" stroke-width="2.5" stroke-linecap="round" />
+              <text x="68" y="36" font-size="7" font-weight="bold" fill="#2b5f8f">S3: 90° Vertical</text>
             </svg>
             <div style="font-size: 7.5px; color: #64748b; font-weight: 700;">Alinhamento Servos 2 & 3</div>
           </div>
@@ -2795,7 +2891,7 @@
       </div>
     </div>
 
-    <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 6px 10px; font-size: 8.5px; color: #991b1b; margin-top: auto;">
+    <div style="background: #fef2f2; border: 1px solid #fecaca; padding: 6px 10px; font-size: 8.5px; color: #991b1b; margin-top: auto;">
       <b>CUIDADO COM CABOS:</b> Certifique-se de que os cabos dos servos não fiquem prensados entre o espaçador 14 e as paredes das torres. Deixe uma leve folga para acomodar a rotação completa do eixo Yaw sem tracionar a fiação.
     </div>
 
@@ -2824,11 +2920,11 @@
     </div>
 
     <div style="display: grid; grid-template-columns: 140px 1fr; gap: 14px; margin-bottom: 12px; align-items: center;">
-      <div style="background: transparent; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 6px; height: 140px; display: flex; align-items: center; justify-content: center;">
+      <div class="hud" style="background: transparent; border: 1.5px solid #cbd5e1; padding: 6px; height: 140px; display: flex; align-items: center; justify-content: center;">
         <img src="assets/renders/subconjunto_3_braco.webp" style="max-width: 100%; max-height: 100%; object-fit: contain;" alt="Subconjunto 3">
       </div>
-      <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; font-size: 9px;">
-        <div style="font-weight: 800; color: #FF5E00; margin-bottom: 4px; text-transform: uppercase;">
+      <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; padding: 8px 12px; font-size: 9px;">
+        <div style="font-weight: 800; color: #2b5f8f; margin-bottom: 4px; text-transform: uppercase;">
           Componentes & Hardware desta Etapa
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px;">
@@ -2896,7 +2992,7 @@
       </div>
     </div>
 
-    <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 6px 10px; font-size: 8.5px; color: #065f46; margin-top: auto;">
+    <div style="background: #ecfdf5; border: 1px solid #a7f3d0; padding: 6px 10px; font-size: 8.5px; color: #065f46; margin-top: auto;">
       <b>TESTE DE PARALELISMO:</b> Segure o conjunto da base e eleve o braço principal manualmente. A haste terminal onde a garra será acoplada deve permanecer rigorosamente horizontal em qualquer altura do curso mecânico.
     </div>
 
@@ -2925,11 +3021,11 @@
     </div>
 
     <div style="display: grid; grid-template-columns: 140px 1fr; gap: 14px; margin-bottom: 12px; align-items: center;">
-      <div style="background: transparent; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 6px; height: 140px; display: flex; align-items: center; justify-content: center;">
+      <div class="hud" style="background: transparent; border: 1.5px solid #cbd5e1; padding: 6px; height: 140px; display: flex; align-items: center; justify-content: center;">
         <img src="assets/renders/subconjunto_4_garra.webp" style="max-width: 100%; max-height: 100%; object-fit: contain;" alt="Subconjunto 4">
       </div>
-      <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; font-size: 9px;">
-        <div style="font-weight: 800; color: #FF5E00; margin-bottom: 4px; text-transform: uppercase;">
+      <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; padding: 8px 12px; font-size: 9px;">
+        <div style="font-weight: 800; color: #2b5f8f; margin-bottom: 4px; text-transform: uppercase;">
           Componentes & Hardware desta Etapa
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px;">
@@ -2964,12 +3060,12 @@
           <div style="flex: 1;">
             Conecte o Servo 4 ao Arduino e envie o pulso de 0° (1000 µs), que representa a garra 100% FECHADA. Com o servo calibrado em 0°, encaixe a manivela <b>H1 (haste de olhal)</b> no estriado e aperte o micro parafuso central M2×4mm. <b>Mecanismo Compliant:</b> Não force o fechamento além do toque para não induzir corrente contínua de stall.
           </div>
-          <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; text-align: center; width: 120px;">
+          <div class="hud-sm" style="background: #ffffff; border: 1px solid #cbd5e1; padding: 4px 8px; text-align: center; width: 120px;">
             <svg width="100" height="42" viewBox="0 0 100 42">
               <rect x="25" y="14" width="30" height="20" rx="3" fill="#1873E6" />
               <circle cx="40" cy="22" r="6" fill="#e2e8f0" stroke="#0f172a" stroke-width="1.5" />
-              <line x1="40" y1="22" x2="80" y2="22" stroke="#FF5E00" stroke-width="2.5" stroke-linecap="round" />
-              <text x="45" y="15" font-size="7" font-weight="bold" fill="#FF5E00">0° Fechado</text>
+              <line x1="40" y1="22" x2="80" y2="22" stroke="#2b5f8f" stroke-width="2.5" stroke-linecap="round" />
+              <text x="45" y="15" font-size="7" font-weight="bold" fill="#2b5f8f">0° Fechado</text>
             </svg>
             <div style="font-size: 7.5px; color: #64748b; font-weight: 700;">Servo 4 (Garra)</div>
           </div>
@@ -3042,7 +3138,7 @@
     </div>
 
     <div style="margin-bottom: 8px;">
-      <h4 style="font-size: 10.5px; font-weight: 800; color: #FF5E00; text-transform: uppercase; margin-bottom: 4px;">
+      <h4 style="font-size: 10.5px; font-weight: 800; color: #2b5f8f; text-transform: uppercase; margin-bottom: 4px;">
         Pinagem Oficial — Firmware 1.3.7
       </h4>
       <table class="data-table" style="font-size: 8px;">
@@ -3098,7 +3194,7 @@
       <div><b>Serial:</b> 115200 baud, linha com newline.</div>
     </div>
 
-    <div style="background: #fef2f2; border: 1px solid #fecaca; border-left: 3px solid #dc2626; border-radius: 4px; padding: 5px 10px; font-size: 8px; color: #991b1b; margin-bottom: 8px;">
+    <div style="background: #fef2f2; border: 1px solid #fecaca; border-left: 3px solid #dc2626; padding: 5px 10px; font-size: 8px; color: #991b1b; margin-bottom: 8px;">
       <b>ALIMENTAÇÃO:</b> use fonte externa <b>5 V / 5 A</b> (3 A é o mínimo), com GND comum ao Arduino e capacitor de 1000 µF / 16 V. Não alimente os 4 servos pelo USB: o Uno reinicia por brownout.
     </div>
 
@@ -3106,7 +3202,7 @@
       <h4 style="font-size: 10.5px; font-weight: 800; color: #0f172a; text-transform: uppercase; margin-bottom: 4px;">
         Firmware Oficial — v1.3.7
       </h4>
-      <div style="background: #0f172a; color: #f8fafc; font-family: 'JetBrains Mono', monospace; font-size: 7.5px; padding: 8px 10px; border-radius: 6px; line-height: 1.45;">
+      <div style="background: #0f172a; color: #f8fafc; font-family: 'JetBrains Mono', monospace; font-size: 7.5px; padding: 8px 10px; line-height: 1.45;">
         #define FW_VER "1.3.7"<br>
         const uint8_t PIN_SERVO_BASE = 11;<br>
         const uint8_t PIN_SERVO_OMBRO = 10;<br>
@@ -3117,7 +3213,7 @@
       <div style="font-size: 7.8px; color: #475569; margin-top: 3px;">O sketch completo está em <b>firmware/braco_4dof/braco_4dof.ino</b>. Gravação: Arduino IDE (Arduino Uno) ou <b>arduino-cli</b>. O sketch de teste antigo foi removido deste manual.</div>
     </div>
 
-    <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 8px 12px; margin-bottom: 8px;">
+    <div class="hud" style="background: #f8fafc; border: 1.5px solid #cbd5e1; padding: 8px 12px; margin-bottom: 8px;">
       <h4 style="font-size: 10px; font-weight: 800; color: #0f172a; text-transform: uppercase; margin-bottom: 4px;">
         Checklist de Comissionamento
       </h4>
@@ -3133,7 +3229,7 @@
       </div>
     </div>
 
-    <div style="background: #fffbeb; border: 1px solid #fef3c7; border-left: 3px solid #f59e0b; border-radius: 4px; padding: 5px 10px; font-size: 8px; color: #92400e;">
+    <div style="background: #fffbeb; border: 1px solid #fef3c7; border-left: 3px solid #f59e0b; padding: 5px 10px; font-size: 8px; color: #92400e;">
       <b>AVISO FINAL DE OPERAÇÃO:</b> Nunca force as articulações com a mão enquanto os servomotores estiverem energizados. O esforço reverso danifica imediatamente os dentes de engrenagem internos dos micro servos SG90.
     </div>
 

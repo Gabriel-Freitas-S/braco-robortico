@@ -3,6 +3,14 @@ import { defineConfig, presetIcons, presetWind3 } from 'unocss';
 // Cores e atalhos usados na landing e nos componentes das páginas de docs.
 // O CSS de layout continua em src/styles; o UnoCSS cobre utilitários e ícones.
 export default defineConfig({
+  // `public/` tem HTML estático (manual, rustdoc) que não usa utilitários;
+  // varrê-lo só gerava classes-lixo — inclusive uma `.where` animada que
+  // colidia com o CSS da landing.
+  content: {
+    pipeline: {
+      exclude: ['public/**', 'dist/**'],
+    },
+  },
   presets: [
     presetWind3(),
     presetIcons({

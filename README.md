@@ -9,7 +9,7 @@ Peças em PLA na Bambu Lab A1, firmware Arduino e controle híbrido.</p>
 
 <p align="center">
   <img alt="firmware 1.3.7" src="https://img.shields.io/badge/firmware-1.3.7-7fb2e5?style=flat-square">
-  <img alt="app 0.1.0" src="https://img.shields.io/badge/app-0.1.0-7fb2e5?style=flat-square">
+  <img alt="app 0.2.0" src="https://img.shields.io/badge/app-0.2.0-7fb2e5?style=flat-square">
   <img alt="manual Rev 2.3" src="https://img.shields.io/badge/manual-Rev%202.3-7fb2e5?style=flat-square">
   <img alt="código MIT" src="https://img.shields.io/badge/c%C3%B3digo-MIT-8fd6a2?style=flat-square">
   <img alt="modelos CC BY 4.0" src="https://img.shields.io/badge/modelos-CC%20BY%204.0-d9c376?style=flat-square">
@@ -193,9 +193,9 @@ montagem.
 
 ## Software
 
-![RoboControl aberto: dois pads, gravação e replay](site/public/assets/site/app.webp)
+![RoboControl em HUD escuro: grade de fundo, dois pads, gravação e replay](site/public/assets/site/app.webp)
 
-- [`app/`](app/) — RoboControl (Rust/egui): dois pads de toque, teclado, gravação, replay e log.
+- [`app/`](app/) — RoboControl (Rust/egui): HUD com grade e cantos cortados, dois pads de toque, teclado, gravação, replay e log.
 - [Documentação do código (rustdoc)](https://gabriel-freitas-s.github.io/braco-robortico/rust/robocontrol/index.html) — API interna do app.
 - [`firmware/braco_4dof/`](firmware/braco_4dof/) — firmware Arduino (v1.3.7).
 - [`wokwi/`](wokwi/) — simulação do firmware no Wokwi.

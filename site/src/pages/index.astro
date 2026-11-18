@@ -44,7 +44,7 @@ const frontmatter = {
         <li>~4h13 · ~102 g</li>
         <li>Sistemas Embarcados</li>
       </ul>
-      <p class="revision">Revisão nov/2026 · firmware 1.3.7 · app 0.1.0 · manual Rev 2.3</p>
+      <p class="revision">Revisão nov/2026 · firmware 1.3.7 · app 0.2.0 · manual Rev 2.3</p>
     </div>
     <figure class="hero-art">
       <img src={asset('assets/site/braco-garra.webp')} alt="Braço robótico montado em vista lateral, com a garra estendida e o shield de joysticks ao lado" width="1200" height="1092" fetchpriority="high" decoding="async">
@@ -338,7 +338,7 @@ const frontmatter = {
       <p>O RoboControl conversa com o firmware pela USB a 115200 baud. O app propõe alvos; a placa executa a rampa, os limites e o hold. Pads e teclado usam o mesmo stick virtual.</p>
     </div>
     <figure class="app-shot">
-      <img src={asset('assets/site/app.webp')} alt="Janela do RoboControl: dois pads de toque, ângulos atuais, gravação, replay e log" width="1179" height="567" loading="lazy" decoding="async">
+      <img src={asset('assets/site/app.webp')} alt="Janela do RoboControl em HUD escuro: grade de fundo, dois pads de toque, ângulos atuais, painel de gravação e replay e log" width="1280" height="646" loading="lazy" decoding="async">
       <figcaption>RoboControl aberto sem conexão · escolha a porta e clique em Conectar</figcaption>
     </figure>
     <div class="software">
@@ -383,20 +383,20 @@ cargo run --release
       <h2 id="downloads-titulo">Downloads</h2>
       <p>Arquivos prontos para imprimir, montar e gravar. Os 3MF já estão fatiados para a A1 em PLA; re-fatia se mudar a geometria.</p>
     </div>
-    <ul class="file-list">
-      <li><a href="https://raw.githubusercontent.com/Gabriel-Freitas-S/braco-robortico/main/impressao/pratos/fatiados/Prato_1_Chassi_Estrutura_Bambu_A1_sliced.3mf"><span class="what">Prato 1 · chassi e base</span><span class="where">3MF · 3,0 MB</span></a></li>
-      <li><a href="https://raw.githubusercontent.com/Gabriel-Freitas-S/braco-robortico/main/impressao/pratos/fatiados/Prato_2_Mecanica_Garra_Bambu_A1_sliced.3mf"><span class="what">Prato 2 · braço e garra</span><span class="where">3MF · 1,5 MB</span></a></li>
-      <li><a href={asset('manual_braco_robotico_rev23.pdf')}><span class="what">Manual em PDF · Rev 2.3</span><span class="where">PDF · 3,0 MB</span></a></li>
-      <li><a href={asset('manual_braco_robotico.html')}><span class="what">Manual técnico e de montagem</span><span class="where">HTML</span></a></li>
-      <li><a href={asset('guia_montagem/')}><span class="what">Guia de montagem de bancada</span><span class="where">HTML</span></a></li>
-      <li><a href="https://github.com/Gabriel-Freitas-S/braco-robortico/tree/main/impressao/pecas"><span class="what">STL por peça</span><span class="where">29 arquivos</span></a></li>
-      <li><a href="https://github.com/Gabriel-Freitas-S/braco-robortico/tree/main/cad-output"><span class="what">CAD das peças alteradas</span><span class="where">STEP</span></a></li>
-      <li><a href="https://raw.githubusercontent.com/Gabriel-Freitas-S/braco-robortico/main/montagens/braco_montado_numerado.glb"><span class="what">Modelo montado e numerado</span><span class="where">GLB · 1,9 MB</span></a></li>
-      <li><a href="https://raw.githubusercontent.com/Gabriel-Freitas-S/braco-robortico/main/firmware/braco_4dof/braco_4dof.ino"><span class="what">Firmware Arduino v1.3.7</span><span class="where">.ino</span></a></li>
-      <li><a href="https://github.com/Gabriel-Freitas-S/braco-robortico/releases"><span class="what">App RoboControl — Linux, Windows e macOS</span><span class="where">executáveis</span></a></li>
-      <li><a href="https://github.com/Gabriel-Freitas-S/braco-robortico/tree/main/app"><span class="what">App RoboControl</span><span class="where">Rust · fonte</span></a></li>
-      <li><a href={asset('rust/robocontrol/index.html')}><span class="what">Documentação do app</span><span class="where">rustdoc</span></a></li>
-      <li><a href="https://github.com/Gabriel-Freitas-S/braco-robortico"><span class="what">Código-fonte completo</span><span class="where">GitHub</span></a></li>
+    <ul class="file-grid">
+      <li><a href="https://raw.githubusercontent.com/Gabriel-Freitas-S/braco-robortico/main/impressao/pratos/fatiados/Prato_1_Chassi_Estrutura_Bambu_A1_sliced.3mf"><span class="file-type">3MF · 3,0 MB</span><span class="what">Prato 1 · chassi e base</span></a></li>
+      <li><a href="https://raw.githubusercontent.com/Gabriel-Freitas-S/braco-robortico/main/impressao/pratos/fatiados/Prato_2_Mecanica_Garra_Bambu_A1_sliced.3mf"><span class="file-type">3MF · 1,5 MB</span><span class="what">Prato 2 · braço e garra</span></a></li>
+      <li><a href={asset('manual_braco_robotico_rev23.pdf')}><span class="file-type">PDF · 3,0 MB</span><span class="what">Manual em PDF · Rev 2.3</span></a></li>
+      <li><a href={asset('manual_braco_robotico.html')}><span class="file-type">HTML</span><span class="what">Manual técnico e de montagem</span></a></li>
+      <li><a href={asset('guia_montagem/')}><span class="file-type">HTML</span><span class="what">Guia de montagem de bancada</span></a></li>
+      <li><a href="https://github.com/Gabriel-Freitas-S/braco-robortico/tree/main/impressao/pecas"><span class="file-type">29 arquivos</span><span class="what">STL por peça</span></a></li>
+      <li><a href="https://github.com/Gabriel-Freitas-S/braco-robortico/tree/main/cad-output"><span class="file-type">STEP</span><span class="what">CAD das peças alteradas</span></a></li>
+      <li><a href="https://raw.githubusercontent.com/Gabriel-Freitas-S/braco-robortico/main/montagens/braco_montado_numerado.glb"><span class="file-type">GLB · 1,9 MB</span><span class="what">Modelo montado e numerado</span></a></li>
+      <li><a href="https://raw.githubusercontent.com/Gabriel-Freitas-S/braco-robortico/main/firmware/braco_4dof/braco_4dof.ino"><span class="file-type">.ino</span><span class="what">Firmware Arduino v1.3.7</span></a></li>
+      <li><a href="https://github.com/Gabriel-Freitas-S/braco-robortico/releases"><span class="file-type">executáveis</span><span class="what">App RoboControl — Linux, Windows e macOS</span></a></li>
+      <li><a href="https://github.com/Gabriel-Freitas-S/braco-robortico/tree/main/app"><span class="file-type">Rust · fonte</span><span class="what">App RoboControl</span></a></li>
+      <li><a href={asset('rust/robocontrol/index.html')}><span class="file-type">rustdoc</span><span class="what">Documentação do app</span></a></li>
+      <li><a href="https://github.com/Gabriel-Freitas-S/braco-robortico"><span class="file-type">GitHub</span><span class="what">Código-fonte completo</span></a></li>
     </ul>
     <p class="req-note">O STEP cobre as peças que mudaram nesta revisão (01, 04, H1, H2) e o shield; as demais estão em STL. O manual traz a BOM, a pinagem e o passo a passo com fotos.</p>
   </div>
