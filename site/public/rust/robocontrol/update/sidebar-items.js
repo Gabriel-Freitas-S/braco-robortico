@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["AGENTE","PREFIXO_RAW","PREFIXO_TAG","REPO","TETO_SKETCH","URL_FIRMWARE","URL_ULTIMA_RELEASE"],"fn":["agente","baixa_sketch","checar","ultima_app","url_release","versao_app","versao_app_da_url"],"struct":["Novidades"]};

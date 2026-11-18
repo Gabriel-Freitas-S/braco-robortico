@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["Icone"],"fn":["botao","botao_cor","botao_quadrado","botao_texto","cores_botao","desenha","foco_anel","toggle"]};
+window.SIDEBAR_ITEMS = {"constant":["ATLAS","ATLAS_ALTURA","ATLAS_LARGURA","CELULA","COLUNAS","CORTE_BOTAO","CORTE_QUADRADO"],"enum":["Icone"],"fn":["botao","botao_compacto","botao_cor","botao_hud","botao_primario","botao_quadrado","botao_quadrado_compacto","botao_texto","cores_botao","desenha","foco_anel","fonte_botao","pinta_botao","pinta_cortado","textura_icones","toggle"]};

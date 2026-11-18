@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["NOME","SKETCH"],"fn":["chave","compara","salvar","valida_versao","validar","versao","versao_de"]};

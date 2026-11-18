@@ -15,7 +15,7 @@
 //! | [`motion`] | gravação, interpolação e arquivos JSON |
 //! | [`firmware`] | sketch embutido, versão e gravação para upload |
 //! | [`update`] | checagem das versões publicadas (app e firmware) |
-//! | [`icons`] | desenho vetorial dos ícones e botões |
+//! | [`icons`] | atlas de ícones (SVG Repo) e botões HUD |
 //!
 //! # Máquina de estados
 //!
@@ -70,7 +70,12 @@
 //! Responsivo por largura/altura disponível: dock lateral a partir de 1024 pt,
 //! topbar em uma linha a partir de 1024, pads lado a lado a partir de 760,
 //! variante compacta quando a altura fica abaixo de 380. A janela mínima é
-//! 760×320, que ainda comporta os pads empilhados.
+//! 760×320, que ainda comporta os pads empilhados; a inicial é 1280×720.
+//!
+//! A área central é um HUD: grade de 24 px no fundo, pads sem moldura (só o
+//! círculo e a coluna de leituras) e cartões com dois cantos cortados a 45°.
+//! O dock é um painel único e o readout `LINK`/`OFFLINE` fica na altura do
+//! botão STOP. Tudo usa a paleta de [`COR_FUNDO`] e [`COR_ACENTO`].
 //!
 //! Movimentos gravados ficam no diretório de dados do usuário, nunca no cwd —
 //! ver [`dir_movimentos`].
@@ -136,8 +141,9 @@ const DOCK_MIN_WIDTH: f32 = 1024.0;
 /// Largura mínima para a topbar caber em uma linha só.
 const TOPBAR_MIN_WIDTH: f32 = 1024.0;
 
-/// Espaço horizontal além do círculo do pad: 20 da moldura do módulo + 12 de
-/// respiro + 116 da coluna de leituras. Usado para calcular quantos pads cabem.
+/// Espaço horizontal além do círculo do pad: 20 das margens laterais do módulo
+/// (10 de cada lado) + 12 entre o círculo e a coluna de leituras + 116 da
+/// própria coluna. Usado para calcular quantos pads cabem.
 const PAD_MODULO_EXTRA: f32 = 148.0;
 
 /// Vão entre os dois pads na disposição lado a lado.

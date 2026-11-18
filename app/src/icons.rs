@@ -1,6 +1,12 @@
-//! Ícones do app: atlas rasterizado do conjunto "Industrial Sharp UI Icons"
-//! (SVG Repo, Siemens/IX Icons, MIT). O atlas é branco com alfa; `desenha`
-//! aplica o tint do tema. Fonte, licença e mapa: `assets/svgrepo-icons.json`.
+//! Ícones do app: atlas rasterizado do conjunto "Ionicons Sharp Interface
+//! Icons" (SVG Repo, Ionicons, MIT). O atlas é branco com alfa; [`desenha`]
+//! aplica o tint do tema.
+//!
+//! São 18 conceitos em 5×4 células de 64 px: transporte (play/pause/stop),
+//! gravação, cadeado aberto/fechado, refresh, lixeira, fechar, link/unlink,
+//! desktop, gamepad, repeat, chevrons, teclado e CPU. Os SVGs fonte ficam em
+//! `assets/svgrepo/`; o mapa conceito → id/slug, a coleção e a licença estão em
+//! `assets/svgrepo-icons.json`.
 //!
 //! Todo ícone é desenhado por [`desenha`] centrado em `c` com raio `r`, então
 //! o mesmo atlas serve ao botão grande, ao quadrado e ao log.

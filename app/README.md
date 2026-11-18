@@ -88,6 +88,10 @@ no [README do projeto](../README.md#firmware)). Gravar reinicia a placa e os
 servos ficam sem torque durante o upload — escore o braço. A Posição 0 e os
 limites ficam na EEPROM e sobrevivem à regravação.
 
+A tela é um HUD escuro: grade de 24 px no fundo, pads sem moldura e cartões com
+dois cantos cortados a 45°. O readout `LINK`/`OFFLINE` fica ao lado do STOP, no
+mesmo tamanho, e o painel de gravação vira dock à direita em janelas largas.
+
 A tela mostra **dois pads de toque**, no mesmo layout da bancada:
 
 | Pad | Eixo X | Eixo Y |
@@ -193,6 +197,7 @@ O aviso aparece em vermelho na barra superior.
 - `src/firmware.rs` — sketch embutido, versão e gravação do `.ino` (testado)
 - `src/update.rs` — checagem de versões publicadas, HTTPS (testado)
 - `src/main.rs` — UI egui (pads de toque, teclado, atalhos, log, gravação, replay)
+- `src/icons.rs` — atlas de ícones (Ionicons Sharp, tint no tema) e botões HUD
 - `assets/Rajdhani-SemiBold.ttf` — display HUD (SIL OFL 1.1; `assets/OFL-Rajdhani.txt`)
 - `assets/SpaceGrotesk-Regular.ttf` — corpo do texto (SIL OFL 1.1; `assets/OFL-SpaceGrotesk.txt`)
 - `assets/icones_hud.rgba` — atlas de ícones; fontes em `assets/svgrepo/` e mapa em `assets/svgrepo-icons.json`
@@ -200,18 +205,19 @@ O aviso aparece em vermelho na barra superior.
 ## Documentação
 
 O código usa rustdoc (`//!` nos módulos, `///` nos itens). A versão navegável
-fica em [`docs/rust/`](../docs/rust/robocontrol/index.html) e é publicada em
+fica em [`site/public/rust/`](../site/public/rust/robocontrol/index.html) e é
+publicada em
 <https://gabriel-freitas-s.github.io/braco-robortico/rust/robocontrol/index.html>.
 Para regenerar depois de mudar o código:
 
 ```bash
 cargo doc --no-deps --document-private-items
-rsync -a --delete --exclude='.lock' --exclude='/index.html' target/doc/ ../docs/rust/
+rsync -a --delete --exclude='.lock' --exclude='/index.html' target/doc/ ../site/public/rust/
 ```
 
 `--document-private-items` é obrigatório: o crate é binário, então sem ele o
 HTML sai quase vazio. O `--exclude='/index.html'` preserva o redirecionamento
-de `docs/rust/` para `robocontrol/`.
+de `site/public/rust/` para `robocontrol/`.
 
 ## Sentido dos eixos
 
