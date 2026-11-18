@@ -1,6 +1,17 @@
 App desktop (Rust + egui) que controla e grava movimentos do braço 4-DOF pela
 USB. O firmware continua dono do movimento: o app só propõe alvos.
 
+## Novidades na 0.2.0
+
+- **Interface HUD:** grade de 24 px, pads sem moldura, painel único de gravação
+  e cartões com dois cantos cortados a 45°; janela inicial 1280×720.
+- **Tipografia e ícones:** Rajdhani + Space Grotesk embutidas e 18 ícones do pack
+  Ionicons Sharp (SVG Repo, MIT), tintados pelo tema.
+- **Status:** readout `LINK`/`OFFLINE` na altura do STOP; **Atalhos** e
+  **Firmware** viraram botões HUD.
+- Protocolo, atalhos, limites e arquivos de movimento **não mudaram** — a
+  atualização é só de interface.
+
 ## Baixar
 
 | Sistema | Arquivo | Observação |
