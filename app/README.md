@@ -193,6 +193,9 @@ O aviso aparece em vermelho na barra superior.
 - `src/firmware.rs` — sketch embutido, versão e gravação do `.ino` (testado)
 - `src/update.rs` — checagem de versões publicadas, HTTPS (testado)
 - `src/main.rs` — UI egui (pads de toque, teclado, atalhos, log, gravação, replay)
+- `assets/Rajdhani-SemiBold.ttf` — display HUD (SIL OFL 1.1; `assets/OFL-Rajdhani.txt`)
+- `assets/SpaceGrotesk-Regular.ttf` — corpo do texto (SIL OFL 1.1; `assets/OFL-SpaceGrotesk.txt`)
+- `assets/icones_hud.rgba` — atlas de ícones; fontes em `assets/svgrepo/` e mapa em `assets/svgrepo-icons.json`
 
 ## Documentação
 
@@ -216,6 +219,15 @@ de `docs/rust/` para `robocontrol/`.
 pad esquerdo **aumenta** o cotovelo; X do pad direito **abre** a garra; Y para
 cima **aumenta** o ombro. Se algum ficar invertido na mão, é só trocar o sinal
 na montagem de `cmd_sticks` em `tick()`.
+
+## Créditos
+
+Ícones da interface: [Icons from SVG Repo](https://www.svgrepo.com), coleção
+[Ionicons Sharp Interface Icons](https://www.svgrepo.com/collection/ionicons-sharp-interface-icons/),
+de **Ionicons** ([ionicons](https://github.com/ionic-team/ionicons)), licença MIT.
+O mapa e a procedência de cada ícone estão em
+[`assets/svgrepo-icons.json`](assets/svgrepo-icons.json); a licença em
+[`assets/SVGRepo-MIT.txt`](assets/SVGRepo-MIT.txt).
 
 ## Licença
 

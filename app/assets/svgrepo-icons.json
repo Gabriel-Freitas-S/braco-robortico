@@ -1,0 +1,353 @@
+{
+  "collection": {
+    "slug": "ionicons-sharp-interface-icons",
+    "name": "Ionicons Sharp Interface Icons",
+    "url": "https://www.svgrepo.com/collection/ionicons-sharp-interface-icons/",
+    "author": "Ionicons",
+    "author_url": "https://github.com/ionic-team/ionicons",
+    "license": "MIT",
+    "license_url": "https://www.svgrepo.com/page/licensing/#MIT"
+  },
+  "credit": {
+    "text": "Icons from SVG Repo",
+    "url": "https://www.svgrepo.com",
+    "placement": "Atalhos modal (créditos) e README"
+  },
+  "atlas": {
+    "path": "app/assets/icones_hud.rgba",
+    "width": 320,
+    "height": 256,
+    "cell": 64,
+    "columns": 5,
+    "rows": 4,
+    "format": "RGBA8 straight alpha, white glyphs on transparent",
+    "normalization": "trim transparent bounds, fit 56x56, center in 64x64 cell"
+  },
+  "style_rationale": "Conjunto único Ionicons Sharp completa os 18 conceitos com traço grosso e cantos retos, combinando com a grade contínua e os painéis cortados do app.",
+  "icons": [
+    {
+      "index": 0,
+      "cell": [
+        0,
+        0
+      ],
+      "concept": "Play",
+      "id": 327167,
+      "slug": "play-sharp",
+      "title": "Play sharp",
+      "page_url": "https://www.svgrepo.com/svg/327167/play-sharp/",
+      "local_svg": "app/assets/svgrepo/play.svg",
+      "collection": "ionicons-sharp-interface-icons",
+      "author": "Ionicons",
+      "author_url": "https://github.com/ionic-team/ionicons",
+      "license": "MIT",
+      "license_url": "https://www.svgrepo.com/page/licensing/#MIT"
+    },
+    {
+      "index": 1,
+      "cell": [
+        1,
+        0
+      ],
+      "concept": "Pause",
+      "id": 327146,
+      "slug": "pause-sharp",
+      "title": "Pause sharp",
+      "page_url": "https://www.svgrepo.com/svg/327146/pause-sharp/",
+      "local_svg": "app/assets/svgrepo/pause.svg",
+      "collection": "ionicons-sharp-interface-icons",
+      "author": "Ionicons",
+      "author_url": "https://github.com/ionic-team/ionicons",
+      "license": "MIT",
+      "license_url": "https://www.svgrepo.com/page/licensing/#MIT"
+    },
+    {
+      "index": 2,
+      "cell": [
+        2,
+        0
+      ],
+      "concept": "Stop",
+      "id": 327233,
+      "slug": "stop-sharp",
+      "title": "Stop sharp",
+      "page_url": "https://www.svgrepo.com/svg/327233/stop-sharp/",
+      "local_svg": "app/assets/svgrepo/stop.svg",
+      "collection": "ionicons-sharp-interface-icons",
+      "author": "Ionicons",
+      "author_url": "https://github.com/ionic-team/ionicons",
+      "license": "MIT",
+      "license_url": "https://www.svgrepo.com/page/licensing/#MIT"
+    },
+    {
+      "index": 3,
+      "cell": [
+        3,
+        0
+      ],
+      "concept": "Gravar",
+      "id": 327023,
+      "slug": "ellipse-sharp",
+      "title": "Ellipse sharp",
+      "page_url": "https://www.svgrepo.com/svg/327023/ellipse-sharp/",
+      "local_svg": "app/assets/svgrepo/gravar.svg",
+      "collection": "ionicons-sharp-interface-icons",
+      "author": "Ionicons",
+      "author_url": "https://github.com/ionic-team/ionicons",
+      "license": "MIT",
+      "license_url": "https://www.svgrepo.com/page/licensing/#MIT"
+    },
+    {
+      "index": 4,
+      "cell": [
+        4,
+        0
+      ],
+      "concept": "Travar",
+      "id": 327107,
+      "slug": "lock-closed-sharp",
+      "title": "Lock closed sharp",
+      "page_url": "https://www.svgrepo.com/svg/327107/lock-closed-sharp/",
+      "local_svg": "app/assets/svgrepo/travar.svg",
+      "collection": "ionicons-sharp-interface-icons",
+      "author": "Ionicons",
+      "author_url": "https://github.com/ionic-team/ionicons",
+      "license": "MIT",
+      "license_url": "https://www.svgrepo.com/page/licensing/#MIT"
+    },
+    {
+      "index": 5,
+      "cell": [
+        0,
+        1
+      ],
+      "concept": "Liberar",
+      "id": 327108,
+      "slug": "lock-open-sharp",
+      "title": "Lock open sharp",
+      "page_url": "https://www.svgrepo.com/svg/327108/lock-open-sharp/",
+      "local_svg": "app/assets/svgrepo/liberar.svg",
+      "collection": "ionicons-sharp-interface-icons",
+      "author": "Ionicons",
+      "author_url": "https://github.com/ionic-team/ionicons",
+      "license": "MIT",
+      "license_url": "https://www.svgrepo.com/page/licensing/#MIT"
+    },
+    {
+      "index": 6,
+      "cell": [
+        1,
+        1
+      ],
+      "concept": "Atualizar",
+      "id": 327189,
+      "slug": "refresh-sharp",
+      "title": "Refresh sharp",
+      "page_url": "https://www.svgrepo.com/svg/327189/refresh-sharp/",
+      "local_svg": "app/assets/svgrepo/atualizar.svg",
+      "collection": "ionicons-sharp-interface-icons",
+      "author": "Ionicons",
+      "author_url": "https://github.com/ionic-team/ionicons",
+      "license": "MIT",
+      "license_url": "https://www.svgrepo.com/page/licensing/#MIT"
+    },
+    {
+      "index": 7,
+      "cell": [
+        2,
+        1
+      ],
+      "concept": "Excluir",
+      "id": 327262,
+      "slug": "trash-sharp",
+      "title": "Trash sharp",
+      "page_url": "https://www.svgrepo.com/svg/327262/trash-sharp/",
+      "local_svg": "app/assets/svgrepo/excluir.svg",
+      "collection": "ionicons-sharp-interface-icons",
+      "author": "Ionicons",
+      "author_url": "https://github.com/ionic-team/ionicons",
+      "license": "MIT",
+      "license_url": "https://www.svgrepo.com/page/licensing/#MIT"
+    },
+    {
+      "index": 8,
+      "cell": [
+        3,
+        1
+      ],
+      "concept": "Fechar",
+      "id": 326982,
+      "slug": "close-sharp",
+      "title": "Close sharp",
+      "page_url": "https://www.svgrepo.com/svg/326982/close-sharp/",
+      "local_svg": "app/assets/svgrepo/fechar.svg",
+      "collection": "ionicons-sharp-interface-icons",
+      "author": "Ionicons",
+      "author_url": "https://github.com/ionic-team/ionicons",
+      "license": "MIT",
+      "license_url": "https://www.svgrepo.com/page/licensing/#MIT"
+    },
+    {
+      "index": 9,
+      "cell": [
+        4,
+        1
+      ],
+      "concept": "Conectar",
+      "id": 327101,
+      "slug": "link-sharp",
+      "title": "Link sharp",
+      "page_url": "https://www.svgrepo.com/svg/327101/link-sharp/",
+      "local_svg": "app/assets/svgrepo/conectar.svg",
+      "collection": "ionicons-sharp-interface-icons",
+      "author": "Ionicons",
+      "author_url": "https://github.com/ionic-team/ionicons",
+      "license": "MIT",
+      "license_url": "https://www.svgrepo.com/page/licensing/#MIT"
+    },
+    {
+      "index": 10,
+      "cell": [
+        0,
+        2
+      ],
+      "concept": "Desconectar",
+      "id": 327270,
+      "slug": "unlink-sharp",
+      "title": "Unlink sharp",
+      "page_url": "https://www.svgrepo.com/svg/327270/unlink-sharp/",
+      "local_svg": "app/assets/svgrepo/desconectar.svg",
+      "collection": "ionicons-sharp-interface-icons",
+      "author": "Ionicons",
+      "author_url": "https://github.com/ionic-team/ionicons",
+      "license": "MIT",
+      "license_url": "https://www.svgrepo.com/page/licensing/#MIT"
+    },
+    {
+      "index": 11,
+      "cell": [
+        1,
+        2
+      ],
+      "concept": "Monitor",
+      "id": 327007,
+      "slug": "desktop-sharp",
+      "title": "Desktop sharp",
+      "page_url": "https://www.svgrepo.com/svg/327007/desktop-sharp/",
+      "local_svg": "app/assets/svgrepo/monitor.svg",
+      "collection": "ionicons-sharp-interface-icons",
+      "author": "Ionicons",
+      "author_url": "https://github.com/ionic-team/ionicons",
+      "license": "MIT",
+      "license_url": "https://www.svgrepo.com/page/licensing/#MIT"
+    },
+    {
+      "index": 12,
+      "cell": [
+        2,
+        2
+      ],
+      "concept": "Joystick",
+      "id": 327058,
+      "slug": "game-controller-sharp",
+      "title": "Game controller sharp",
+      "page_url": "https://www.svgrepo.com/svg/327058/game-controller-sharp/",
+      "local_svg": "app/assets/svgrepo/joystick.svg",
+      "collection": "ionicons-sharp-interface-icons",
+      "author": "Ionicons",
+      "author_url": "https://github.com/ionic-team/ionicons",
+      "license": "MIT",
+      "license_url": "https://www.svgrepo.com/page/licensing/#MIT"
+    },
+    {
+      "index": 13,
+      "cell": [
+        3,
+        2
+      ],
+      "concept": "Repetir",
+      "id": 327197,
+      "slug": "repeat-sharp",
+      "title": "Repeat sharp",
+      "page_url": "https://www.svgrepo.com/svg/327197/repeat-sharp/",
+      "local_svg": "app/assets/svgrepo/repetir.svg",
+      "collection": "ionicons-sharp-interface-icons",
+      "author": "Ionicons",
+      "author_url": "https://github.com/ionic-team/ionicons",
+      "license": "MIT",
+      "license_url": "https://www.svgrepo.com/page/licensing/#MIT"
+    },
+    {
+      "index": 14,
+      "cell": [
+        4,
+        2
+      ],
+      "concept": "SetaCima",
+      "id": 326978,
+      "slug": "chevron-up-sharp",
+      "title": "Chevron up sharp",
+      "page_url": "https://www.svgrepo.com/svg/326978/chevron-up-sharp/",
+      "local_svg": "app/assets/svgrepo/seta-cima.svg",
+      "collection": "ionicons-sharp-interface-icons",
+      "author": "Ionicons",
+      "author_url": "https://github.com/ionic-team/ionicons",
+      "license": "MIT",
+      "license_url": "https://www.svgrepo.com/page/licensing/#MIT"
+    },
+    {
+      "index": 15,
+      "cell": [
+        0,
+        3
+      ],
+      "concept": "SetaBaixo",
+      "id": 326973,
+      "slug": "chevron-down-sharp",
+      "title": "Chevron down sharp",
+      "page_url": "https://www.svgrepo.com/svg/326973/chevron-down-sharp/",
+      "local_svg": "app/assets/svgrepo/seta-baixo.svg",
+      "collection": "ionicons-sharp-interface-icons",
+      "author": "Ionicons",
+      "author_url": "https://github.com/ionic-team/ionicons",
+      "license": "MIT",
+      "license_url": "https://www.svgrepo.com/page/licensing/#MIT"
+    },
+    {
+      "index": 16,
+      "cell": [
+        1,
+        3
+      ],
+      "concept": "Atalhos",
+      "id": 327095,
+      "slug": "keypad-sharp",
+      "title": "Keypad sharp",
+      "page_url": "https://www.svgrepo.com/svg/327095/keypad-sharp/",
+      "local_svg": "app/assets/svgrepo/atalhos.svg",
+      "collection": "ionicons-sharp-interface-icons",
+      "author": "Ionicons",
+      "author_url": "https://github.com/ionic-team/ionicons",
+      "license": "MIT",
+      "license_url": "https://www.svgrepo.com/page/licensing/#MIT"
+    },
+    {
+      "index": 17,
+      "cell": [
+        2,
+        3
+      ],
+      "concept": "Firmware",
+      "id": 327074,
+      "slug": "hardware-chip-sharp",
+      "title": "Hardware chip sharp",
+      "page_url": "https://www.svgrepo.com/svg/327074/hardware-chip-sharp/",
+      "local_svg": "app/assets/svgrepo/firmware.svg",
+      "collection": "ionicons-sharp-interface-icons",
+      "author": "Ionicons",
+      "author_url": "https://github.com/ionic-team/ionicons",
+      "license": "MIT",
+      "license_url": "https://www.svgrepo.com/page/licensing/#MIT"
+    }
+  ]
+}

@@ -136,18 +136,18 @@ const DOCK_MIN_WIDTH: f32 = 1024.0;
 /// Largura mínima para a topbar caber em uma linha só.
 const TOPBAR_MIN_WIDTH: f32 = 1024.0;
 
-/// Espaço horizontal além do círculo do pad: 12 de respiro + 116 da coluna de
-/// leituras de ângulo. Usado para calcular quantos pads cabem na largura.
-const PAD_MODULO_EXTRA: f32 = 128.0;
+/// Espaço horizontal além do círculo do pad: 20 da moldura do módulo + 12 de
+/// respiro + 116 da coluna de leituras. Usado para calcular quantos pads cabem.
+const PAD_MODULO_EXTRA: f32 = 148.0;
 
 /// Vão entre os dois pads na disposição lado a lado.
 const PAD_GAP: f32 = 24.0;
 
-/// Altura fora do círculo do pad (título, legendas, leituras) no modo normal.
-const PAD_CHROME_NORMAL: f32 = 144.0;
+/// Altura fora do círculo do pad (cabeçalho do módulo, header, legendas).
+const PAD_CHROME_NORMAL: f32 = 160.0;
 
 /// Altura fora do círculo do pad no modo compacto (tela baixa).
-const PAD_CHROME_COMPACTO: f32 = 102.0;
+const PAD_CHROME_COMPACTO: f32 = 128.0;
 
 /// Abaixo desta altura disponível os pads trocam para o chrome compacto.
 const ALTURA_PADS_COMPACTA: f32 = 380.0;
@@ -269,7 +269,11 @@ fn stick_digital(negativo: bool, positivo: bool, fino: bool) -> f32 {
         (false, true) => 1.0,
         _ => 0.0,
     };
-    if fino { v * 0.5 } else { v }
+    if fino {
+        v * 0.5
+    } else {
+        v
+    }
 }
 
 /// Abre a janela, instala o tema e dispara a checagem de versões.
@@ -283,7 +287,7 @@ fn stick_digital(negativo: bool, positivo: bool, fino: bool) -> f32 {
 fn main() -> eframe::Result {
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
-            .with_inner_size([1180.0, 560.0])
+            .with_inner_size([1280.0, 720.0])
             .with_min_inner_size([760.0, 320.0])
             .with_maximized(false)
             .with_app_id("robocontrol")
@@ -558,7 +562,9 @@ impl App {
 
     /// `true` quando há app ou firmware mais novo que o embutido.
     fn tem_novidade(&self) -> bool {
-        let Some(n) = &self.novidades else { return false };
+        let Some(n) = &self.novidades else {
+            return false;
+        };
         let mais_novo = |disponivel: Option<&str>, atual: &str| {
             disponivel.and_then(|v| firmware::compara(v, atual)) == Some(Ordering::Greater)
         };
@@ -602,7 +608,9 @@ impl App {
     /// ganha sufixo `_2`, `_3`… para não apagar outro movimento. A gravação é
     /// consumida mesmo se o save falhar (o erro vai para o banner).
     fn finalizar_gravacao(&mut self, motivo: &str, permitir_sobrescrever: bool) {
-        let Some((mut rec, _)) = self.recording.take() else { return };
+        let Some((mut rec, _)) = self.recording.take() else {
+            return;
+        };
         rec.name = self.rec_name.clone();
         rec.trim_idle();
         if rec.samples.is_empty() {
@@ -666,7 +674,9 @@ impl App {
     /// O `last_diag` recuado força um `#B` já no primeiro tick, para a UI não
     /// ficar 2 s com versão e limites "?".
     fn connect(&mut self) {
-        let Some(path) = self.ports.get(self.port_idx).cloned() else { return };
+        let Some(path) = self.ports.get(self.port_idx).cloned() else {
+            return;
+        };
         match Link::open(&path) {
             Ok(l) => {
                 self.loga(format!("conectado em {path}"));
@@ -735,7 +745,10 @@ impl App {
     /// Começa uma nova gravação com o nome atual.
     fn inicia_gravacao(&mut self) {
         self.recording = Some((
-            Recording { name: self.rec_name.clone(), samples: Vec::new() },
+            Recording {
+                name: self.rec_name.clone(),
+                samples: Vec::new(),
+            },
             Instant::now(),
         ));
         self.loga("gravação iniciada");
@@ -783,9 +796,10 @@ impl App {
 
         //  H/F1 alterna a lista. Com campo de texto focado, H é uma letra; com
         //  o modal de firmware aberto, quem fecha é o Esc/× do próprio modal.
-        if !digitando && !popup && !self.firmware_aberto
-            && (tecla_pressionada(ctx, egui::Key::H)
-                || tecla_pressionada(ctx, egui::Key::F1))
+        if !digitando
+            && !popup
+            && !self.firmware_aberto
+            && (tecla_pressionada(ctx, egui::Key::H) || tecla_pressionada(ctx, egui::Key::F1))
         {
             self.atalhos_abertos = !self.atalhos_abertos;
         }
@@ -828,14 +842,22 @@ impl App {
                         p.pausado
                     })
                     .unwrap_or(false);
-                self.loga(if pausado { "replay pausado" } else { "replay retomado" });
+                self.loga(if pausado {
+                    "replay pausado"
+                } else {
+                    "replay retomado"
+                });
             } else if let Some(r) = self.loaded.clone() {
                 self.inicia_replay(r);
             }
         }
         if self.loaded.is_some() && tecla_pressionada(ctx, egui::Key::L) {
             self.looping = !self.looping;
-            self.loga(if self.looping { "repetir ligado" } else { "repetir desligado" });
+            self.loga(if self.looping {
+                "repetir ligado"
+            } else {
+                "repetir desligado"
+            });
         }
         for (tecla, vel) in [
             (egui::Key::Num1, 0.5),
@@ -861,7 +883,10 @@ impl App {
             )
         });
         self.tecla_l = egui::vec2(stick_digital(a, d, fino), stick_digital(w, s, fino));
-        self.tecla_r = egui::vec2(stick_digital(esq, dir, fino), stick_digital(cima, baixo, fino));
+        self.tecla_r = egui::vec2(
+            stick_digital(esq, dir, fino),
+            stick_digital(cima, baixo, fino),
+        );
     }
 
     /// Um passo do laço: leitura da serial, heartbeat de diagnóstico, gravação,
@@ -878,7 +903,8 @@ impl App {
     /// 6. Se o PC está no controle, envia `#P` (replay/alvo manual) ou `#V`
     ///    (sticks) no máximo a cada [`TICK`].
     fn tick(&mut self, now: Instant) {
-        let dt_ms = (now.saturating_duration_since(self.last_tick).as_secs_f32() * 1000.0).min(250.0);
+        let dt_ms =
+            (now.saturating_duration_since(self.last_tick).as_secs_f32() * 1000.0).min(250.0);
         self.last_tick = now;
 
         //  Resultado da checagem de versões: uma mensagem e a thread termina.
@@ -886,9 +912,7 @@ impl App {
             match rx.try_recv() {
                 Ok(n) => self.aplica_novidades(n),
                 Err(TryRecvError::Empty) => self.checando = Some(rx),
-                Err(TryRecvError::Disconnected) => {
-                    self.loga("verificação de versões não concluiu")
-                }
+                Err(TryRecvError::Disconnected) => self.loga("verificação de versões não concluiu"),
             }
         }
 
@@ -934,9 +958,9 @@ impl App {
                     if s.pc_mode {
                         self.last_assume = None;
                     }
-                    let em_transicao = self
-                        .last_assume
-                        .is_some_and(|t| now.saturating_duration_since(t) < Duration::from_millis(250));
+                    let em_transicao = self.last_assume.is_some_and(|t| {
+                        now.saturating_duration_since(t) < Duration::from_millis(250)
+                    });
                     // O firmware é dono da verdade sobre quem controla.
                     if self.pc && !s.pc_mode && !em_transicao {
                         self.solta_controle();
@@ -962,7 +986,9 @@ impl App {
             self.loga("placa parou de responder — controle devolvido ao joystick");
         }
 
-        if self.link.is_some() && now.saturating_duration_since(self.last_diag) >= Duration::from_secs(2) {
+        if self.link.is_some()
+            && now.saturating_duration_since(self.last_diag) >= Duration::from_secs(2)
+        {
             self.last_diag = now;
             self.send(protocol::CMD_DIAG);
         }
@@ -1048,7 +1074,7 @@ impl App {
         if topbar_em_linha_unica(ui.available_width()) {
             ui.horizontal(|ui| {
                 self.conexao_bar(ui);
-                ui.separator();
+                separador_vertical(ui, 28.0);
                 self.controle_bar(ui);
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     self.seguranca_bar(ui, !compacta, self.recording.is_some());
@@ -1066,7 +1092,7 @@ impl App {
                 self.controle_bar(ui);
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if self.recording.is_some() {
-                        pill(ui, "Gravando", COR_REC, COR_ERRO_FUNDO);
+                        status_hud(ui, "REC", "GRAVANDO", COR_REC, COR_ERRO_FUNDO);
                     }
                     if !compacta {
                         self.diagnostico_bar(ui);
@@ -1077,14 +1103,16 @@ impl App {
 
         if let Some(erro) = self.erro.clone() {
             ui.add_space(4.0);
-            egui::Frame::NONE
-                .fill(COR_ERRO_FUNDO)
-                .corner_radius(8)
-                .inner_margin(egui::Margin::symmetric(12, 6))
-                .show(ui, |ui| {
+            caixa_hud(
+                ui,
+                4.0,
+                COR_ERRO_FUNDO,
+                egui::Stroke::new(1.0_f32, COR_ERRO.gamma_multiply(0.45)),
+                egui::Margin::symmetric(12, 6),
+                |ui| {
                     ui.horizontal(|ui| {
                         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                            if botao_quadrado(ui, Icone::Excluir, ALVO)
+                            if botao_quadrado(ui, Icone::Fechar, ALVO)
                                 .on_hover_text("fechar aviso")
                                 .clicked()
                             {
@@ -1093,7 +1121,8 @@ impl App {
                         });
                         ui.label(egui::RichText::new(erro).color(COR_ERRO));
                     });
-                });
+                },
+            );
         }
         if let Some(w) = &self.reboot {
             ui.add_space(4.0);
@@ -1128,6 +1157,8 @@ impl App {
                     ui.selectable_value(&mut self.port_idx, i, p);
                 }
             });
+        let borda_combo = ui.style().interact(&combo.response).bg_stroke;
+        corta_cantos_controle(ui, &combo.response, 4.0, SUPERFICIE_1, borda_combo);
         combo
             .response
             .on_hover_text("Porta serial da placa (seleção pelo mouse)");
@@ -1135,7 +1166,9 @@ impl App {
         if self.link.is_none() {
             let tem_porta = self.ports.get(self.port_idx).is_some();
             let resposta = ui
-                .add_enabled_ui(tem_porta, |ui| botao(ui, Icone::Conectar, "Conectar", 124.0))
+                .add_enabled_ui(tem_porta, |ui| {
+                    icons::botao_primario(ui, Icone::Conectar, "Conectar", 112.0)
+                })
                 .inner
                 .on_hover_text(if tem_porta {
                     "Abre a porta serial selecionada (conexão pelo mouse)"
@@ -1146,7 +1179,7 @@ impl App {
                 self.connect();
             }
         } else {
-            let resposta = botao(ui, Icone::Desconectar, "Desconectar", 138.0).on_hover_text(
+            let resposta = botao(ui, Icone::Desconectar, "Desconectar", 132.0).on_hover_text(
                 "Fecha a porta, salva a gravação em andamento e devolve ao joystick",
             );
             if resposta.clicked() {
@@ -1161,7 +1194,7 @@ impl App {
     /// clique; se a placa discordar, o botão acompanha a placa no próximo status.
     fn controle_bar(&mut self, ui: &mut egui::Ui) {
         if self.pc {
-            let resposta = botao(ui, Icone::Joystick, "Devolver ao joystick", 200.0).on_hover_text(
+            let resposta = botao(ui, Icone::Joystick, "Devolver ao joystick", 184.0).on_hover_text(
                 "Congela no ângulo atual e devolve o controle ao joystick\nTecla: J",
             );
             if resposta.clicked() {
@@ -1170,12 +1203,10 @@ impl App {
         } else {
             let resposta = ui
                 .add_enabled_ui(self.link.is_some(), |ui| {
-                    botao(ui, Icone::Monitor, "Assumir controle", 184.0)
+                    icons::botao_primario(ui, Icone::Monitor, "Assumir controle", 168.0)
                 })
                 .inner
-                .on_hover_text(
-                    "Assume o controle do PC a partir do ângulo atual\nTecla: M",
-                );
+                .on_hover_text("Assume o controle do PC a partir do ângulo atual\nTecla: M");
             if resposta.clicked() {
                 self.assume();
             }
@@ -1193,13 +1224,11 @@ impl App {
         };
         let resposta = ui
             .add_enabled_ui(self.link.is_some(), |ui| {
-                icons::botao_cor(ui, icone, rotulo, 152.0, fundo, frente)
+                icons::botao_cor(ui, icone, rotulo, 140.0, fundo, frente)
             })
             .inner;
         if resposta
-            .on_hover_text(
-                "Mantém pressão contínua no objeto e bloqueia a abertura\nTecla: G",
-            )
+            .on_hover_text("Mantém pressão contínua no objeto e bloqueia a abertura\nTecla: G")
             .clicked()
         {
             self.alterna_trava_garra();
@@ -1216,9 +1245,9 @@ impl App {
             ui,
             Icone::Stop,
             "STOP",
-            124.0,
-            cor(0x62, 0x20, 0x27),
-            cor(0xff, 0xc2, 0xc2),
+            104.0,
+            COR_PERIGO_FUNDO,
+            COR_PERIGO_TEXTO,
         )
         .on_hover_text(
             "Para o braço onde está e devolve o controle ao joystick.\n\
@@ -1231,16 +1260,16 @@ impl App {
             self.stop();
         }
         if gravando {
-            pill(ui, "Gravando", COR_REC, COR_ERRO_FUNDO);
+            status_hud(ui, "REC", "GRAVANDO", COR_REC, COR_ERRO_FUNDO);
         }
-        let (txt, ct, cf) = if self.link.is_none() {
-            ("desconectado", COR_MUTED, COR_FUNDO)
+        let (valor, ct, cf) = if self.link.is_none() {
+            ("OFFLINE", COR_MUTED, SUPERFICIE_2)
         } else if self.pc {
-            ("PC no controle", COR_OK, COR_OK_FUNDO)
+            ("PC", COR_OK, COR_OK_FUNDO)
         } else {
-            ("joystick no controle", COR_WARN, COR_WARN_FUNDO)
+            ("JOYSTICK", COR_WARN, COR_WARN_FUNDO)
         };
-        pill(ui, txt, ct, cf);
+        status_hud(ui, "LINK", valor, ct, cf);
         if diagnostico {
             self.diagnostico_bar(ui);
         }
@@ -1311,7 +1340,7 @@ impl App {
 
         ui.horizontal(|ui| {
             titulo_secao(ui, "Controle");
-            if geo.compacto && disponivel.x >= 720.0 {
+            if geo.compacto && disponivel.x >= 800.0 {
                 ui.add_space(8.0);
                 ui.label(
                     egui::RichText::new("·  Arraste para mover, solte para segurar")
@@ -1320,14 +1349,18 @@ impl App {
                 );
             }
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                if icons::botao_texto(ui, "Atalhos", self.atalhos_abertos, 96.0)
+                if icons::botao_hud(ui, Icone::Atalhos, "Atalhos", self.atalhos_abertos, 108.0)
                     .on_hover_text("lista de atalhos do teclado (H)")
                     .clicked()
                 {
                     self.atalhos_abertos = !self.atalhos_abertos;
                 }
-                let rotulo = if self.tem_novidade() { "Firmware •" } else { "Firmware" };
-                if icons::botao_texto(ui, rotulo, self.firmware_aberto, 104.0)
+                let rotulo = if self.tem_novidade() {
+                    "Firmware •"
+                } else {
+                    "Firmware"
+                };
+                if icons::botao_hud(ui, Icone::Firmware, rotulo, self.firmware_aberto, 116.0)
                     .on_hover_text("firmware embutido, versão da placa e atualizações")
                     .clicked()
                 {
@@ -1335,14 +1368,7 @@ impl App {
                 }
                 if self.pc && (self.tecla_l != egui::Vec2::ZERO || self.tecla_r != egui::Vec2::ZERO)
                 {
-                    pill(ui, "teclado ativo", COR_ACENTO, cor(0x1b, 0x2a, 0x3a));
-                }
-                if self.link.is_none() {
-                    pill(ui, "conecte e assuma o controle", COR_MUTED, COR_FUNDO);
-                } else if self.pc {
-                    pill(ui, "pads + teclado", COR_OK, COR_OK_FUNDO);
-                } else {
-                    pill(ui, "joystick no controle", COR_WARN, COR_WARN_FUNDO);
+                    status_hud(ui, "TECLADO", "ATIVO", COR_ACENTO, SUPERFICIE_2);
                 }
             });
         });
@@ -1394,9 +1420,9 @@ impl App {
                     "BASE · COTOVELO",
                     &mut self.pad_l,
                     geo.lado,
-                    geo.compacto,
                     habilitado,
                     esquerdo,
+                    "A/D · W/S",
                     "Arraste para mover.\nTeclado: A/D = Base, W/S = Cotovelo\nShift = movimento fino",
                 ) {
                     clicado = Some(j);
@@ -1408,9 +1434,9 @@ impl App {
                     "GARRA · OMBRO",
                     &mut self.pad_r,
                     geo.lado,
-                    geo.compacto,
                     habilitado,
                     direito,
+                    "←/→ · ↑/↓",
                     "Arraste para mover.\nTeclado: ←/→ = Garra, ↑/↓ = Ombro\nShift = movimento fino",
                 ) {
                     clicado = Some(j);
@@ -1427,9 +1453,9 @@ impl App {
                     "BASE · COTOVELO",
                     &mut self.pad_l,
                     geo.lado,
-                    geo.compacto,
                     habilitado,
                     esquerdo,
+                    "A/D · W/S",
                     "Arraste para mover.\nTeclado: A/D = Base, W/S = Cotovelo\nShift = movimento fino",
                 ) {
                     clicado = Some(j);
@@ -1445,9 +1471,9 @@ impl App {
                     "GARRA · OMBRO",
                     &mut self.pad_r,
                     geo.lado,
-                    geo.compacto,
                     habilitado,
                     direito,
+                    "←/→ · ↑/↓",
                     "Arraste para mover.\nTeclado: ←/→ = Garra, ↑/↓ = Ombro\nShift = movimento fino",
                 ) {
                     clicado = Some(j);
@@ -1487,51 +1513,78 @@ impl App {
         //  O campo de nome só existe quando não está gravando; o foco é
         //  recalculado a cada frame para o teclado saber quando não deve agir.
         self.nome_em_foco = false;
-        let gap_secao = if compacta { 12.0 } else { 20.0 };
-        ui.add_space(if compacta { 2.0 } else { 6.0 });
-        titulo_secao(ui, "Gravação");
-        ui.add_space(6.0);
+        ui.add_space(if compacta { 4.0 } else { 8.0 });
 
-        if let Some((rec, _)) = &self.recording {
-            //  Tempo capturado (última amostra), não tempo de parede: se a
-            //  placa parar de responder, o contador não continua crescendo.
-            let dur_s = rec.samples.last().map(|s| s.0 as f32 / 1000.0).unwrap_or(0.0);
-            pill(
-                ui,
-                &format!("Gravando · {dur_s:.1}s · {} amostras", rec.samples.len()),
-                COR_REC,
-                COR_ERRO_FUNDO,
-            );
-            ui.add_space(8.0);
-            let resposta = botao(ui, Icone::Stop, "Parar gravação e salvar", ui.available_width())
-                .on_hover_text(
-                    "Encerra a gravação, corta as pausas das pontas e salva\nTecla: R",
-                );
-            if resposta.clicked() {
-                self.finalizar_gravacao("parada manual", true);
-            }
-        } else {
-            ui.label(egui::RichText::new("Nome do movimento").small().color(COR_MUTED));
-            ui.add_space(4.0);
-            egui::Frame::NONE
-                .fill(cor(0x0d, 0x11, 0x15))
-                .stroke(egui::Stroke::new(1.0_f32, cor(0x2c, 0x36, 0x43)))
-                .corner_radius(8)
-                .inner_margin(egui::Margin::symmetric(12, 0))
-                .show(ui, |ui| {
-                    ui.set_height(ALVO);
-                    ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
-                        let resp = ui.add_sized(
-                            [ui.available_width(), 24.0],
-                            egui::TextEdit::singleline(&mut self.rec_name)
-                                .frame(false)
-                                .vertical_align(egui::Align::Center),
-                        );
-                        self.nome_em_foco = resp.has_focus();
-                    });
-                });
-            ui.add_space(8.0);
-            let resposta = ui
+        caixa_hud(
+            ui,
+            7.0,
+            SUPERFICIE_2,
+            egui::Stroke::new(1.0_f32, LINHA),
+            egui::Margin::same(10),
+            |ui| {
+                titulo_secao(ui, "Gravação");
+                ui.add_space(8.0);
+
+                if let Some((rec, _)) = &self.recording {
+                    //  Tempo capturado (última amostra), não tempo de parede: se a
+                    //  placa parar de responder, o contador não continua crescendo.
+                    let dur_s = rec
+                        .samples
+                        .last()
+                        .map(|s| s.0 as f32 / 1000.0)
+                        .unwrap_or(0.0);
+                    pill(
+                        ui,
+                        &format!("Gravando · {dur_s:.1}s · {} amostras", rec.samples.len()),
+                        COR_REC,
+                        COR_ERRO_FUNDO,
+                    );
+                    ui.add_space(8.0);
+                    let resposta = botao(
+                        ui,
+                        Icone::Stop,
+                        "Parar gravação e salvar",
+                        ui.available_width(),
+                    )
+                    .on_hover_text(
+                        "Encerra a gravação, corta as pausas das pontas e salva\nTecla: R",
+                    );
+                    if resposta.clicked() {
+                        self.finalizar_gravacao("parada manual", true);
+                    }
+                } else {
+                    ui.label(
+                        egui::RichText::new("Nome do movimento")
+                            .small()
+                            .color(COR_MUTED),
+                    );
+                    ui.add_space(4.0);
+                    let campo = caixa_hud(
+                        ui,
+                        4.0,
+                        COR_FUNDO,
+                        egui::Stroke::new(1.0_f32, LINHA_FORTE),
+                        egui::Margin::symmetric(12, 0),
+                        |ui| {
+                            ui.set_height(ALVO);
+                            ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
+                                let resp = ui.add_sized(
+                                    [ui.available_width(), 24.0],
+                                    egui::TextEdit::singleline(&mut self.rec_name)
+                                        .frame(false)
+                                        .vertical_align(egui::Align::Center),
+                                );
+                                self.nome_em_foco = resp.has_focus();
+                                resp.has_focus()
+                            })
+                            .inner
+                        },
+                    );
+                    if campo.inner {
+                        foco_cortado(ui, campo.response.rect, 4.0);
+                    }
+                    ui.add_space(8.0);
+                    let resposta = ui
                 .add_enabled_ui(self.link.is_some(), |ui| {
                     icons::botao_cor(
                         ui,
@@ -1548,280 +1601,320 @@ impl App {
                 } else {
                     "Conecte a placa para gravar"
                 });
-            if resposta.clicked() {
-                self.inicia_gravacao();
-            }
-        }
-
-        ui.add_space(gap_secao);
-        titulo_secao(ui, "Replay");
-        ui.add_space(6.0);
-        if let Some(r) = self.loaded.clone() {
-            ui.horizontal(|ui| {
-                ui.add(egui::Label::new(egui::RichText::new(&r.name).strong()).truncate());
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    ui.label(
-                        egui::RichText::new(format!(
-                            "{:.1}s · {} amostras",
-                            r.duration_ms() as f32 / 1000.0,
-                            r.samples.len()
-                        ))
-                        .small()
-                        .color(COR_MUTED),
-                    );
-                });
-            });
-            ui.add_space(6.0);
-            let resposta = icons::toggle(
-                ui,
-                self.looping,
-                Icone::Repetir,
-                "Repetir continuamente",
-                ui.available_width(),
-            )
-            .on_hover_text("Repete o replay continuamente\nTecla: L");
-            if resposta.clicked() {
-                self.looping = !self.looping;
-            }
-            ui.add_space(6.0);
-            ui.label(egui::RichText::new("Velocidade").small().color(COR_MUTED));
-            ui.add_space(4.0);
-            ui.horizontal(|ui| {
-                let larg_vel = (ui.available_width() - 20.0) / 3.0;
-                for v in VELOCIDADES_REPLAY {
-                    let ativo = (self.vel_replay - v).abs() < 0.01;
-                    let rotulo = format!("{v}×");
-                    let tecla = match v {
-                        0.5 => "1",
-                        1.0 => "2",
-                        _ => "3",
-                    };
-                    let resposta = icons::botao_texto(ui, &rotulo, ativo, larg_vel)
-                        .on_hover_text(format!("Velocidade {rotulo}\nTecla: {tecla}"));
                     if resposta.clicked() {
-                        self.vel_replay = v;
+                        self.inicia_gravacao();
                     }
                 }
-            });
-            ui.add_space(6.0);
-            if self.play.is_none() {
-                let pode = self.link.is_some();
-                let resposta = ui
-                    .add_enabled_ui(pode, |ui| {
-                        botao(ui, Icone::Play, "Reproduzir movimento", ui.available_width())
-                    })
-                    .inner
-                    .on_hover_text(if pode {
-                        "Assume o controle do PC e inicia o replay\nTecla: P"
-                    } else {
-                        "Conecte a placa para iniciar o replay"
-                    });
-                if resposta.clicked() {
-                    self.inicia_replay(r.clone());
-                }
-            } else if let Some(play) = &self.play {
-                let dur_ms = play.rec.duration_ms() as f32;
-                let frac = if play.preparando || dur_ms <= 0.0 {
-                    0.0
-                } else {
-                    (play.pos_ms / dur_ms).clamp(0.0, 1.0)
-                };
-                let status_txt = if play.preparando {
-                    if play.pausado {
-                        "Pausado no pré-posicionamento".to_string()
-                    } else {
-                        "Indo para o início…".to_string()
-                    }
-                } else if play.pausado {
-                    format!(
-                        "Pausado · {:.1}s / {:.1}s",
-                        play.pos_ms / 1000.0,
-                        dur_ms / 1000.0
-                    )
-                } else {
-                    format!(
-                        "Reproduzindo ({}×) · {:.1}s / {:.1}s",
-                        self.vel_replay,
-                        play.pos_ms / 1000.0,
-                        dur_ms / 1000.0
-                    )
-                };
-                ui.label(
-                    egui::RichText::new(status_txt)
-                        .small()
-                        .color(if play.pausado { COR_WARN } else { COR_OK }),
-                );
-                ui.add_space(4.0);
-                let (bar_rect, _) = ui.allocate_exact_size(
-                    egui::vec2(ui.available_width(), 10.0),
-                    egui::Sense::hover(),
-                );
-                let painter = ui.painter();
-                painter.rect_filled(bar_rect, 5.0, cor(0x0d, 0x11, 0x15));
-                painter.rect_stroke(
-                    bar_rect,
-                    5.0,
-                    egui::Stroke::new(1.0_f32, cor(0x2c, 0x36, 0x43)),
-                    egui::StrokeKind::Inside,
-                );
-                if frac > 0.0 {
-                    let larg_fill = (bar_rect.width() * frac).max(8.0).min(bar_rect.width());
-                    let fill_rect = egui::Rect::from_min_size(
-                        bar_rect.min,
-                        egui::vec2(larg_fill, bar_rect.height()),
-                    );
-                    let fill_cor = if play.pausado { COR_WARN } else { COR_ACENTO };
-                    painter.rect_filled(fill_rect, 5.0, fill_cor);
-                }
-                ui.add_space(6.0);
-
-                let pausado = play.pausado;
-                let mut toggle_pausa = false;
-                let mut parar = false;
-                ui.horizontal(|ui| {
-                    let larg = (ui.available_width() - 10.0) / 2.0;
-                    let (ico, rot) = if pausado {
-                        (Icone::Play, "Continuar")
-                    } else {
-                        (Icone::Pause, "Pausar")
-                    };
-                    let resposta = botao(ui, ico, rot, larg).on_hover_text(if pausado {
-                        "Continua o replay de onde parou\nTecla: P"
-                    } else {
-                        "Pausa o replay\nTecla: P"
-                    });
-                    if resposta.clicked() {
-                        toggle_pausa = true;
-                    }
-                    let resposta = botao(ui, Icone::Stop, "Parar", ui.available_width())
-                        .on_hover_text(
-                            "Para o replay e devolve o controle ao joystick\nTecla: Espaço",
-                        );
-                    if resposta.clicked() {
-                        parar = true;
-                    }
-                });
-                if toggle_pausa {
-                    let mut agora_pausado = None;
-                    if let Some(play) = self.play.as_mut() {
-                        play.pausado = !play.pausado;
-                        agora_pausado = Some(play.pausado);
-                    }
-                    if let Some(pausado) = agora_pausado {
-                        self.loga(if pausado {
-                            "replay pausado"
-                        } else {
-                            "replay retomado"
+                ui.add_space(10.0);
+                separador_horizontal(ui);
+                ui.add_space(10.0);
+                titulo_secao(ui, "Replay");
+                ui.add_space(8.0);
+                if let Some(r) = self.loaded.clone() {
+                    ui.horizontal(|ui| {
+                        ui.add(egui::Label::new(egui::RichText::new(&r.name).strong()).truncate());
+                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                            ui.label(
+                                egui::RichText::new(format!(
+                                    "{:.1}s · {} amostras",
+                                    r.duration_ms() as f32 / 1000.0,
+                                    r.samples.len()
+                                ))
+                                .small()
+                                .color(COR_MUTED),
+                            );
                         });
-                    }
-                } else if parar {
-                    self.stop();
-                }
-            }
-        } else {
-            ui.label(
-                egui::RichText::new("Selecione um movimento abaixo para preparar o replay.")
-                    .small()
-                    .color(COR_MUTED),
-            );
-        }
-
-        ui.add_space(gap_secao);
-        ui.horizontal(|ui| {
-            titulo_secao(ui, "Movimentos salvos");
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                if botao_quadrado(ui, Icone::Atualizar, ALVO)
-                    .on_hover_text("atualizar lista")
-                    .clicked()
-                {
-                    self.refresh_files();
-                }
-            });
-        });
-        ui.add_space(8.0);
-
-        if self.files.is_empty() {
-            ui.label(egui::RichText::new("Nenhum movimento salvo").strong().color(COR_MUTED));
-            ui.add_space(2.0);
-            ui.label(
-                egui::RichText::new("Conecte a placa, dê um nome e inicie a gravação.")
-                    .small()
-                    .color(COR_MUTED),
-            );
-        }
-        let files = self.files.clone();
-        for f in files {
-            let nome = f
-                .file_name()
-                .map(|n| n.to_string_lossy().trim_end_matches(".json").to_string())
-                .unwrap_or_default();
-
-            if self.excluir.as_ref() == Some(&f) {
-                ui.horizontal(|ui| {
-                    let largura = (ui.available_width() - 10.0) / 2.0;
-                    if icons::botao_cor(
+                    });
+                    ui.add_space(6.0);
+                    let resposta = icons::toggle(
                         ui,
-                        Icone::Excluir,
-                        "Excluir",
-                        largura,
-                        cor(0x62, 0x20, 0x27),
-                        cor(0xff, 0xc2, 0xc2),
+                        self.looping,
+                        Icone::Repetir,
+                        "Repetir continuamente",
+                        ui.available_width(),
                     )
-                    .clicked()
-                    {
-                        match Recording::delete(&f) {
-                            Ok(()) => {
-                                self.loga(format!("excluído {nome}"));
-                                if self.loaded_path.as_ref() == Some(&f) {
-                                    self.loaded = None;
-                                    self.loaded_path = None;
-                                    self.play = None;
-                                }
-                                self.refresh_files();
+                    .on_hover_text("Repete o replay continuamente\nTecla: L");
+                    if resposta.clicked() {
+                        self.looping = !self.looping;
+                    }
+                    ui.add_space(6.0);
+                    ui.label(egui::RichText::new("Velocidade").small().color(COR_MUTED));
+                    ui.add_space(4.0);
+                    ui.horizontal(|ui| {
+                        let larg_vel = (ui.available_width() - 20.0) / 3.0;
+                        for v in VELOCIDADES_REPLAY {
+                            let ativo = (self.vel_replay - v).abs() < 0.01;
+                            let rotulo = format!("{v}×");
+                            let tecla = match v {
+                                0.5 => "1",
+                                1.0 => "2",
+                                _ => "3",
+                            };
+                            let resposta = icons::botao_texto(ui, &rotulo, ativo, larg_vel)
+                                .on_hover_text(format!("Velocidade {rotulo}\nTecla: {tecla}"));
+                            if resposta.clicked() {
+                                self.vel_replay = v;
                             }
-                            Err(e) => self.falha(format!("Não foi possível excluir {nome}: {e}")),
                         }
-                        self.excluir = None;
+                    });
+                    ui.add_space(6.0);
+                    if self.play.is_none() {
+                        let pode = self.link.is_some();
+                        let resposta = ui
+                            .add_enabled_ui(pode, |ui| {
+                                icons::botao_primario(
+                                    ui,
+                                    Icone::Play,
+                                    "Reproduzir movimento",
+                                    ui.available_width(),
+                                )
+                            })
+                            .inner
+                            .on_hover_text(if pode {
+                                "Assume o controle do PC e inicia o replay\nTecla: P"
+                            } else {
+                                "Conecte a placa para iniciar o replay"
+                            });
+                        if resposta.clicked() {
+                            self.inicia_replay(r.clone());
+                        }
+                    } else if let Some(play) = &self.play {
+                        let dur_ms = play.rec.duration_ms() as f32;
+                        let frac = if play.preparando || dur_ms <= 0.0 {
+                            0.0
+                        } else {
+                            (play.pos_ms / dur_ms).clamp(0.0, 1.0)
+                        };
+                        let status_txt = if play.preparando {
+                            if play.pausado {
+                                "Pausado no pré-posicionamento".to_string()
+                            } else {
+                                "Indo para o início…".to_string()
+                            }
+                        } else if play.pausado {
+                            format!(
+                                "Pausado · {:.1}s / {:.1}s",
+                                play.pos_ms / 1000.0,
+                                dur_ms / 1000.0
+                            )
+                        } else {
+                            format!(
+                                "Reproduzindo ({}×) · {:.1}s / {:.1}s",
+                                self.vel_replay,
+                                play.pos_ms / 1000.0,
+                                dur_ms / 1000.0
+                            )
+                        };
+                        ui.label(
+                            egui::RichText::new(status_txt)
+                                .small()
+                                .color(if play.pausado { COR_WARN } else { COR_OK }),
+                        );
+                        ui.add_space(4.0);
+                        let (bar_rect, _) = ui.allocate_exact_size(
+                            egui::vec2(ui.available_width(), 6.0),
+                            egui::Sense::hover(),
+                        );
+                        let painter = ui.painter();
+                        painter.rect_filled(bar_rect, 3.0, COR_FUNDO);
+                        painter.rect_stroke(
+                            bar_rect,
+                            3.0,
+                            egui::Stroke::new(1.0_f32, LINHA_FORTE),
+                            egui::StrokeKind::Inside,
+                        );
+                        if frac > 0.0 {
+                            let larg_fill =
+                                (bar_rect.width() * frac).max(6.0).min(bar_rect.width());
+                            let fill_rect = egui::Rect::from_min_size(
+                                bar_rect.min,
+                                egui::vec2(larg_fill, bar_rect.height()),
+                            );
+                            let fill_cor = if play.pausado { COR_WARN } else { COR_ACENTO };
+                            painter.rect_filled(fill_rect, 3.0, fill_cor);
+                        }
+                        ui.add_space(6.0);
+
+                        let pausado = play.pausado;
+                        let mut toggle_pausa = false;
+                        let mut parar = false;
+                        ui.horizontal(|ui| {
+                            let larg = (ui.available_width() - 10.0) / 2.0;
+                            let (ico, rot) = if pausado {
+                                (Icone::Play, "Continuar")
+                            } else {
+                                (Icone::Pause, "Pausar")
+                            };
+                            let resposta = botao(ui, ico, rot, larg).on_hover_text(if pausado {
+                                "Continua o replay de onde parou\nTecla: P"
+                            } else {
+                                "Pausa o replay\nTecla: P"
+                            });
+                            if resposta.clicked() {
+                                toggle_pausa = true;
+                            }
+                            let resposta = botao(ui, Icone::Stop, "Parar", ui.available_width())
+                                .on_hover_text(
+                                    "Para o replay e devolve o controle ao joystick\nTecla: Espaço",
+                                );
+                            if resposta.clicked() {
+                                parar = true;
+                            }
+                        });
+                        if toggle_pausa {
+                            let mut agora_pausado = None;
+                            if let Some(play) = self.play.as_mut() {
+                                play.pausado = !play.pausado;
+                                agora_pausado = Some(play.pausado);
+                            }
+                            if let Some(pausado) = agora_pausado {
+                                self.loga(if pausado {
+                                    "replay pausado"
+                                } else {
+                                    "replay retomado"
+                                });
+                            }
+                        } else if parar {
+                            self.stop();
+                        }
                     }
-                    if botao(ui, Icone::Stop, "Cancelar", ui.available_width()).clicked() {
-                        self.excluir = None;
-                    }
+                } else {
+                    ui.vertical_centered(|ui| {
+                        let (r, _) = ui.allocate_exact_size(
+                            egui::vec2(ui.available_width(), 20.0),
+                            egui::Sense::hover(),
+                        );
+                        icons::desenha(ui.painter(), r.center(), 8.0, Icone::Repetir, COR_MUTED);
+                        ui.add_space(2.0);
+                        ui.label(
+                            egui::RichText::new(
+                                "Selecione um movimento abaixo para preparar o replay.",
+                            )
+                            .small()
+                            .color(COR_MUTED),
+                        );
+                    });
+                }
+                ui.add_space(10.0);
+                separador_horizontal(ui);
+                ui.add_space(10.0);
+                ui.horizontal(|ui| {
+                    titulo_secao(ui, "Movimentos salvos");
+                    ui.label(
+                        egui::RichText::new(self.files.len().to_string())
+                            .small()
+                            .color(COR_MUTED),
+                    );
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        if icons::botao_quadrado_compacto(ui, Icone::Atualizar, 34.0)
+                            .on_hover_text("atualizar lista")
+                            .clicked()
+                        {
+                            self.refresh_files();
+                        }
+                    });
                 });
-                continue;
-            }
+                ui.add_space(8.0);
 
-            ui.horizontal(|ui| {
-                let selecionado = self.loaded_path.as_ref() == Some(&f);
-                let largura_nome = (ui.available_width() - ALVO - 10.0).max(60.0);
-                let nome_visivel = texto_curto(&nome, 30);
-                let resposta = icons::botao_texto(ui, &nome_visivel, selecionado, largura_nome);
-                if resposta.on_hover_text("carregar este movimento").clicked() {
-                    match Recording::load(&f) {
-                        Ok(r) => {
-                            self.loaded = Some(r);
-                            self.loaded_path = Some(f.clone());
-                            self.loga(format!("carregado {nome}"));
-                        }
-                        Err(e) => self.falha(format!("Não foi possível ler {nome}: {e}")),
+                if self.files.is_empty() {
+                    ui.vertical_centered(|ui| {
+                        let (rect, _) = ui.allocate_exact_size(
+                            egui::vec2(ui.available_width(), 24.0),
+                            egui::Sense::hover(),
+                        );
+                        icons::desenha(ui.painter(), rect.center(), 9.0, Icone::Gravar, COR_MUTED);
+                        ui.add_space(4.0);
+                        ui.label(
+                            egui::RichText::new("Nenhum movimento salvo")
+                                .strong()
+                                .color(TEXTO),
+                        );
+                        ui.label(
+                            egui::RichText::new("Conecte a placa, dê um nome e inicie a gravação.")
+                                .small()
+                                .color(COR_MUTED),
+                        );
+                    });
+                }
+                let files = self.files.clone();
+                for f in files {
+                    let nome = f
+                        .file_name()
+                        .map(|n| n.to_string_lossy().trim_end_matches(".json").to_string())
+                        .unwrap_or_default();
+
+                    if self.excluir.as_ref() == Some(&f) {
+                        ui.horizontal(|ui| {
+                            let largura = (ui.available_width() - 10.0) / 2.0;
+                            if icons::botao_cor(
+                                ui,
+                                Icone::Excluir,
+                                "Excluir",
+                                largura,
+                                COR_PERIGO_FUNDO,
+                                COR_PERIGO_TEXTO,
+                            )
+                            .clicked()
+                            {
+                                match Recording::delete(&f) {
+                                    Ok(()) => {
+                                        self.loga(format!("excluído {nome}"));
+                                        if self.loaded_path.as_ref() == Some(&f) {
+                                            self.loaded = None;
+                                            self.loaded_path = None;
+                                            self.play = None;
+                                        }
+                                        self.refresh_files();
+                                    }
+                                    Err(e) => {
+                                        self.falha(format!("Não foi possível excluir {nome}: {e}"))
+                                    }
+                                }
+                                self.excluir = None;
+                            }
+                            if botao(ui, Icone::Stop, "Cancelar", ui.available_width()).clicked() {
+                                self.excluir = None;
+                            }
+                        });
+                        continue;
                     }
-                }
-                if botao_quadrado(ui, Icone::Excluir, ALVO)
-                    .on_hover_text("excluir")
-                    .clicked()
-                {
-                    self.excluir = Some(f.clone());
-                }
-            });
-        }
 
-        ui.add_space(12.0);
-        ui.add(
-            egui::Label::new(
-                egui::RichText::new(dir_movimentos().display().to_string())
-                    .small()
-                    .color(COR_MUTED),
-            )
-            .truncate(),
+                    ui.horizontal(|ui| {
+                        let selecionado = self.loaded_path.as_ref() == Some(&f);
+                        let largura_nome = (ui.available_width() - ALVO - 10.0).max(60.0);
+                        let nome_visivel = texto_curto(&nome, 30);
+                        let resposta =
+                            icons::botao_texto(ui, &nome_visivel, selecionado, largura_nome);
+                        if resposta.on_hover_text("carregar este movimento").clicked() {
+                            match Recording::load(&f) {
+                                Ok(r) => {
+                                    self.loaded = Some(r);
+                                    self.loaded_path = Some(f.clone());
+                                    self.loga(format!("carregado {nome}"));
+                                }
+                                Err(e) => self.falha(format!("Não foi possível ler {nome}: {e}")),
+                            }
+                        }
+                        if botao_quadrado(ui, Icone::Excluir, ALVO)
+                            .on_hover_text("excluir")
+                            .clicked()
+                        {
+                            self.excluir = Some(f.clone());
+                        }
+                    });
+                }
+                ui.add_space(10.0);
+                separador_horizontal(ui);
+                ui.add_space(6.0);
+                ui.add(
+                    egui::Label::new(
+                        egui::RichText::new(dir_movimentos().display().to_string())
+                            .small()
+                            .color(COR_MUTED),
+                    )
+                    .truncate(),
+                );
+            },
         );
     }
 
@@ -1844,7 +1937,7 @@ impl App {
         }
         let p = ui.painter();
         if resp.hovered() {
-            p.rect_filled(rect, 6.0, cor(0x1a, 0x20, 0x28));
+            p.rect_filled(rect, 2.0, SUPERFICIE_2);
         }
         icons::desenha(
             p,
@@ -1857,8 +1950,8 @@ impl App {
             egui::pos2(rect.left() + 30.0, rect.center().y),
             egui::Align2::LEFT_CENTER,
             "LOG",
-            egui::FontId::proportional(12.5),
-            COR_MUTED,
+            fonte_hud(12.0),
+            COR_TITULO,
         );
         if !self.log_aberta {
             let ultima = self.log.last().map(|s| s.as_str());
@@ -1876,7 +1969,7 @@ impl App {
                     egui::pos2(rect.right() - 12.0, rect.center().y),
                     egui::Align2::RIGHT_CENTER,
                     format!("{}", self.log.len()),
-                    egui::FontId::proportional(11.5),
+                    fonte_hud(11.5),
                     COR_MUTED,
                 );
             }
@@ -1892,10 +1985,7 @@ impl App {
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     let limpar = ui
                         .add_enabled_ui(!self.log.is_empty(), |ui| {
-                            ui.add_sized(
-                                [64.0, 26.0],
-                                egui::Button::new(egui::RichText::new("Limpar").small()),
-                            )
+                            icons::botao_compacto(ui, "Limpar", 64.0)
                         })
                         .inner
                         .on_hover_text("Apaga o histórico");
@@ -1904,10 +1994,7 @@ impl App {
                     }
                     let copiar = ui
                         .add_enabled_ui(!self.log.is_empty(), |ui| {
-                            ui.add_sized(
-                                [64.0, 26.0],
-                                egui::Button::new(egui::RichText::new("Copiar").small()),
-                            )
+                            icons::botao_compacto(ui, "Copiar", 64.0)
                         })
                         .inner
                         .on_hover_text("Copia todas as linhas para a área de transferência");
@@ -1917,12 +2004,13 @@ impl App {
                 });
             });
             ui.add_space(6.0);
-            egui::Frame::NONE
-                .fill(cor(0x0d, 0x11, 0x15))
-                .stroke(egui::Stroke::new(1.0_f32, cor(0x2c, 0x36, 0x43)))
-                .corner_radius(8)
-                .inner_margin(egui::Margin::symmetric(10, 8))
-                .show(ui, |ui| {
+            caixa_hud(
+                ui,
+                4.0,
+                COR_FUNDO,
+                egui::Stroke::new(1.0_f32, LINHA_FORTE),
+                egui::Margin::symmetric(10, 8),
+                |ui| {
                     egui::ScrollArea::vertical()
                         .stick_to_bottom(true)
                         .auto_shrink([false, false])
@@ -1940,7 +2028,8 @@ impl App {
                                 );
                             }
                         });
-                });
+                },
+            );
         }
     }
 
@@ -2022,16 +2111,8 @@ impl App {
                                 .num_columns(2)
                                 .spacing([18.0, 6.0])
                                 .show(dir, |ui| {
-                                    linha_atalho(
-                                        ui,
-                                        "R",
-                                        "Iniciar / parar e salvar a gravação",
-                                    );
-                                    linha_atalho(
-                                        ui,
-                                        "P",
-                                        "Reproduzir / pausar / continuar",
-                                    );
+                                    linha_atalho(ui, "R", "Iniciar / parar e salvar a gravação");
+                                    linha_atalho(ui, "P", "Reproduzir / pausar / continuar");
                                     linha_atalho(ui, "1 / 2 / 3", "Velocidade 0,5× / 1× / 2×");
                                     linha_atalho(ui, "L", "Repetir o movimento (loop)");
                                 });
@@ -2042,16 +2123,8 @@ impl App {
                                 .spacing([18.0, 6.0])
                                 .show(dir, |ui| {
                                     linha_atalho(ui, "H / F1", "Abrir / fechar esta lista");
-                                    linha_atalho(
-                                        ui,
-                                        "Esc",
-                                        "Fechar a lista ou o modal de ângulo",
-                                    );
-                                    linha_atalho(
-                                        ui,
-                                        "Enter",
-                                        "Confirmar o ângulo no modal",
-                                    );
+                                    linha_atalho(ui, "Esc", "Fechar a lista ou o modal de ângulo");
+                                    linha_atalho(ui, "Enter", "Confirmar o ângulo no modal");
                                 });
                             dir.add_space(12.0);
                             dir.label(
@@ -2061,6 +2134,11 @@ impl App {
                                 )
                                 .small()
                                 .color(COR_MUTED),
+                            );
+                            dir.add_space(8.0);
+                            dir.hyperlink_to(
+                                egui::RichText::new("Icons from SVG Repo").small(),
+                                "https://www.svgrepo.com",
                             );
                         });
                     });
@@ -2117,9 +2195,13 @@ impl App {
             .fixed_size(egui::vec2(largura, altura))
             .open(&mut aberto)
             .show(ctx, |ui| {
-                let novo_fw = disponivel.as_deref().and_then(|v| firmware::compara(v, &embutida))
+                let novo_fw = disponivel
+                    .as_deref()
+                    .and_then(|v| firmware::compara(v, &embutida))
                     == Some(Ordering::Greater);
-                let novo_app = app_novo.as_deref().and_then(|v| firmware::compara(v, &app_atual))
+                let novo_app = app_novo
+                    .as_deref()
+                    .and_then(|v| firmware::compara(v, &app_atual))
                     == Some(Ordering::Greater);
 
                 //  Todo o corpo rola; só o Fechar fica fixo. Sem isso o
@@ -2179,7 +2261,8 @@ impl App {
                                 self.salvar_sketch();
                             }
                             if novo_app {
-                                if let Some(url) = app_novo.as_deref().and_then(update::url_release) {
+                                if let Some(url) = app_novo.as_deref().and_then(update::url_release)
+                                {
                                     if icons::botao_texto(ui, "Abrir release", false, 132.0)
                                         .clicked()
                                     {
@@ -2268,7 +2351,9 @@ impl App {
     /// Confirmar assume o controle do PC se preciso e liga o alvo manual — o
     /// `#P` correspondente sai pelo [`Self::tick`], no ritmo global.
     fn editor_angulo_modal(&mut self, ctx: &egui::Context) {
-        let Some(junta) = self.editando_junta else { return };
+        let Some(junta) = self.editando_junta else {
+            return;
+        };
         let nomes = ["Base", "Ombro", "Cotovelo", "Garra"];
         let nome = nomes[junta];
         let conectado = self.link.is_some();
@@ -2305,19 +2390,20 @@ impl App {
                 );
                 ui.add_space(8.0);
 
-                egui::Frame::NONE
-                    .fill(cor(0x0d, 0x11, 0x15))
-                    .stroke(egui::Stroke::new(1.0_f32, COR_ACENTO))
-                    .corner_radius(8)
-                    .inner_margin(egui::Margin::symmetric(12, 0))
-                    .show(ui, |ui| {
+                let campo = caixa_hud(
+                    ui,
+                    4.0,
+                    COR_FUNDO,
+                    egui::Stroke::new(1.0_f32, LINHA_FORTE),
+                    egui::Margin::symmetric(12, 0),
+                    |ui| {
                         ui.set_height(ALVO);
                         ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
                             let resp = ui.add_sized(
                                 [ui.available_width(), 28.0],
                                 egui::TextEdit::singleline(&mut self.editando_texto)
                                     .frame(false)
-                                    .font(egui::FontId::proportional(20.0))
+                                    .font(egui::FontId::new(20.0, egui::FontFamily::Monospace))
                                     .vertical_align(egui::Align::Center),
                             );
                             if self.focar_angulo {
@@ -2327,8 +2413,14 @@ impl App {
                             if resp.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
                                 confirmar = true;
                             }
-                        });
-                    });
+                            resp.has_focus()
+                        })
+                        .inner
+                    },
+                );
+                if campo.inner {
+                    foco_cortado(ui, campo.response.rect, 4.0);
+                }
                 ui.add_space(8.0);
 
                 match &avaliacao {
@@ -2355,7 +2447,7 @@ impl App {
                     let pode = avaliacao.is_ok();
                     let resp = ui
                         .add_enabled_ui(pode, |ui| {
-                            botao(ui, Icone::Play, "Mover", ui.available_width())
+                            icons::botao_primario(ui, Icone::Play, "Mover", ui.available_width())
                         })
                         .inner
                         .on_hover_text(if pode {
@@ -2444,9 +2536,9 @@ impl eframe::App for App {
         let compacta = ctx.available_rect().height() < 560.0;
 
         egui::TopBottomPanel::top("topo").show(ctx, |ui| {
-            ui.add_space(4.0);
+            ui.add_space(2.0);
             self.top_bar(ui, compacta);
-            ui.add_space(4.0);
+            ui.add_space(2.0);
         });
         egui::TopBottomPanel::bottom("log").show(ctx, |ui| self.log_panel(ui));
 
@@ -2459,20 +2551,23 @@ impl eframe::App for App {
                 .width_range(300.0..=480.0)
                 .show(ctx, |ui| self.recordings_panel(ui, compacta));
         }
-        egui::CentralPanel::default().show(ctx, |ui| {
-            let altura_viewport = ui.available_height();
-            egui::ScrollArea::vertical()
-                .auto_shrink([false, false])
-                .show(ui, |ui| {
-                    self.sticks(ui, altura_viewport, dock);
-                    if !dock {
-                        ui.add_space(20.0);
-                        ui.separator();
-                        ui.add_space(12.0);
-                        self.recordings_body(ui, compacta);
-                    }
-                });
-        });
+        egui::CentralPanel::default()
+            .frame(egui::Frame::central_panel(&ctx.style()).fill(COR_FUNDO))
+            .show(ctx, |ui| {
+                ui.painter().add(grade_shape(ui.max_rect()));
+                let altura_viewport = ui.available_height();
+                egui::ScrollArea::vertical()
+                    .auto_shrink([false, false])
+                    .show(ui, |ui| {
+                        self.sticks(ui, altura_viewport, dock);
+                        if !dock {
+                            ui.add_space(20.0);
+                            ui.separator();
+                            ui.add_space(12.0);
+                            self.recordings_body(ui, compacta);
+                        }
+                    });
+            });
 
         self.editor_angulo_modal(ctx);
         self.atalhos_modal(ctx);
@@ -2488,12 +2583,32 @@ const fn cor(r: u8, g: u8, b: u8) -> egui::Color32 {
     egui::Color32::from_rgb(r, g, b)
 }
 
-/// Fundo padrão dos painéis (o mais escuro da hierarquia de superfícies).
-const COR_FUNDO: egui::Color32 = cor(0x18, 0x1d, 0x23);
+/// Fundo da área de trabalho: pads, conteúdo e campos de texto.
+const COR_FUNDO: egui::Color32 = cor(0x0e, 0x12, 0x17);
+/// Topbar, dock e log: um degrau acima do fundo.
+const SUPERFICIE_1: egui::Color32 = cor(0x15, 0x1a, 0x20);
+/// Cartões, controles parados e chips de ângulo.
+const SUPERFICIE_2: egui::Color32 = cor(0x1a, 0x20, 0x27);
+/// Hover de controles e linhas de lista.
+const SUPERFICIE_3: egui::Color32 = cor(0x21, 0x28, 0x32);
+/// Linha de 1 px entre superfícies.
+const LINHA: egui::Color32 = cor(0x24, 0x2d, 0x37);
+/// Linha de destaque: borda de controle, separador forte.
+const LINHA_FORTE: egui::Color32 = cor(0x33, 0x40, 0x4e);
+/// Texto principal.
+const TEXTO: egui::Color32 = cor(0xe8, 0xed, 0xf2);
+/// Títulos de seção e cabeçalhos: entre o texto e o muted.
+const COR_TITULO: egui::Color32 = cor(0xc6, 0xd2, 0xde);
 /// Texto secundário: legendas, unidades, caminhos.
-const COR_MUTED: egui::Color32 = cor(0x84, 0x93, 0xa1);
+const COR_MUTED: egui::Color32 = cor(0x9a, 0xa7, 0xb4);
+/// Texto de controle desabilitado (legível no fundo escuro).
+const COR_DESABILITADO: egui::Color32 = cor(0x6e, 0x7d, 0x8d);
 /// Acento: foco de teclado, seleção, borda do pad ativo.
 const COR_ACENTO: egui::Color32 = cor(0x7f, 0xb2, 0xe5);
+/// Fundo do botão primário e da seleção.
+const COR_ACENTO_FUNDO: egui::Color32 = cor(0x2b, 0x5f, 0x8f);
+/// Texto sobre o acento.
+const COR_ACENTO_TEXTO: egui::Color32 = cor(0xe8, 0xf2, 0xfc);
 /// Estado bom: PC no controle, garra liberada.
 const COR_OK: egui::Color32 = cor(0x8f, 0xd6, 0xa2);
 /// Fundo do estado bom (pill verde).
@@ -2508,32 +2623,89 @@ const COR_ERRO: egui::Color32 = cor(0xe2, 0x86, 0x86);
 const COR_ERRO_FUNDO: egui::Color32 = cor(0x35, 0x1d, 0x24);
 /// Vermelho de gravação, um tom acima do erro para não competir com ele.
 const COR_REC: egui::Color32 = cor(0xe0, 0x7b, 0x7b);
+/// Fundo de ação destrutiva (STOP, excluir).
+const COR_PERIGO_FUNDO: egui::Color32 = cor(0x62, 0x20, 0x27);
+/// Texto sobre o vermelho destrutivo.
+const COR_PERIGO_TEXTO: egui::Color32 = cor(0xff, 0xc2, 0xc2);
 
-/// Tema único do app: superfícies escuras azuladas, cantos de 8 px e alvos de
+/// Tema único do app: superfícies escuras azuladas, cantos cortados e alvos de
 /// toque de 48 px. Aplicado uma vez, no arranque.
+///
+/// Duas fontes embutidas (SIL OFL 1.1, ver `assets/OFL-*.txt`): Rajdhani
+/// SemiBold no display HUD (títulos, botões, pills) e Space Grotesk Regular no
+/// corpo. O Hack do egui continua nos números, teclas e log.
 ///
 /// Mexe em `Visuals` (fills, seleção, estados dos widgets), no espaçamento
 /// (`interact_size.y = ALVO`) e nos tamanhos de texto. Não há troca de tema em
 /// tempo de execução: a paleta acima é a única.
 fn aplica_tema(ctx: &egui::Context) {
     use egui::{FontFamily, FontId, TextStyle};
+
+    let mut fontes = egui::FontDefinitions::default();
+    fontes.font_data.insert(
+        "rajdhani".to_owned(),
+        std::sync::Arc::new(egui::FontData::from_static(include_bytes!(
+            "../assets/Rajdhani-SemiBold.ttf"
+        ))),
+    );
+    fontes.font_data.insert(
+        "space".to_owned(),
+        std::sync::Arc::new(egui::FontData::from_static(include_bytes!(
+            "../assets/SpaceGrotesk-Regular.ttf"
+        ))),
+    );
+    fontes.families.insert(
+        FontFamily::Name("hud".into()),
+        vec![
+            "rajdhani".to_owned(),
+            "space".to_owned(),
+            "Ubuntu-Light".to_owned(),
+            "NotoEmoji-Regular".to_owned(),
+        ],
+    );
+    fontes.families.insert(
+        FontFamily::Proportional,
+        vec![
+            "space".to_owned(),
+            "Ubuntu-Light".to_owned(),
+            "NotoEmoji-Regular".to_owned(),
+        ],
+    );
+    ctx.set_fonts(fontes);
+
     let mut st = (*ctx.style()).clone();
     let mut v = egui::Visuals::dark();
 
-    v.panel_fill = cor(0x14, 0x18, 0x1e);
-    v.window_fill = cor(0x18, 0x1d, 0x23);
-    v.extreme_bg_color = cor(0x0d, 0x11, 0x15);
-    v.faint_bg_color = cor(0x1a, 0x20, 0x27);
-    v.override_text_color = Some(cor(0xd6, 0xdf, 0xe9));
-    v.selection.bg_fill = cor(0x2b, 0x5f, 0x8f);
+    v.panel_fill = SUPERFICIE_1;
+    v.window_fill = SUPERFICIE_1;
+    v.extreme_bg_color = COR_FUNDO;
+    v.faint_bg_color = SUPERFICIE_2;
+    v.override_text_color = Some(TEXTO);
+    v.selection.bg_fill = COR_ACENTO_FUNDO;
     v.selection.stroke = egui::Stroke::new(1.5_f32, COR_ACENTO);
     v.hyperlink_color = COR_ACENTO;
+    v.window_stroke = egui::Stroke::new(1.0_f32, LINHA_FORTE);
+    v.window_corner_radius = egui::CornerRadius::same(4);
+    v.menu_corner_radius = egui::CornerRadius::same(4);
+    v.window_shadow = egui::epaint::Shadow {
+        offset: [0, 8],
+        blur: 24,
+        spread: 0,
+        color: egui::Color32::from_black_alpha(110),
+    };
+    v.popup_shadow = egui::epaint::Shadow {
+        offset: [0, 4],
+        blur: 14,
+        spread: 0,
+        color: egui::Color32::from_black_alpha(90),
+    };
+    v.text_cursor.stroke = egui::Stroke::new(1.5_f32, COR_ACENTO);
 
-    let raio = egui::CornerRadius::same(8);
+    let raio = egui::CornerRadius::same(2);
     v.widgets.noninteractive.corner_radius = raio;
-    v.widgets.noninteractive.weak_bg_fill = cor(0x1a, 0x20, 0x28);
-    v.widgets.noninteractive.bg_fill = cor(0x1a, 0x20, 0x28);
-    v.widgets.noninteractive.bg_stroke = egui::Stroke::new(1.0_f32, cor(0x2a, 0x34, 0x41));
+    v.widgets.noninteractive.weak_bg_fill = SUPERFICIE_2;
+    v.widgets.noninteractive.bg_fill = SUPERFICIE_2;
+    v.widgets.noninteractive.bg_stroke = egui::Stroke::new(1.0_f32, LINHA);
 
     for w in [
         &mut v.widgets.inactive,
@@ -2543,47 +2715,229 @@ fn aplica_tema(ctx: &egui::Context) {
     ] {
         w.corner_radius = raio;
     }
-    v.widgets.inactive.weak_bg_fill = cor(0x20, 0x28, 0x32);
-    v.widgets.inactive.bg_fill = cor(0x20, 0x28, 0x32);
-    v.widgets.inactive.bg_stroke = egui::Stroke::new(1.0_f32, cor(0x2c, 0x36, 0x43));
-    v.widgets.hovered.weak_bg_fill = cor(0x27, 0x32, 0x40);
-    v.widgets.hovered.bg_fill = cor(0x27, 0x32, 0x40);
-    v.widgets.hovered.bg_stroke = egui::Stroke::new(1.0_f32, cor(0x42, 0x57, 0x6e));
-    v.widgets.active.weak_bg_fill = cor(0x30, 0x3e, 0x50);
-    v.widgets.active.bg_fill = cor(0x30, 0x3e, 0x50);
+    v.widgets.inactive.weak_bg_fill = SUPERFICIE_2;
+    v.widgets.inactive.bg_fill = SUPERFICIE_2;
+    v.widgets.inactive.bg_stroke = egui::Stroke::new(1.0_f32, LINHA);
+    v.widgets.inactive.fg_stroke = egui::Stroke::new(1.0_f32, TEXTO);
+    v.widgets.hovered.weak_bg_fill = SUPERFICIE_3;
+    v.widgets.hovered.bg_fill = SUPERFICIE_3;
+    v.widgets.hovered.bg_stroke = egui::Stroke::new(1.0_f32, LINHA_FORTE);
+    v.widgets.hovered.fg_stroke = egui::Stroke::new(1.0_f32, TEXTO);
+    v.widgets.active.weak_bg_fill = SUPERFICIE_3;
+    v.widgets.active.bg_fill = SUPERFICIE_3;
     v.widgets.active.bg_stroke = egui::Stroke::new(1.5_f32, COR_ACENTO);
+    v.widgets.active.fg_stroke = egui::Stroke::new(1.0_f32, TEXTO);
+    v.widgets.open.weak_bg_fill = SUPERFICIE_3;
+    v.widgets.open.bg_fill = SUPERFICIE_3;
+    v.widgets.open.bg_stroke = egui::Stroke::new(1.0_f32, LINHA_FORTE);
+    v.widgets.open.fg_stroke = egui::Stroke::new(1.0_f32, TEXTO);
 
     st.visuals = v;
     st.spacing.button_padding = egui::vec2(14.0, 9.0);
     st.spacing.item_spacing = egui::vec2(10.0, 8.0);
     st.spacing.interact_size.y = ALVO;
 
-    st.text_styles.insert(TextStyle::Body, FontId::new(15.0, FontFamily::Proportional));
-    st.text_styles.insert(TextStyle::Button, FontId::new(15.0, FontFamily::Proportional));
-    st.text_styles.insert(TextStyle::Heading, FontId::new(20.0, FontFamily::Proportional));
-    st.text_styles.insert(TextStyle::Small, FontId::new(12.5, FontFamily::Proportional));
+    st.text_styles
+        .insert(TextStyle::Body, FontId::new(15.0, FontFamily::Proportional));
+    st.text_styles.insert(TextStyle::Button, fonte_hud(15.0));
+    st.text_styles.insert(TextStyle::Heading, fonte_hud(21.0));
+    st.text_styles.insert(
+        TextStyle::Small,
+        FontId::new(12.5, FontFamily::Proportional),
+    );
+    st.text_styles.insert(
+        TextStyle::Monospace,
+        FontId::new(13.0, FontFamily::Monospace),
+    );
     ctx.set_style(st);
 }
 
-/// Título de seção: caixa alta, pequeno e discreto.
+/// Display HUD: Rajdhani SemiBold, com Space Grotesk no fallback.
+fn fonte_hud(tamanho: f32) -> egui::FontId {
+    egui::FontId::new(tamanho, egui::FontFamily::Name("hud".into()))
+}
+
+/// Título de seção: tick de acento + caixa alta em Rajdhani.
+fn titulo_secao_resp(ui: &mut egui::Ui, texto: &str) -> egui::Response {
+    ui.horizontal(|ui| {
+        ui.spacing_mut().item_spacing.x = 8.0;
+        let (tick, _) = ui.allocate_exact_size(egui::vec2(3.0, 12.0), egui::Sense::hover());
+        ui.painter().rect_filled(tick, 0.0, COR_ACENTO);
+        ui.label(
+            egui::RichText::new(texto.to_uppercase())
+                .font(fonte_hud(12.5))
+                .color(COR_TITULO),
+        )
+    })
+    .inner
+}
+
+/// Atalho quando o `Response` do título não é usado.
 fn titulo_secao(ui: &mut egui::Ui, texto: &str) {
-    ui.label(
-        egui::RichText::new(texto.to_uppercase())
-            .small()
-            .strong()
-            .color(COR_MUTED),
+    titulo_secao_resp(ui, texto);
+}
+
+/// Divisor vertical de 1 px entre grupos da topbar.
+fn separador_vertical(ui: &mut egui::Ui, altura: f32) {
+    let (rect, _) = ui.allocate_exact_size(egui::vec2(1.0, altura), egui::Sense::hover());
+    ui.painter().rect_filled(rect, 0.0, LINHA_FORTE);
+}
+
+/// Divisor horizontal de 1 px entre seções do painel.
+fn separador_horizontal(ui: &mut egui::Ui) {
+    let (rect, _) =
+        ui.allocate_exact_size(egui::vec2(ui.available_width(), 1.0), egui::Sense::hover());
+    ui.painter().rect_filled(rect, 0.0, LINHA);
+}
+
+/// Readout de status curto (label + valor), na altura dos botões.
+fn status_hud(
+    ui: &mut egui::Ui,
+    rotulo: &str,
+    valor: &str,
+    cor_texto: egui::Color32,
+    fundo: egui::Color32,
+) {
+    caixa_hud(
+        ui,
+        4.0,
+        fundo,
+        egui::Stroke::new(1.0_f32, cor_texto.gamma_multiply(0.45)),
+        egui::Margin::symmetric(12, 0),
+        |ui| {
+            ui.horizontal(|ui| {
+                ui.set_height(ALVO);
+                ui.spacing_mut().item_spacing.x = 8.0;
+                ui.label(
+                    egui::RichText::new(valor)
+                        .font(fonte_hud(15.0))
+                        .color(cor_texto),
+                );
+                ui.label(
+                    egui::RichText::new(rotulo)
+                        .font(fonte_hud(10.0))
+                        .color(COR_MUTED),
+                );
+                let (ponto, _) = ui.allocate_exact_size(egui::vec2(6.0, 6.0), egui::Sense::hover());
+                ui.painter().circle_filled(ponto.center(), 3.0, cor_texto);
+            });
+        },
     );
 }
 
-/// Etiqueta arredondada de estado.
+/// Etiqueta compacta de estado (cartões): ponto colorido + texto, com borda
+/// derivada da própria cor para a pill não sumir no fundo.
 fn pill(ui: &mut egui::Ui, texto: &str, cor_texto: egui::Color32, fundo: egui::Color32) {
-    egui::Frame::NONE
-        .fill(fundo)
-        .corner_radius(20)
-        .inner_margin(egui::Margin::symmetric(12, 5))
-        .show(ui, |ui| {
-            ui.label(egui::RichText::new(texto).strong().color(cor_texto));
-        });
+    caixa_hud(
+        ui,
+        4.0,
+        fundo,
+        egui::Stroke::new(1.0_f32, cor_texto.gamma_multiply(0.45)),
+        egui::Margin::symmetric(12, 5),
+        |ui| {
+            ui.horizontal(|ui| {
+                ui.spacing_mut().item_spacing.x = 7.0;
+                let (ponto, _) = ui.allocate_exact_size(egui::vec2(6.0, 6.0), egui::Sense::hover());
+                ui.painter().circle_filled(ponto.center(), 3.0, cor_texto);
+                ui.label(
+                    egui::RichText::new(texto)
+                        .font(fonte_hud(14.0))
+                        .color(cor_texto),
+                );
+            });
+        },
+    );
+}
+
+/// Contorno de um retângulo com dois cantos cortados a 45°.
+///
+/// Único dono da geometria: os botões (`icons`) e os cartões usam o mesmo corte.
+pub(crate) fn pontos_cortados(rect: egui::Rect, corte: f32) -> Vec<egui::Pos2> {
+    let c = corte.min(rect.width() * 0.35).min(rect.height() * 0.35);
+    vec![
+        rect.left_top(),
+        egui::Pos2::new(rect.right() - c, rect.top()),
+        egui::Pos2::new(rect.right(), rect.top() + c),
+        rect.right_bottom(),
+        egui::Pos2::new(rect.left() + c, rect.bottom()),
+        egui::Pos2::new(rect.left(), rect.bottom() - c),
+    ]
+}
+
+/// Superfície HUD genérica: fundo e borda com dois cantos cortados, atrás do
+/// conteúdo. A forma é reservada antes do conteúdo (`Shape::Noop`) e trocada
+/// depois de medir a altura real; assim funciona com qualquer conteúdo.
+fn caixa_hud<R>(
+    ui: &mut egui::Ui,
+    corte: f32,
+    fundo: egui::Color32,
+    borda: egui::Stroke,
+    margem: egui::Margin,
+    conteudo: impl FnOnce(&mut egui::Ui) -> R,
+) -> egui::InnerResponse<R> {
+    let indice = ui.painter().add(egui::Shape::Noop);
+    let interno = egui::Frame::NONE.inner_margin(margem).show(ui, conteudo);
+    ui.painter().set(
+        indice,
+        egui::Shape::convex_polygon(pontos_cortados(interno.response.rect, corte), fundo, borda),
+    );
+    interno
+}
+
+/// Anel de foco no mesmo corte da superfície.
+fn foco_cortado(ui: &egui::Ui, rect: egui::Rect, corte: f32) {
+    ui.painter().add(egui::Shape::closed_line(
+        pontos_cortados(rect.expand(2.0), corte + 1.0),
+        egui::Stroke::new(1.5_f32, COR_ACENTO),
+    ));
+}
+
+/// Corta os cantos de um controle padrão do egui (ComboBox).
+///
+/// O egui não expõe a forma do widget, então o triângulo da superfície de trás
+/// cobre o canto arredondado e a diagonal é redesenhada com a borda atual.
+fn corta_cantos_controle(
+    ui: &egui::Ui,
+    resp: &egui::Response,
+    corte: f32,
+    atras: egui::Color32,
+    borda: egui::Stroke,
+) {
+    let r = resp.rect;
+    let c = corte.min(r.width() * 0.25).min(r.height() * 0.25);
+    let p = ui.painter();
+    p.add(egui::Shape::convex_polygon(
+        vec![
+            egui::Pos2::new(r.right() - c, r.top()),
+            egui::Pos2::new(r.right(), r.top()),
+            egui::Pos2::new(r.right(), r.top() + c),
+        ],
+        atras,
+        egui::Stroke::NONE,
+    ));
+    p.line_segment(
+        [
+            egui::Pos2::new(r.right() - c, r.top()),
+            egui::Pos2::new(r.right(), r.top() + c),
+        ],
+        borda,
+    );
+    p.add(egui::Shape::convex_polygon(
+        vec![
+            egui::Pos2::new(r.left() + c, r.bottom()),
+            egui::Pos2::new(r.left(), r.bottom()),
+            egui::Pos2::new(r.left(), r.bottom() - c),
+        ],
+        atras,
+        egui::Stroke::NONE,
+    ));
+    p.line_segment(
+        [
+            egui::Pos2::new(r.left() + c, r.bottom()),
+            egui::Pos2::new(r.left(), r.bottom() - c),
+        ],
+        borda,
+    );
 }
 
 /// Cor de uma linha do log: erros/STOP em vermelho, eventos bons em verde.
@@ -2627,35 +2981,42 @@ fn linha_atalho(ui: &mut egui::Ui, teclas: &str, descricao: &str) {
 /// Mostra `—` quando desconectado. O anel de hover e o tooltip existem porque o
 /// alvo é abrir o modal de ângulo, não só ler o valor.
 fn chip(ui: &mut egui::Ui, nome: &str, valor: Option<f32>, largura: f32) -> egui::Response {
-    let texto = valor.map(|v| format!("{v:.0}°")).unwrap_or_else(|| "—".into());
-    let resp = egui::Frame::NONE
-        .fill(cor(0x1c, 0x23, 0x2b))
-        .stroke(egui::Stroke::new(1.0_f32, cor(0x2d, 0x38, 0x46)))
-        .corner_radius(10)
-        .inner_margin(egui::Margin::symmetric(12, 6))
-        .show(ui, |ui| {
+    let texto = valor
+        .map(|v| format!("{v:03.0}°"))
+        .unwrap_or_else(|| "—".into());
+    let resp = caixa_hud(
+        ui,
+        4.0,
+        SUPERFICIE_2,
+        egui::Stroke::new(1.0_f32, LINHA),
+        egui::Margin::symmetric(12, 6),
+        |ui| {
             ui.set_width((largura - 24.0).max(24.0));
             ui.vertical(|ui| {
                 ui.spacing_mut().item_spacing.y = 0.0;
-                ui.label(egui::RichText::new(nome.to_uppercase()).small().color(COR_MUTED));
+                ui.label(
+                    egui::RichText::new(nome.to_uppercase())
+                        .font(fonte_hud(11.0))
+                        .color(COR_MUTED),
+                );
                 ui.add_space(2.0);
                 ui.label(
                     egui::RichText::new(texto)
-                        .size(23.0)
+                        .monospace()
+                        .size(22.0)
                         .strong()
-                        .color(cor(0xe8, 0xef, 0xf6)),
+                        .color(TEXTO),
                 );
             });
-        })
-        .response
-        .interact(egui::Sense::click());
+        },
+    )
+    .response
+    .interact(egui::Sense::click());
     if resp.hovered() {
-        ui.painter().rect_stroke(
-            resp.rect,
-            10.0,
+        ui.painter().add(egui::Shape::closed_line(
+            pontos_cortados(resp.rect, 4.0),
             egui::Stroke::new(1.5_f32, COR_ACENTO),
-            egui::StrokeKind::Inside,
-        );
+        ));
     }
     resp.on_hover_text("toque para digitar o ângulo")
 }
@@ -2705,14 +3066,84 @@ fn pos_pad(
     })
 }
 
+/// Altura do cabeçalho interno de um módulo de pad.
+const MODULO_HEADER: f32 = 22.0;
+
+/// Cabeçalho e corpo de um pad sobre a grade contínua do fundo.
+fn modulo_pad<R>(
+    ui: &mut egui::Ui,
+    largura: f32,
+    altura_corpo: f32,
+    titulo: &str,
+    teclas: &str,
+    dica: &str,
+    conteudo: impl FnOnce(&mut egui::Ui) -> R,
+) -> R {
+    egui::Frame::NONE
+        .inner_margin(egui::Margin::same(10))
+        .show(ui, |ui| {
+            ui.vertical(|ui| {
+                ui.set_width(largura);
+                ui.set_max_width(largura);
+                ui.allocate_ui_with_layout(
+                    egui::vec2(largura, MODULO_HEADER),
+                    egui::Layout::left_to_right(egui::Align::Center),
+                    |ui| {
+                        titulo_secao_resp(ui, titulo).on_hover_text(dica);
+                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                            ui.label(
+                                egui::RichText::new(teclas)
+                                    .font(fonte_hud(10.5))
+                                    .color(COR_MUTED),
+                            );
+                        });
+                    },
+                );
+                ui.add_space(8.0);
+                ui.allocate_ui_with_layout(
+                    egui::vec2(largura, altura_corpo),
+                    egui::Layout::top_down(egui::Align::LEFT),
+                    |ui| conteudo(ui),
+                )
+                .inner
+            })
+            .inner
+        })
+        .inner
+}
+
+/// Grade de 24 px do fundo central.
+fn grade_shape(corpo: egui::Rect) -> egui::Shape {
+    let mut linhas = Vec::new();
+    let stroke = egui::Stroke::new(1.0_f32, cor(0x1e, 0x25, 0x2d));
+    let passo = 24.0;
+    let mut x = corpo.left() + passo;
+    while x < corpo.right() {
+        linhas.push(egui::Shape::line_segment(
+            [egui::pos2(x, corpo.top()), egui::pos2(x, corpo.bottom())],
+            stroke,
+        ));
+        x += passo;
+    }
+    let mut y = corpo.top() + passo;
+    while y < corpo.bottom() {
+        linhas.push(egui::Shape::line_segment(
+            [egui::pos2(corpo.left(), y), egui::pos2(corpo.right(), y)],
+            stroke,
+        ));
+        y += passo;
+    }
+    egui::Shape::Vec(linhas)
+}
+
 /// Pad de toque estilo alavanca: arrastar move o knob, soltar volta ao centro
 /// (centro = segurar a posição, igual ao joystick físico solto).
 ///
 /// O vetor do stick é normalizado pelo raio e preso ao círculo unitário, então
 /// arrastar além da borda satura em 100% em vez de extrapolar. `habilitado`
-/// falso ignora a entrada e centraliza. O layout é sempre círculo + coluna de
-/// leituras (`lado + 12 + 116`); `compacto` só aperta os espaçamentos. `dica`
-/// vira o tooltip do título (teclas equivalentes do teclado).
+/// falso ignora a entrada e centraliza. O palco é o círculo + coluna de
+/// leituras (`lado + 12 + 116`) dentro do módulo; `teclas` vira o atalho no
+/// header e `dica` o tooltip.
 ///
 /// Retorna o índice da junta caso o usuário toque em um dos cards de ângulo.
 #[allow(clippy::too_many_arguments)]
@@ -2722,9 +3153,9 @@ fn pad(
     titulo: &str,
     state: &mut PadState,
     lado: f32,
-    compacto: bool,
     habilitado: bool,
     leituras: [(&str, usize, Option<f32>); 2],
+    teclas: &str,
     dica: &str,
 ) -> Option<usize> {
     const LARG_LEITURA: f32 = 116.0;
@@ -2733,128 +3164,182 @@ fn pad(
     let mut clicado = None;
 
     ui.push_id(id, |ui| {
-        ui.vertical(|ui| {
-            ui.spacing_mut().item_spacing = egui::Vec2::ZERO;
-            ui.set_width(lado + ESPACO + LARG_LEITURA);
-            ui.label(egui::RichText::new(titulo).small().strong().color(COR_MUTED))
-                .on_hover_text(dica);
-            ui.add_space(if compacto { 2.0 } else { 4.0 });
-            ui.label(
-                egui::RichText::new(format!("X · {}   ·   Y · {}", leituras[0].0, leituras[1].0))
-                    .small()
-                    .color(COR_MUTED),
-            );
-            ui.add_space(if compacto { 6.0 } else { 8.0 });
+        modulo_pad(
+            ui,
+            lado + ESPACO + LARG_LEITURA,
+            lado.max(ALTURA_LEITURAS),
+            titulo,
+            teclas,
+            dica,
+            |ui| {
+                ui.horizontal(|ui| {
+                    ui.spacing_mut().item_spacing.x = 0.0;
+                    let (rect, resp) = ui
+                        .allocate_exact_size(egui::vec2(lado, lado), egui::Sense::click_and_drag());
+                    let centro = rect.center();
+                    let raio = lado * 0.5 - 4.0;
 
-            ui.horizontal(|ui| {
-                ui.spacing_mut().item_spacing.x = 0.0;
-                let (rect, resp) =
-                    ui.allocate_exact_size(egui::vec2(lado, lado), egui::Sense::click_and_drag());
-                let centro = rect.center();
-                let raio = lado * 0.5 - 4.0;
-
-                let pos = if habilitado {
-                    pos_pad(ui, rect, &resp, &mut state.touch)
-                } else {
-                    state.touch = None;
-                    None
-                };
-                match pos {
-                    Some(pos) => {
-                        let mut d = (pos - centro) / raio;
-                        if d.length() > 1.0 {
-                            d = d.normalized();
+                    let pos = if habilitado {
+                        pos_pad(ui, rect, &resp, &mut state.touch)
+                    } else {
+                        state.touch = None;
+                        None
+                    };
+                    match pos {
+                        Some(pos) => {
+                            let mut d = (pos - centro) / raio;
+                            if d.length() > 1.0 {
+                                d = d.normalized();
+                            }
+                            state.stick = d;
                         }
-                        state.stick = d;
+                        None => state.stick = egui::Vec2::ZERO,
                     }
-                    None => state.stick = egui::Vec2::ZERO,
-                }
 
-                let ativo = habilitado && state.stick != egui::Vec2::ZERO;
-                let fundo_pad = if habilitado { cor(0x1c, 0x22, 0x2a) } else { cor(0x17, 0x1c, 0x23) };
-                let borda_pad = if ativo {
-                    COR_ACENTO
-                } else if habilitado {
-                    cor(0x32, 0x3e, 0x4c)
-                } else {
-                    cor(0x27, 0x2f, 0x39)
-                };
-                let p = ui.painter();
-                p.circle_filled(centro, raio, fundo_pad);
-                if ativo {
-                    p.circle_filled(
+                    let ativo = habilitado && state.stick != egui::Vec2::ZERO;
+                    if habilitado {
+                        if resp.dragged() {
+                            ui.ctx().set_cursor_icon(egui::CursorIcon::Grabbing);
+                        } else if resp.hovered() {
+                            ui.ctx().set_cursor_icon(egui::CursorIcon::Grab);
+                        }
+                    }
+                    let fundo_pad = if habilitado {
+                        SUPERFICIE_2
+                    } else {
+                        SUPERFICIE_1
+                    };
+                    let borda_pad = if ativo { COR_ACENTO } else { LINHA_FORTE };
+                    let p = ui.painter();
+                    p.circle_filled(centro, raio, fundo_pad);
+                    if ativo {
+                        p.circle_filled(
+                            centro,
+                            raio,
+                            egui::Color32::from_rgba_unmultiplied(0x7f, 0xb2, 0xe5, 24),
+                        );
+                    }
+                    p.circle_stroke(
                         centro,
                         raio,
-                        egui::Color32::from_rgba_unmultiplied(0x7f, 0xb2, 0xe5, 24),
+                        egui::Stroke::new(if ativo { 2.5_f32 } else { 1.5_f32 }, borda_pad),
                     );
-                }
-                p.circle_stroke(
-                    centro,
-                    raio,
-                    egui::Stroke::new(if ativo { 2.5_f32 } else { 1.5_f32 }, borda_pad),
-                );
-                let linha = egui::Stroke::new(1.0_f32, cor(0x25, 0x2d, 0x37));
-                p.line_segment([centro - egui::vec2(raio, 0.0), centro + egui::vec2(raio, 0.0)], linha);
-                p.line_segment([centro - egui::vec2(0.0, raio), centro + egui::vec2(0.0, raio)], linha);
-                p.circle_stroke(centro, raio * 0.65, egui::Stroke::new(1.0_f32, cor(0x20, 0x27, 0x30)));
-                p.circle_stroke(centro, raio * 0.28, egui::Stroke::new(1.0_f32, cor(0x25, 0x2d, 0x37)));
 
-                // Sinais sutis nas pontas dos eixos para orientação imediata ao toque.
-                let cor_eixo = if habilitado { cor(0x64, 0x74, 0x84) } else { cor(0x3d, 0x47, 0x52) };
-                let fonte_eixo = egui::FontId::proportional(11.0);
-                let margem_eixo = (raio - 11.0).max(12.0);
-                for (offset, sinal) in [
-                    (egui::vec2(-margem_eixo, 0.0), "−"),
-                    (egui::vec2(margem_eixo, 0.0), "+"),
-                    (egui::vec2(0.0, -margem_eixo), "+"),
-                    (egui::vec2(0.0, margem_eixo), "−"),
-                ] {
-                    p.text(centro + offset, egui::Align2::CENTER_CENTER, sinal, fonte_eixo.clone(), cor_eixo);
-                }
+                    // Ticks a cada 30°, exceto nos cardeais (o crosshair já os marca).
+                    let cor_tick = LINHA_FORTE;
+                    for i in 0..12 {
+                        if i % 3 == 0 {
+                            continue;
+                        }
+                        let ang = i as f32 * std::f32::consts::TAU / 12.0;
+                        let dir = egui::vec2(ang.cos(), ang.sin());
+                        p.line_segment(
+                            [centro + dir * (raio - 5.0), centro + dir * (raio - 2.0)],
+                            egui::Stroke::new(1.0_f32, cor_tick),
+                        );
+                    }
 
-                let knob = centro + state.stick * raio;
-                if ativo {
+                    let linha = egui::Stroke::new(1.0_f32, LINHA_FORTE);
                     p.line_segment(
-                        [centro, knob],
-                        egui::Stroke::new(2.5_f32, egui::Color32::from_rgba_unmultiplied(0x7f, 0xb2, 0xe5, 140)),
+                        [
+                            centro - egui::vec2(raio, 0.0),
+                            centro + egui::vec2(raio, 0.0),
+                        ],
+                        linha,
                     );
-                }
-                let raio_knob = (raio * 0.22).clamp(18.0, 36.0);
-                let cor_knob = if !habilitado {
-                    cor(0x53, 0x61, 0x70)
-                } else if ativo {
-                    cor(0x9e, 0xcb, 0xf5)
-                } else {
-                    COR_ACENTO
-                };
-                if ativo {
-                    p.circle_filled(
-                        knob,
-                        raio_knob * 1.32,
-                        egui::Color32::from_rgba_unmultiplied(0x7f, 0xb2, 0xe5, 42),
+                    p.line_segment(
+                        [
+                            centro - egui::vec2(0.0, raio),
+                            centro + egui::vec2(0.0, raio),
+                        ],
+                        linha,
                     );
-                }
-                p.circle_filled(knob, raio_knob, cor_knob);
-                p.circle_stroke(knob, raio_knob, egui::Stroke::new(2.0_f32, cor(0x0f, 0x14, 0x19)));
-                p.circle_filled(knob, raio_knob * 0.28, cor(0x16, 0x1d, 0x25));
+                    p.circle_stroke(centro, raio * 0.65, egui::Stroke::new(1.0_f32, LINHA_FORTE));
 
-                ui.add_space(ESPACO);
-                ui.vertical(|ui| {
-                    ui.spacing_mut().item_spacing.y = 0.0;
-                    ui.set_width(LARG_LEITURA);
-                    ui.add_space(((lado - ALTURA_LEITURAS) * 0.5).max(0.0));
-                    ui.label(egui::RichText::new("ÂNGULOS ATUAIS").small().color(COR_MUTED));
-                    ui.add_space(6.0);
-                    if chip(ui, leituras[0].0, leituras[0].2, LARG_LEITURA).clicked() {
-                        clicado = Some(leituras[0].1);
+                    // Sinais sutis nas pontas dos eixos para orientação imediata ao toque.
+                    let cor_eixo = if habilitado {
+                        COR_MUTED
+                    } else {
+                        COR_DESABILITADO
+                    };
+                    let fonte_eixo = fonte_hud(12.0);
+                    let margem_eixo = (raio - 11.0).max(12.0);
+                    for (offset, sinal) in [
+                        (egui::vec2(-margem_eixo, 0.0), "−"),
+                        (egui::vec2(margem_eixo, 0.0), "+"),
+                        (egui::vec2(0.0, -margem_eixo), "+"),
+                        (egui::vec2(0.0, margem_eixo), "−"),
+                    ] {
+                        p.text(
+                            centro + offset,
+                            egui::Align2::CENTER_CENTER,
+                            sinal,
+                            fonte_eixo.clone(),
+                            cor_eixo,
+                        );
                     }
-                    ui.add_space(8.0);
-                    if chip(ui, leituras[1].0, leituras[1].2, LARG_LEITURA).clicked() {
-                        clicado = Some(leituras[1].1);
+
+                    let knob = centro + state.stick * raio;
+                    if ativo {
+                        p.line_segment(
+                            [centro, knob],
+                            egui::Stroke::new(
+                                2.5_f32,
+                                egui::Color32::from_rgba_unmultiplied(0x7f, 0xb2, 0xe5, 140),
+                            ),
+                        );
                     }
+                    let raio_knob = (raio * 0.22).clamp(18.0, 36.0);
+                    let cor_knob = if !habilitado {
+                        COR_DESABILITADO
+                    } else if ativo {
+                        COR_ACENTO_TEXTO
+                    } else {
+                        COR_ACENTO
+                    };
+                    if ativo {
+                        p.circle_filled(
+                            knob,
+                            raio_knob * 1.32,
+                            egui::Color32::from_rgba_unmultiplied(0x7f, 0xb2, 0xe5, 42),
+                        );
+                    }
+                    let hex: Vec<egui::Pos2> = (0..6)
+                        .map(|i| {
+                            let a = std::f32::consts::TAU * i as f32 / 6.0
+                                + std::f32::consts::FRAC_PI_6;
+                            knob + egui::vec2(a.cos(), a.sin()) * raio_knob
+                        })
+                        .collect();
+                    p.add(egui::Shape::convex_polygon(
+                        hex,
+                        cor_knob,
+                        egui::Stroke::new(2.0_f32, COR_FUNDO),
+                    ));
+                    p.circle_filled(knob, raio_knob * 0.28, SUPERFICIE_1);
+
+                    ui.add_space(ESPACO);
+                    ui.vertical(|ui| {
+                        ui.spacing_mut().item_spacing.y = 0.0;
+                        ui.set_width(LARG_LEITURA);
+                        ui.add_space(((lado - ALTURA_LEITURAS) * 0.5).max(0.0));
+                        ui.label(
+                            egui::RichText::new("ÂNGULOS ATUAIS")
+                                .font(fonte_hud(11.0))
+                                .color(COR_MUTED),
+                        );
+                        ui.add_space(6.0);
+                        if chip(ui, leituras[0].0, leituras[0].2, LARG_LEITURA).clicked() {
+                            clicado = Some(leituras[0].1);
+                        }
+                        ui.add_space(8.0);
+                        if chip(ui, leituras[1].0, leituras[1].2, LARG_LEITURA).clicked() {
+                            clicado = Some(leituras[1].1);
+                        }
+                    });
                 });
-            });
-        });
+            },
+        );
     });
     clicado
 }
@@ -2883,7 +3368,7 @@ mod ui_layout_tests {
             egui::vec2(1440.0, 350.0),
             egui::vec2(1280.0, 320.0),
             egui::vec2(940.0, 250.0),
-            egui::vec2(740.0, 260.0),  // fallback estreito empilhado
+            egui::vec2(740.0, 260.0), // fallback estreito empilhado
         ] {
             let geo = geometria_pads(disponivel);
             if geo.lado_a_lado {

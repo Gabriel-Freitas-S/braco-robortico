@@ -256,3 +256,8 @@ publicado no Sketchfab sob licença
 As peças foram remodeladas, dimensionadas para impressão 3D e adaptadas à Bambu
 Lab A1. Os arquivos de referência ficam em [`ref/mdf/`](ref/mdf/) com este
 crédito. O modelo original não é de autoria deste projeto.
+
+Os ícones da interface do app vêm do [Icons from SVG Repo](https://www.svgrepo.com),
+coleção [Ionicons Sharp Interface Icons](https://www.svgrepo.com/collection/ionicons-sharp-interface-icons/),
+de **Ionicons** ([ionicons](https://github.com/ionic-team/ionicons)), licença MIT.
+Mapa e procedência: [`app/assets/svgrepo-icons.json`](app/assets/svgrepo-icons.json).
