@@ -39,7 +39,8 @@ alvo de toque de 48 pt; **Atalhos** e **Firmware** abrem seus modais ali mesmo.
 - **Pads:** esquerdo = base (X) e cotovelo (Y); direito = garra (X) e ombro (Y).
   Soltar o dedo centraliza e segura a posição.
 - **Assumir controle (M):** adota os ângulos atuais e trava o joystick físico.
-- **Gravação:** captura a pose a 20 Hz, inclusive movendo no joystick; salva em
+- **Gravação:** captura a pose a 20 Hz e as transições da trava da garra,
+  inclusive movendo no joystick; salva em
   `~/.local/share/robocontrol/movimentos/`.
 - **Replay:** espera a pose inicial, reproduz com pausa, velocidade 0,5×/1×/2× e
   loop; STOP cancela.
@@ -96,7 +97,9 @@ exige o PC no controle (`M`).
 ## Gravação e replay
 
 **Gravar** captura a pose a 20 Hz, inclusive quando você está movendo no
-joystick físico — é o “ensinar fazendo”. **Parar e salvar** remove pausas paradas
+joystick físico — é o “ensinar fazendo”. A trava da garra (G ou D4) também entra
+na gravação como evento; o replay reaplica `#L1`/`#L0` nos mesmos instantes, com
+a pressão contínua que segura o objeto. **Parar e salvar** remove pausas paradas
 no início/fim e deixa o movimento carregado. Se o cabo cair ou a placa
 reiniciar, a gravação em andamento é encerrada e salva com sufixo `_2`, `_3`…
 
@@ -152,7 +155,8 @@ verdade; o app só propõe alvos.
 - Log do app: erros em vermelho, STOP e gravação em destaque; o painel copia e
   limpa.
 - STOP: para o movimento e desenergiza os servos em ~0,6 s.
-- Trava da garra: com `#L1`, nem o pad nem o replay abrem a pinça.
+- Trava da garra: com `#L1`, nem o pad nem o replay abrem a pinça; o replay
+  reaplica as transições de trava gravadas.
 - Sem app: `stty -F /dev/ttyACM0 115200 raw -echo` e
   `printf '#B\n' > /dev/ttyACM0`; leia a resposta com `cat`.
 

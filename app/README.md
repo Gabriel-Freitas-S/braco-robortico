@@ -156,6 +156,9 @@ As linhas são selecionáveis para copiar um trecho.
 
 - **Gravar** captura a pose a 20 Hz (via `#S` quando no joystick e `S...` no modo
   PC) — inclusive quando você está movendo no joystick físico (é "ensinar fazendo").
+- A **trava da garra** (G ou D4) também é gravada, com o instante de cada
+  transição. Sem isso o replay reproduzia só o aperto de 2,5°, sem a pressão
+  contínua que segura o objeto.
 - **Parar e salvar** remove pausas paradas no início/fim, grava em `~/.local/share/robocontrol/movimentos/<nome>.json` (Windows: `%APPDATA%\robocontrol\movimentos`) e já deixa o movimento carregado para replay.
 - Se o cabo cair, a placa reiniciar ou você desconectar, a gravação em andamento é encerrada e salva (com sufixo `_2`, `_3`… se o nome já existir).
 - **Reproduzir** aguarda o braço alcançar a pose inicial antes de iniciar o

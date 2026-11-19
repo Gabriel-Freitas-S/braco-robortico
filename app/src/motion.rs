@@ -12,13 +12,16 @@
 //! ```json
 //! {
 //!   "name": "pega_peca",
-//!   "samples": [[0, [90.0, 60.0, 45.0, 10.0]], [50, [92.0, 60.0, 45.0, 10.0]]]
+//!   "samples": [[0, [90.0, 60.0, 45.0, 10.0]], [50, [92.0, 60.0, 45.0, 10.0]]],
+//!   "locks": [[0, false], [1500, true], [3000, false]]
 //! }
 //! ```
 //!
 //! Invariantes: `samples` é ordenado por tempo, os tempos são crescentes e cada
-//! pose tem quatro ângulos em graus (Base, Ombro, Cotovelo, Garra). O nome do
-//! arquivo é o nome sanitizado; salvar de novo com o mesmo nome sobrescreve.
+//! pose tem quatro ângulos em graus (Base, Ombro, Cotovelo, Garra). `locks` é
+//! opcional (arquivos antigos só têm `samples`) e guarda as transições da trava
+//! de pressão da garra, também ordenadas por tempo. O nome do arquivo é o nome
+//! sanitizado; salvar de novo com o mesmo nome sobrescreve.
 
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
@@ -32,6 +35,14 @@ pub struct Recording {
     pub name: String,
     /// `(ms desde o início, pose em graus)`, ordenado por tempo.
     pub samples: Vec<(u32, [f32; 4])>,
+    /// `(ms desde o início, travada)`: transições da trava de pressão da garra.
+    ///
+    /// O replay reaplica cada transição com `#L1`/`#L0`; sem isso a pressão
+    /// contínua não volta e a garra não segura o objeto. `#[serde(default)]`
+    /// mantém os arquivos antigos (só pose) válidos: sem eventos, nunca se manda
+    /// `#L`.
+    #[serde(default)]
+    pub locks: Vec<(u32, bool)>,
 }
 
 impl Recording {
@@ -68,6 +79,18 @@ impl Recording {
             out[i] = p0[i] + (p1[i] - p0[i]) * k;
         }
         Some(out)
+    }
+
+    /// Estado da trava de pressão em `t_ms`: o do último evento até esse
+    /// instante. Antes do primeiro evento a garra está liberada (`false`), como
+    /// no firmware ao ligar.
+    pub fn lock_at(&self, t_ms: f32) -> bool {
+        self.locks
+            .iter()
+            .take_while(|(t, _)| (*t as f32) <= t_ms)
+            .last()
+            .map(|(_, travada)| *travada)
+            .unwrap_or(false)
     }
 
     /// Caminho do arquivo para `name` em `dir` (nome sanitizado + `.json`).
@@ -121,20 +144,27 @@ impl Recording {
     ///
     /// Mantém uma amostra estacionária imediatamente antes do primeiro movimento e
     /// uma imediatamente após o último movimento (limiar de `0.5°`). Se nenhuma
-    /// junta tiver se movido, reduz para uma única pose em `t = 0`.
+    /// junta tiver se movido, reduz para uma única pose em `t = 0`. As transições
+    /// da trava acompanham o corte: o estado em vigor no novo `t = 0` vira um
+    /// evento em `0`, e os eventos seguintes são deslocados junto.
     pub fn trim_idle(&mut self) {
         const EPS: f32 = 0.5;
         if self.samples.len() < 2 {
-            if let Some(first) = self.samples.first_mut() {
-                first.0 = 0;
+            if let Some(t0) = self.samples.first().map(|s| s.0) {
+                let travada = self.lock_at(t0 as f32);
+                self.samples[0].0 = 0;
+                self.locks = if travada { vec![(0, true)] } else { Vec::new() };
             }
             return;
         }
         let pose_inicial = self.samples[0].1;
         let Some(first_move) = self.samples.iter().position(|(_, p)| pose_diff(*p, pose_inicial) > EPS)
         else {
+            let t0 = self.samples[0].0;
+            let travada = self.lock_at(t0 as f32);
             self.samples.truncate(1);
             self.samples[0].0 = 0;
+            self.locks = if travada { vec![(0, true)] } else { Vec::new() };
             return;
         };
         let start_idx = first_move.saturating_sub(1);
@@ -149,6 +179,23 @@ impl Recording {
         let t0 = self.samples[0].0;
         for (t, _) in &mut self.samples {
             *t = t.saturating_sub(t0);
+        }
+        self.rebase_locks(t0);
+    }
+
+    /// Desloca as transições da trava para o novo `t = 0` depois do corte.
+    ///
+    /// O estado em `t0` vira um evento em `0`, para o replay começar com a garra
+    /// na mesma condição da gravação; eventos que passariam do fim ficam no fim.
+    fn rebase_locks(&mut self, t0: u32) {
+        let travada = self.lock_at(t0 as f32);
+        self.locks.retain(|(t, _)| *t > t0);
+        let fim = self.duration_ms();
+        for (t, _) in &mut self.locks {
+            *t = t.saturating_sub(t0).min(fim);
+        }
+        if travada {
+            self.locks.insert(0, (0, true));
         }
     }
 }
@@ -274,6 +321,7 @@ mod tests {
                 (0, [90.0, 60.0, 45.0, 10.0]),
                 (1000, [110.0, 60.0, 45.0, 10.0]),
             ],
+            locks: vec![],
         }
     }
 
@@ -294,10 +342,13 @@ mod tests {
     #[test]
     fn grava_e_le() {
         let dir = std::env::temp_dir().join("robocontrol_teste");
-        let path = rec().save(&dir).unwrap();
+        let mut r = rec();
+        r.locks = vec![(0, false), (500, true)];
+        let path = r.save(&dir).unwrap();
         let lido = Recording::load(&path).unwrap();
         assert_eq!(lido.samples.len(), 2);
         assert_eq!(lido.name, "t");
+        assert_eq!(lido.locks, r.locks);
         let _ = std::fs::remove_file(path);
     }
 
@@ -305,6 +356,26 @@ mod tests {
     fn caminho_usa_nome_sanitizado() {
         let path = Recording::path_for(Path::new("/mov"), "pega peça");
         assert_eq!(path.file_name().unwrap(), "pega_peça.json");
+    }
+
+    #[test]
+    fn trava_acompanha_a_linha_do_tempo() {
+        let mut r = rec();
+        r.locks = vec![(100, true), (900, false)];
+        assert!(!r.lock_at(0.0));
+        assert!(!r.lock_at(99.0));
+        assert!(r.lock_at(100.0));
+        assert!(r.lock_at(500.0));
+        assert!(!r.lock_at(900.0));
+        assert!(!r.lock_at(5_000.0));
+    }
+
+    #[test]
+    fn arquivo_antigo_sem_trava_carrega() {
+        let json = r#"{"name":"velho","samples":[[0,[90.0,60.0,45.0,10.0]]]}"#;
+        let r: Recording = serde_json::from_str(json).unwrap();
+        assert!(r.locks.is_empty());
+        assert!(!r.lock_at(0.0));
     }
 
     #[test]
@@ -320,6 +391,7 @@ mod tests {
                 (1750, [110.0, 60.0, 45.0, 10.0]),
                 (2000, [110.0, 60.0, 45.0, 10.0]),
             ],
+            locks: vec![],
         };
         r.trim_idle();
         assert_eq!(r.samples.first().unwrap().0, 0);
@@ -334,10 +406,32 @@ mod tests {
                 (100, [90.0, 60.0, 45.0, 10.0]),
                 (500, [90.2, 60.0, 45.0, 10.0]),
             ],
+            locks: vec![],
         };
         estatica.trim_idle();
         assert_eq!(estatica.samples.len(), 1);
         assert_eq!(estatica.samples[0].0, 0);
+    }
+
+    #[test]
+    fn corte_preserva_a_trava_em_vigor() {
+        let mut r = Recording {
+            name: "trava".into(),
+            samples: vec![
+                (0, [90.0, 60.0, 45.0, 10.0]),
+                (500, [90.0, 60.0, 45.0, 10.0]),
+                (1000, [110.0, 60.0, 45.0, 10.0]),
+                (1500, [110.0, 60.0, 45.0, 10.0]),
+            ],
+            locks: vec![(0, false), (200, true), (800, false)],
+        };
+        r.trim_idle();
+        // O corte começa em 500 ms: a garra já estava travada ali.
+        assert_eq!(r.samples.first().unwrap().0, 0);
+        assert_eq!(r.duration_ms(), 500);
+        assert!(r.lock_at(0.0));
+        assert!(r.lock_at(299.0));
+        assert!(!r.lock_at(300.0));
     }
 
     #[test]
@@ -349,6 +443,7 @@ mod tests {
                 (0, [90.0, 60.0, 45.0, 10.0]),
                 (1000, [110.0, 60.0, 45.0, 10.0]),
             ],
+            locks: vec![],
         };
         let mut play = PlayState::new(r.clone());
 

@@ -30,7 +30,8 @@
 //! - Tocar num pad ou usar uma tecla de movimento cancela replay e alvo manual:
 //!   quem está com a mão (ou no teclado) manda.
 //! - A trava da garra é um único estado no firmware (botão D4 e app), e com ela
-//!   ativa a garra só aperta.
+//!   ativa a garra só aperta. A gravação guarda suas transições e o replay as
+//!   reaplica via `#L1`/`#L0`, então a pressão também volta.
 //! - Os limites usados na validação da UI vêm do diagnóstico; quem os aplica de
 //!   verdade é o firmware, então um alvo fora da faixa não vira movimento.
 //! - Queda de link ou reinício da placa encerra a gravação, salva o que foi
@@ -373,6 +374,10 @@ struct App {
     last_tick: Instant,
     /// Janela curta após `assume()` para não descartar `pc` por um `Status` antigo em trânsito.
     last_assume: Option<Instant>,
+    /// Última trava comandada pelo app + instante. Um `Status` gerado antes do
+    /// `#L` pode chegar depois e trazer o estado velho; nessa janela ele não vira
+    /// evento na gravação (o próximo status confirma ou corrige).
+    trava_cmd: Option<(Instant, bool)>,
 
     /// Gravação em andamento + instante inicial (base dos carimbos em ms).
     recording: Option<(Recording, Instant)>,
@@ -394,6 +399,9 @@ struct App {
     loaded_path: Option<PathBuf>,
     /// Replay em andamento (com pré-posicionamento, pausa e posição na linha do tempo).
     play: Option<PlayState>,
+    /// Último estado da trava enviado ao firmware pelo replay. Evita repetir
+    /// `#L` a cada tick e reaplica o estado inicial quando o loop recomeça.
+    trava_replay: bool,
     /// Fator de velocidade selecionado para o replay (`0.5`, `1.0`, `2.0`).
     vel_replay: f32,
     /// Ao terminar, recomeça do início em vez de parar.
@@ -447,6 +455,7 @@ impl App {
             last_status: None,
             last_tick: Instant::now(),
             last_assume: None,
+            trava_cmd: None,
             recording: None,
             excluir: None,
             rec_name: "movimento".into(),
@@ -455,6 +464,7 @@ impl App {
             loaded: None,
             loaded_path: None,
             play: None,
+            trava_replay: false,
             vel_replay: 1.0,
             looping: false,
             alvo_manual: false,
@@ -744,8 +754,25 @@ impl App {
     /// Alterna a trava de pressão da garra (a mesma do botão físico D4).
     fn alterna_trava_garra(&mut self) {
         let travar = !self.garra_travada;
+        self.trava_cmd = Some((Instant::now(), travar));
         self.send(protocol::cmd_lock(travar));
         self.garra_travada = travar;
+        self.registra_trava(travar);
+    }
+
+    /// Registra uma transição da trava na gravação em andamento, sem duplicar.
+    ///
+    /// Chamado no comando do app (tecla G/botão) e no status (botão físico D4):
+    /// o replay reaplica cada transição com `#L1`/`#L0`, então a pressão da garra
+    /// também volta — só o aperto de 2,5° não seguraria o objeto.
+    fn registra_trava(&mut self, travada: bool) {
+        let Some((rec, t0)) = self.recording.as_mut() else {
+            return;
+        };
+        if rec.locks.last().map(|e| e.1) == Some(travada) {
+            return;
+        }
+        rec.locks.push((t0.elapsed().as_millis() as u32, travada));
     }
 
     /// Começa uma nova gravação com o nome atual.
@@ -754,6 +781,7 @@ impl App {
             Recording {
                 name: self.rec_name.clone(),
                 samples: Vec::new(),
+                locks: vec![(0, self.garra_travada)],
             },
             Instant::now(),
         ));
@@ -767,6 +795,7 @@ impl App {
         }
         self.assume();
         self.alvo_manual = false;
+        self.trava_replay = self.garra_travada;
         self.play = Some(PlayState::new(rec));
         self.loga("reproduzindo…");
     }
@@ -975,6 +1004,17 @@ impl App {
                     if let Some((rec, t0)) = self.recording.as_mut() {
                         rec.samples.push((t0.elapsed().as_millis() as u32, s.pose));
                     }
+                    //  Cobre a trava acionada no botão físico D4 (modo joystick):
+                    //  o app só sabe dela por este status. Um status em trânsito
+                    //  (gerado antes do nosso #L) não pode reverter a gravação.
+                    let em_transito = self.trava_cmd.is_some_and(|(t, esperada)| {
+                        s.trava != esperada
+                            && now.saturating_duration_since(t) < Duration::from_millis(250)
+                    });
+                    if !em_transito {
+                        self.trava_cmd = None;
+                        self.registra_trava(s.trava);
+                    }
                 }
             }
         }
@@ -1001,7 +1041,7 @@ impl App {
 
         // Replay: aguarda pré-posicionamento e avança conforme velocidade e pausa.
         if let Some(mut play) = self.play.take() {
-            match play.step(
+            let em_andamento = match play.step(
                 dt_ms,
                 self.vel_replay,
                 self.looping,
@@ -1011,14 +1051,26 @@ impl App {
             ) {
                 Some(p) => {
                     self.pose = p;
-                    self.play = Some(play);
+                    true
                 }
                 None => {
                     if let Some(last) = play.rec.sample_at(play.rec.duration_ms() as f32) {
                         self.pose = last;
                     }
                     self.loga("fim do movimento");
+                    false
                 }
+            };
+            //  A trava gravada é reaplicada como evento (#L1/#L0), não como pose:
+            //  é ela que mantém a pressão contínua no objeto. Arquivo antigo não
+            //  tem eventos: o replay não mexe na trava, como antes.
+            let travada = play.rec.lock_at(play.pos_ms);
+            if !play.rec.locks.is_empty() && travada != self.trava_replay {
+                self.trava_replay = travada;
+                self.send(protocol::cmd_lock(travada));
+            }
+            if em_andamento {
+                self.play = Some(play);
             }
         }
 
@@ -3424,6 +3476,20 @@ mod ui_layout_tests {
     }
 
     #[test]
+    fn gravacao_registra_transicoes_da_trava() {
+        let mut app = App::new();
+        app.garra_travada = false;
+        app.inicia_gravacao();
+        assert_eq!(app.recording.as_ref().unwrap().0.locks, vec![(0, false)]);
+
+        app.registra_trava(true);
+        app.registra_trava(true); // já registrada: não duplica
+        let locks = &app.recording.as_ref().unwrap().0.locks;
+        assert_eq!(locks.len(), 2);
+        assert!(locks[1].1);
+    }
+
+    #[test]
     fn reinicio_derruba_autoridade_e_zera_alvos() {
         let mut app = App::new();
         app.pc = true;
@@ -3433,6 +3499,7 @@ mod ui_layout_tests {
         app.play = Some(PlayState::new(Recording {
             name: "t".into(),
             samples: vec![(0, [90.0; 4])],
+            locks: vec![],
         }));
 
         app.registra_boots(4);

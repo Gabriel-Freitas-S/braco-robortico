@@ -1,5 +1,10 @@
 # Changelog
 
+## App 0.2.1 — trava da garra no replay — 2026-11-19
+
+- **Correção:** a gravação de movimentos não guardava a trava da garra (G/`#L1`). Como `#L0` não move a garra, o "soltar" não deixava amostra, e o replay reproduzia só o aperto de 2,5° — sem a pressão contínua, o objeto escorregava. O JSON agora tem `locks` com o instante de cada transição, capturada pela tecla G, pelo botão do painel e pelo D4 (via status); o replay reaplica `#L1`/`#L0` nos mesmos instantes, inclusive no início e no loop.
+- **Compatibilidade:** arquivos antigos, sem `locks`, carregam e o replay não mexe na trava (não há evento para reaplicar).
+
 ## App 0.2.0 — interface HUD — 2026-11-17
 
 - **Versão:** 0.1.0 → 0.2.0. Mudou só a interface; protocolo, comandos e arquivos de movimento continuam iguais.
